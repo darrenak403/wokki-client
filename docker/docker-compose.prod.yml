@@ -1,0 +1,25 @@
+name: wokki-client-prod
+
+services:
+  wokki-client:
+    container_name: wokki-client-prod
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: runner
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Wokki}
+        NEXT_PUBLIC_ENV: ${NEXT_PUBLIC_ENV:-production}
+    env_file:
+      - .env
+    ports:
+      - "6789:6789"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:6789/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
