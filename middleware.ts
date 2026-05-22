@@ -1,29 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { getRolesFromToken } from "@/lib/auth/jwt-roles";
 import { MARKETING_PATHS } from "@/components/shared/site-nav";
 import { ROLE_ADMIN } from "@/lib/types/roles";
-
-const getUserRoles = (token: string | undefined): string[] => {
-  if (!token) return [];
-  try {
-    const decoded = jwtDecode(token) as { role?: string | string[]; exp?: number } | null;
-
-    if (decoded?.exp && decoded.exp < Math.floor(Date.now() / 1000)) return [];
-
-    if (!decoded?.role) return [];
-    return Array.isArray(decoded.role) ? decoded.role : [decoded.role];
-  } catch {
-    return [];
-  }
-};
 
 const hasRole = (roles: string[], target: string) => roles.includes(target);
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("authToken")?.value;
-  const userRoles = getUserRoles(token);
+  const userRoles = getRolesFromToken(token);
 
   const publicRoutes = [...MARKETING_PATHS, "/login", "/register"];
   const authRoutes = ["/login", "/register"];

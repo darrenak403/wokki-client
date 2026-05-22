@@ -18,7 +18,7 @@ const values = [
 
 const milestones = [
   { year: "2024", event: "Ý tưởng Wokki — giải quyết lịch ca bằng spreadsheet cho F&B." },
-  { year: "2025", event: "MVP nội bộ: lịch tuần, xuất bản lịch, chấm công và đổi ca." },
+  { year: "2025", event: "Ra mắt lịch tuần, xuất bản lịch, chấm công và đổi ca." },
   { year: "2026", event: "Ra mắt chat, payroll summary và onboarding đa chi nhánh." },
 ] as const;
 
