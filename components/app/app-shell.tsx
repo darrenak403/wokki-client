@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LogOutIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getAppNavForRole } from "@/components/app/app-nav";
+import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, role, logout, isLoading } = useAuth();
   const navItems = role ? getAppNavForRole(role) : [];
+  const swapPendingCount = useSwapInboxPendingCount();
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -45,7 +47,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 )}
                 aria-current={isActive ? "page" : undefined}
               >
-                {item.label}
+                <span className="flex items-center justify-between gap-2">
+                  {item.label}
+                  {item.showSwapPendingBadge && swapPendingCount > 0 ? (
+                    <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground tabular-nums">
+                      {swapPendingCount > 99 ? "99+" : swapPendingCount}
+                    </span>
+                  ) : null}
+                </span>
               </Link>
             );
           })}

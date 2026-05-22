@@ -2,13 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { employeeKeys } from "@/lib/api/query-keys";
+import { employeeKeys, swapInboxKeys } from "@/lib/api/query-keys";
 import { fetchSelf } from "@/lib/api/services/fetchSelf";
 import { fetchSwapRequests } from "@/lib/api/services/fetchSwapRequests";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";
 import type {
   CreateSwapRequest,
   SwapActionRequest,
+  SwapListParams,
   SwapTargetsParams,
 } from "@/types/employee";
 
@@ -70,6 +71,43 @@ export function useDeclineSwapMutation() {
       fetchSwapRequests.decline(swapId, data ?? {}),
     onSuccess: () => {
       invalidateEmployeeApp(queryClient);
+      toast.success("Đã từ chối yêu cầu đổi ca.");
+    },
+    onError: (error) => toast.error(mapEmployeeError(error)),
+  });
+}
+
+export function useSwapInboxQuery(params: SwapListParams, enabled = true) {
+  return useQuery({
+    queryKey: swapInboxKeys.list(params),
+    queryFn: () => fetchSwapRequests.list(params),
+    enabled,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useOverrideApproveSwapMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ swapId, data }: { swapId: string; data?: SwapActionRequest }) =>
+      fetchSwapRequests.overrideApprove(swapId, data ?? {}),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: swapInboxKeys.all });
+      void queryClient.invalidateQueries({ queryKey: employeeKeys.all });
+      toast.success("Đã duyệt đổi ca. Nhân viên nên refresh lịch của tôi.");
+    },
+    onError: (error) => toast.error(mapEmployeeError(error)),
+  });
+}
+
+export function useOverrideRejectSwapMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ swapId, data }: { swapId: string; data?: SwapActionRequest }) =>
+      fetchSwapRequests.overrideReject(swapId, data ?? {}),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: swapInboxKeys.all });
+      void queryClient.invalidateQueries({ queryKey: employeeKeys.all });
       toast.success("Đã từ chối yêu cầu đổi ca.");
     },
     onError: (error) => toast.error(mapEmployeeError(error)),

@@ -20,7 +20,13 @@ const EMPLOYEE_ERROR_MESSAGES: Record<string, string> = {
   SWAP_OPEN_EXISTS: "Đã có yêu cầu đổi ca đang chờ cho phân ca này.",
   SWAP_INVALID_TRANSITION: "Không thể chuyển trạng thái yêu cầu.",
   SWAP_PEER_ACCEPTED_EXISTS: "Yêu cầu đã được xử lý.",
+  SWAP_OVERRIDE_APPROVED: "Trưởng ca đã duyệt đổi ca.",
+  SWAP_OVERRIDE_REJECTED: "Trưởng ca đã từ chối đổi ca.",
   ATTENDANCE_OPEN_EXISTS: "Bạn đang có lần chấm công chưa kết thúc.",
+  ATTENDANCE_ADJUSTED: "Đã điều chỉnh chấm công.",
+  ATTENDANCE_NOTE_REQUIRED: "Ghi chú điều chỉnh là bắt buộc.",
+  ATTENDANCE_PERIOD_LOCKED: "Kỳ lương đã khóa — không thể chỉnh chấm công.",
+  ATTENDANCE_NOT_FOUND: "Không tìm thấy bản ghi chấm công.",
   INTERNAL_ERROR: "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
 };
 

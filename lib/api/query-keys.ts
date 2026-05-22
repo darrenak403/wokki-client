@@ -1,3 +1,21 @@
+export const swapInboxKeys = {
+  all: ["swapInbox"] as const,
+  lists: () => [...swapInboxKeys.all, "list"] as const,
+  list: (params: object) => [...swapInboxKeys.lists(), params] as const,
+};
+
+export const opsKeys = {
+  all: ["ops"] as const,
+  teamAttendance: (params: object) => [...opsKeys.all, "teamAttendance", params] as const,
+};
+
+export const payrollKeys = {
+  all: ["payroll"] as const,
+  summary: (params: object) => [...payrollKeys.all, "summary", params] as const,
+  employeeDetail: (employeeId: string, params: object) =>
+    [...payrollKeys.all, "detail", employeeId, params] as const,
+};
+
 export const employeeKeys = {
   all: ["employee"] as const,
   mySchedule: () => [...employeeKeys.all, "mySchedule"] as const,

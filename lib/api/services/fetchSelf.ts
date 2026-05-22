@@ -3,7 +3,7 @@ import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
 import type {
-  AttendanceListParams,
+  SelfAttendanceListParams,
   AttendanceResponse,
   ShiftAssignmentResponse,
   SwapRequestResponse,
@@ -37,7 +37,9 @@ export const fetchSelf = {
     return assertEmployeeSuccess(normalizeApiResponse(response.data));
   },
 
-  listAttendance: async (params: AttendanceListParams = {}): Promise<AttendanceResponse[]> => {
+  listAttendance: async (
+    params: SelfAttendanceListParams = {},
+  ): Promise<AttendanceResponse[]> => {
     const response = await apiService.get<ApiEnvelope<AttendanceResponse[]>>(
       "api/v1/self/attendance",
       {

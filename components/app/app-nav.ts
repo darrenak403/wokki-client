@@ -6,6 +6,8 @@ export type AppNavItem = {
   label: string;
   /** Wave / module — ghi chú cho agent, không hiển thị UI */
   module?: string;
+  /** Hiển thị badge pending swap (Wave 5) */
+  showSwapPendingBadge?: boolean;
 };
 
 const ADMIN_NAV: AppNavItem[] = [
@@ -16,6 +18,9 @@ const ADMIN_NAV: AppNavItem[] = [
   { href: "/admin/employees", label: "Nhân sự", module: "wave2" },
   { href: "/admin/users", label: "Tài khoản", module: "wave2" },
   { href: "/admin/schedule", label: "Lịch ca", module: "wave3" },
+  { href: "/admin/swap", label: "Đổi ca", module: "wave5", showSwapPendingBadge: true },
+  { href: "/admin/attendance", label: "Chấm công", module: "wave5" },
+  { href: "/admin/payroll", label: "Lương", module: "wave5" },
 ];
 
 const MANAGER_NAV: AppNavItem[] = [
@@ -25,7 +30,9 @@ const MANAGER_NAV: AppNavItem[] = [
   { href: "/manager/shifts", label: "Ca làm việc", module: "wave2" },
   { href: "/manager/employees", label: "Nhân sự", module: "wave2" },
   { href: "/manager/schedule", label: "Lịch ca", module: "wave3" },
+  { href: "/manager/swap", label: "Đổi ca", module: "wave5", showSwapPendingBadge: true },
   { href: "/manager/attendance", label: "Chấm công", module: "wave5" },
+  { href: "/manager/payroll", label: "Lương", module: "wave5" },
 ];
 
 const USER_NAV: AppNavItem[] = [

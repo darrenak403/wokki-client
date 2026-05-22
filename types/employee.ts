@@ -58,10 +58,37 @@ export interface ClockInRequest {
   assignmentId?: string;
 }
 
-export type AttendanceListParams = {
+/** Wave 4 — GET /self/attendance */
+export type SelfAttendanceListParams = {
   fromDate?: string;
   toDate?: string;
 };
+
+/** Wave 5 — GET /attendance (team, Manager/Admin) */
+export type TeamAttendanceListParams = {
+  page?: number;
+  pageSize?: number;
+  employeeId?: string;
+  fromDate?: string;
+  toDate?: string;
+};
+
+/** @deprecated Use SelfAttendanceListParams or TeamAttendanceListParams */
+export type AttendanceListParams = SelfAttendanceListParams;
+
+export type SwapListParams = {
+  page?: number;
+  pageSize?: number;
+  status?: SwapStatus;
+  departmentId?: string;
+  weekStartDate?: string;
+};
+
+export interface AdjustAttendanceRequest {
+  clockIn: string;
+  clockOut: string;
+  adjustmentNote: string;
+}
 
 /** Proposed BE endpoint for peer swap targets (Wave 4 §1A). */
 export type SwapTargetsParams = {

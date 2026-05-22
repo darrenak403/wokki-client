@@ -26,3 +26,11 @@ export function weekDayDates(weekStartMonday: string): string[] {
   const start = parseISO(weekStartMonday);
   return Array.from({ length: 7 }, (_, i) => format(addDays(start, i), "yyyy-MM-dd"));
 }
+
+export function weekRangeFromMonday(weekStartMonday: string): {
+  startDate: string;
+  endDate: string;
+} {
+  const days = weekDayDates(weekStartMonday);
+  return { startDate: days[0], endDate: days[6] };
+}

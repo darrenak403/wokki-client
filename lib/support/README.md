@@ -9,7 +9,8 @@ lib/support/
   auth/          # Wave 1 — JWT, cookie, RBAC routes, map-auth-error
   foundation/    # Wave 2 — sessionStorage, map-errors, assert-success
   schedule/      # Wave 3 — week/status helpers, map-errors, assert-success
-  employee/      # Wave 4 — self/swap/attendance map-errors, assert-success
+  employee/      # Wave 4–5 — self/swap/attendance map-errors, assert-success
+  payroll/       # Wave 5 — payroll map-errors, CSV download helper
   seo/           # Guest — metadata, sitemap, JSON-LD
 ```
 
