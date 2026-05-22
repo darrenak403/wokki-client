@@ -9,6 +9,12 @@ export const opsKeys = {
   teamAttendance: (params: object) => [...opsKeys.all, "teamAttendance", params] as const,
 };
 
+export const chatKeys = {
+  all: ["chat"] as const,
+  channels: () => [...chatKeys.all, "channels"] as const,
+  messages: (channelId: string) => [...chatKeys.all, "messages", channelId] as const,
+};
+
 export const payrollKeys = {
   all: ["payroll"] as const,
   summary: (params: object) => [...payrollKeys.all, "summary", params] as const,

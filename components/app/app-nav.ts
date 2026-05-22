@@ -21,6 +21,7 @@ const ADMIN_NAV: AppNavItem[] = [
   { href: "/admin/swap", label: "Đổi ca", module: "wave5", showSwapPendingBadge: true },
   { href: "/admin/attendance", label: "Chấm công", module: "wave5" },
   { href: "/admin/payroll", label: "Lương", module: "wave5" },
+  { href: "/admin/chat", label: "Tin nhắn", module: "wave6" },
 ];
 
 const MANAGER_NAV: AppNavItem[] = [
@@ -33,6 +34,7 @@ const MANAGER_NAV: AppNavItem[] = [
   { href: "/manager/swap", label: "Đổi ca", module: "wave5", showSwapPendingBadge: true },
   { href: "/manager/attendance", label: "Chấm công", module: "wave5" },
   { href: "/manager/payroll", label: "Lương", module: "wave5" },
+  { href: "/manager/chat", label: "Tin nhắn", module: "wave6" },
 ];
 
 const USER_NAV: AppNavItem[] = [
@@ -40,6 +42,7 @@ const USER_NAV: AppNavItem[] = [
   { href: "/user/schedule", label: "Lịch của tôi", module: "wave4" },
   { href: "/user/swap", label: "Đổi ca", module: "wave4" },
   { href: "/user/attendance", label: "Chấm công", module: "wave4" },
+  { href: "/user/chat", label: "Tin nhắn", module: "wave6" },
 ];
 
 export function getAppNavForRole(role: AppRole): AppNavItem[] {

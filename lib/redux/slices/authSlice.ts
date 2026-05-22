@@ -10,6 +10,7 @@ import {
   persistSession,
   syncRoleCookie,
 } from "@/lib/support/auth/session-cookies";
+import { clearCachedMyEmployeeId } from "@/lib/support/chat/my-employee-id";
 import type { AuthUser, LoginRequest } from "@/types/auth";
 import type { AppRole } from "@/lib/types/roles";
 import type { RootState, AppDispatch } from "../store";
@@ -187,6 +188,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       clearSessionCookies();
+      clearCachedMyEmployeeId();
       clearAutoRefresh();
     },
     clearError: (state) => {
@@ -234,6 +236,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.isLoading = false;
       state.error = null;
+      clearCachedMyEmployeeId();
     });
 
     builder

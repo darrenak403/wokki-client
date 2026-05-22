@@ -17,6 +17,9 @@ hooks/
   useUsers.ts
   useFoundationSession.ts
   useSchedule.ts
+  useSignalR.ts
+  useSignalRNotifications.ts
+  useChatHub.ts
 ```
 
 ## Quy tắc đặt tên
@@ -35,5 +38,9 @@ hooks/
 | `useAuth`, `useAuthSyncAcrossTabs` | 1 | Redux, cookies |
 | `useLocations` … `useUsers`, `useFoundationSession` | 2 | `fetch*` foundation + `lib/support/foundation/map-errors` |
 | `useSchedule` | 3 | `fetchSchedules` + `lib/support/schedule/map-errors` |
+| `useMySchedule`, `useSwapRequests`, `useAttendance` | 4 | `fetchSelf` + employee support |
+| `usePayroll`, `useSwapInboxPendingCount` | 5 | `fetchPayroll` / swap inbox |
+| `useSignalR`, `useSignalRNotifications` | — | `lib/realtime/signalr.ts` (`/hubs/app`) |
+| `useChatHub` | 6 | `lib/realtime/chat-hub.ts` (`/ws/chat`) |
 
-Wave mới → thêm **một file** `hooks/useEmployee.ts` (không folder con).
+Wave mới → thêm **một file** `hooks/useXxx.ts` (không folder con).
