@@ -24,10 +24,15 @@ export interface ShiftAssignmentResponse {
   scheduleId: string;
   shiftDefinitionId: string;
   shiftName: string;
+  shiftColor?: string | null;
   startTime: string;
   endTime: string;
   employeeId: string;
   date: string;
+  departmentId?: string | null;
+  departmentName?: string | null;
+  locationId?: string | null;
+  locationName?: string | null;
   note: string | null;
   createdAt: string;
 }
