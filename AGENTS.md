@@ -40,10 +40,37 @@ Chi tiết: [`docs/fe/ui-architecture.md`](docs/fe/ui-architecture.md)
 
 **Khi thêm feature:** route mới dưới `app/(app)/{admin|manager|user}/`, cập nhật `components/app/app-nav.ts` — **không** đặt trên landing.
 
+## Cấu trúc thư mục UI (agent phải tuân)
+
+| Vùng | Route group | Pages | Components (colocated) | Shell chung |
+|------|-------------|-------|------------------------|-------------|
+| Guest | `app/(landing)/` | `page.tsx`, `pricing/`, … | `app/(landing)/components/` | `components/shared/` |
+| Auth | `app/(auth)/` | `login/`, `register/` | `app/(auth)/login/components/`, … | `components/shared/` |
+| App | `app/(app)/` | `admin/*`, `manager/*`, `user/*` | **`admin/{feature}/components/`** + `components/shared/admin/` | `components/app/` (`AppShell`, `app-nav.ts`) |
+
+**Quy tắc App (`(app)`):**
+
+- **Panel / màn chính** → colocated cùng page: `app/(app)/admin/{feature}/components/` (vd. `admin/locations/components/locations-panel.tsx`)
+- **Page** (`page.tsx`) mỏng — chỉ metadata + render panel từ `./components/` hoặc `@/app/(app)/admin/.../components/...`
+- **Manager/User** reuse panel Admin (read-only): import từ `@/app/(app)/admin/{feature}/components/...` + prop `canWrite={false}` khi cần
+- **Widget dùng chéo nhiều màn admin** (select, validator) → `components/shared/admin/` — **không** đặt panel ở đây
+- **Không** tạo `components/app/{feature}/` — `components/app/` chỉ `AppShell`, `app-nav.ts`
+- Logic/API: `lib/api/services/`, `lib/hooks/foundation/`, `lib/foundation/`, `types/foundation.ts`
+
+**Ví dụ Wave 2 (foundation):**
+
+```
+app/(app)/admin/locations/page.tsx
+app/(app)/admin/locations/components/locations-panel.tsx
+components/shared/admin/location-select.tsx
+components/shared/admin/foundation-session-validator.tsx
+app/(app)/manager/locations/page.tsx                 # import panel từ admin/locations/components
+```
+
 ## Kiến trúc kỹ thuật
 
 - **App Router** — Server Components mặc định; `"use client"` khi cần tương tác
-- **Colocated components:** `app/[route]/components/`; `components/shared/` (guest); `components/app/` (shell app); `components/ui/` (shadcn)
+- **Colocated components:** UI theo route group — xem bảng dưới; `components/ui/` (shadcn)
 - **State:** TanStack Query + Redux (auth)
 - **API:** `lib/api/services/fetchXxx.ts`, envelope `success` + `message.code`, cookie `authToken`, middleware RBAC
 - **SEO:** `buildPageMetadata()` — app routes dùng `noindex: true`

@@ -10,13 +10,19 @@ export type AppNavItem = {
 
 const ADMIN_NAV: AppNavItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", module: "core" },
-  // Wave 2+
-  { href: "/admin/users", label: "Người dùng", module: "wave2" },
-  { href: "/admin/branches", label: "Chi nhánh", module: "wave2" },
+  { href: "/admin/locations", label: "Chi nhánh", module: "wave2" },
+  { href: "/admin/departments", label: "Phòng ban", module: "wave2" },
+  { href: "/admin/shifts", label: "Ca định nghĩa", module: "wave2" },
+  { href: "/admin/employees", label: "Nhân sự", module: "wave2" },
+  { href: "/admin/users", label: "Tài khoản", module: "wave2" },
 ];
 
 const MANAGER_NAV: AppNavItem[] = [
   { href: "/manager/dashboard", label: "Dashboard", module: "core" },
+  { href: "/manager/locations", label: "Chi nhánh", module: "wave2" },
+  { href: "/manager/departments", label: "Phòng ban", module: "wave2" },
+  { href: "/manager/shifts", label: "Ca định nghĩa", module: "wave2" },
+  { href: "/manager/employees", label: "Nhân sự", module: "wave2" },
   { href: "/manager/schedule", label: "Lịch ca", module: "wave3" },
   { href: "/manager/attendance", label: "Chấm công", module: "wave5" },
 ];

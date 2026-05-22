@@ -1,0 +1,12 @@
+import { DepartmentsPanel } from "@/app/(app)/admin/departments/components/departments-panel";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Phòng ban — Admin",
+  path: "/admin/departments",
+  noindex: true,
+});
+
+export default function AdminDepartmentsPage() {
+  return <DepartmentsPanel canWrite />;
+}

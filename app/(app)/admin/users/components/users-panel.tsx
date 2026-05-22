@@ -1,0 +1,184 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { PlusIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useCreateUserMutation, useUsersQuery } from "@/lib/hooks/foundation/use-users";
+import { APP_ROLES, type AppRole } from "@/lib/types/roles";
+
+const userSchema = z.object({
+  email: z.string().email("Email không hợp lệ"),
+  password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+  role: z.enum(["Admin", "Manager", "User"] as [AppRole, AppRole, AppRole]),
+});
+
+export function UsersPanel() {
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError } = useUsersQuery({ page, pageSize: 10 });
+  const createMutation = useCreateUserMutation();
+  const [open, setOpen] = useState(false);
+
+  const form = useForm<z.infer<typeof userSchema>>({
+    resolver: zodResolver(userSchema),
+    defaultValues: { email: "", password: "", role: "User" },
+  });
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    await createMutation.mutateAsync(values);
+    setOpen(false);
+    form.reset();
+  });
+
+  const items = data?.items ?? [];
+  const totalPages = data?.totalPages ?? 1;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Tài khoản hệ thống</h1>
+          <p className="text-sm text-muted-foreground">
+            Tạo tài khoản đăng nhập (Admin / Manager / User) — không tự tạo hồ sơ nhân viên.
+            Dùng màn <span className="font-medium">Nhân sự</span> để gắn ca và chấm công.
+          </p>
+        </div>
+        <Button type="button" onClick={() => setOpen(true)}>
+          <PlusIcon className="size-4" />
+          Thêm tài khoản
+        </Button>
+      </div>
+
+      {isError ? (
+        <p className="text-sm text-destructive">Không tải được danh sách tài khoản.</p>
+      ) : (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Vai trò</TableHead>
+                <TableHead>Ngày tạo</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={3}>Đang tải…</TableCell>
+                </TableRow>
+              ) : items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-muted-foreground">
+                    Chưa có tài khoản.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                items.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{row.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{row.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(row.createdAt).toLocaleDateString("vi-VN")}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Trước
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Trang {page} / {totalPages}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Sau
+            </Button>
+          </div>
+        </>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Thêm tài khoản hệ thống</DialogTitle>
+            <DialogDescription>
+              Không tạo Employee. Để nhân viên có ca, dùng màn Nhân sự.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={onSubmit} className="space-y-4" noValidate>
+            <FieldGroup>
+              <Field>
+                <FieldLabel>Email</FieldLabel>
+                <Input type="email" {...form.register("email")} />
+                <FieldError errors={[form.formState.errors.email]} />
+              </Field>
+              <Field>
+                <FieldLabel>Mật khẩu</FieldLabel>
+                <Input type="password" {...form.register("password")} />
+                <FieldError errors={[form.formState.errors.password]} />
+              </Field>
+              <Field>
+                <FieldLabel>Vai trò</FieldLabel>
+                <select
+                  className="h-8 w-full rounded-lg border border-input px-2 text-sm"
+                  {...form.register("role")}
+                >
+                  {APP_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </FieldGroup>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Hủy
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending}>
+                Tạo
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
