@@ -79,11 +79,8 @@ export function ShiftsPanel() {
   const departmentId = session.selectedDepartmentId;
 
   const listParams = useMemo(
-    () =>
-      locationId
-        ? { locationId, departmentId: departmentId ?? undefined }
-        : null,
-    [locationId, departmentId],
+    () => (locationId ? { locationId, departmentId: departmentId ?? undefined } : null),
+    [locationId, departmentId]
   );
 
   const { data: shifts = [], isLoading, isError } = useShiftsQuery(listParams);
@@ -172,7 +169,7 @@ export function ShiftsPanel() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Ca định nghĩa</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Ca làm việc</h1>
           <p className="text-sm text-muted-foreground">
             Định nghĩa ca sáng, chiều, tối trước khi xếp lịch tuần.
           </p>
@@ -224,7 +221,7 @@ export function ShiftsPanel() {
             ) : shifts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-muted-foreground">
-                  Chưa có ca định nghĩa tại chi nhánh này.
+                  Chưa có ca làm việc tại chi nhánh này.
                 </TableCell>
               </TableRow>
             ) : (
@@ -275,7 +272,7 @@ export function ShiftsPanel() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? "Sửa ca định nghĩa" : "Thêm ca định nghĩa"}</DialogTitle>
+            <DialogTitle>{editing ? "Sửa ca làm việc" : "Thêm ca làm việc"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <FieldGroup>
@@ -337,7 +334,7 @@ export function ShiftsPanel() {
       <AlertDialog open={Boolean(deactivateId)} onOpenChange={() => setDeactivateId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ngưng ca định nghĩa?</AlertDialogTitle>
+            <AlertDialogTitle>Ngưng ca làm việc?</AlertDialogTitle>
             <AlertDialogDescription>
               Ca sẽ không dùng khi xếp lịch mới. Bạn có thể tạo ca khác sau.
             </AlertDialogDescription>

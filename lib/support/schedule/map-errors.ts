@@ -9,7 +9,7 @@ const SCHEDULE_ERROR_MESSAGES: Record<string, string> = {
   SCHEDULE_WEEK_NOT_MONDAY: "Ngày bắt đầu tuần phải là thứ Hai.",
   SCHEDULE_EMPLOYEE_WRONG_DEPT: "Nhân viên không thuộc phòng ban của lịch.",
   SCHEDULE_SHIFT_WRONG_SCOPE: "Ca không thuộc phạm vi chi nhánh/phòng ban.",
-  SCHEDULE_SHIFT_INACTIVE: "Ca định nghĩa không còn hoạt động.",
+  SCHEDULE_SHIFT_INACTIVE: "ca làm việc không còn hoạt động.",
   SCHEDULE_ALREADY_PUBLISHED: "Lịch đã được công bố.",
   SCHEDULE_NOT_PUBLISHED: "Lịch chưa được công bố.",
   SCHEDULE_SUGGESTIONS_EMPTY: "Không có gợi ý để áp dụng.",
@@ -42,7 +42,7 @@ export function mapScheduleFailureMessage(message?: unknown, messageCode?: strin
 }
 
 export function mapScheduleResponseFailure(
-  response: Pick<ApiResponse<unknown>, "message">,
+  response: Pick<ApiResponse<unknown>, "message">
 ): string {
   return mapScheduleFailureMessage(response.message, response.message.code);
 }
@@ -60,8 +60,7 @@ export function mapScheduleError(error: unknown): string {
   const body = apiError.data as Record<string, unknown> | undefined;
   const fromBody = extractApiMessage(body?.message);
   const code =
-    apiError.messageCode ??
-    (typeof fromBody.code === "string" ? fromBody.code : undefined);
+    apiError.messageCode ?? (typeof fromBody.code === "string" ? fromBody.code : undefined);
   const mapped = mapCode(code);
   if (mapped) return mapped;
 

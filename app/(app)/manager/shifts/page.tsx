@@ -2,7 +2,7 @@ import { ShiftsPanel } from "@/app/(app)/admin/shifts/components/shifts-panel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
-  title: "Ca định nghĩa — Manager",
+  title: "Ca làm việc — Manager",
   path: "/manager/shifts",
   noindex: true,
 });
@@ -10,3 +10,4 @@ export const metadata = buildPageMetadata({
 export default function ManagerShiftsPage() {
   return <ShiftsPanel />;
 }
+  

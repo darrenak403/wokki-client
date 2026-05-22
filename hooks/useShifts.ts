@@ -9,11 +9,7 @@ import {
   appendShiftDefinitionId,
   removeShiftDefinitionId,
 } from "@/lib/support/foundation/session-context";
-import type {
-  CreateShiftRequest,
-  ShiftListParams,
-  UpdateShiftRequest,
-} from "@/types/foundation";
+import type { CreateShiftRequest, ShiftListParams, UpdateShiftRequest } from "@/types/foundation";
 
 const STALE_MS = 2 * 60 * 1000;
 
@@ -39,7 +35,7 @@ export function useCreateShiftMutation(params: ShiftListParams | null) {
         void queryClient.invalidateQueries({ queryKey: foundationKeys.shifts(params) });
       }
       void queryClient.invalidateQueries({ queryKey: foundationKeys.all });
-      toast.success("Đã tạo ca định nghĩa.");
+      toast.success("Đã tạo ca làm việc.");
     },
     onError: (error) => toast.error(mapFoundationError(error)),
   });
@@ -54,7 +50,7 @@ export function useUpdateShiftMutation(params: ShiftListParams | null) {
       if (params) {
         void queryClient.invalidateQueries({ queryKey: foundationKeys.shifts(params) });
       }
-      toast.success("Đã cập nhật ca định nghĩa.");
+      toast.success("Đã cập nhật ca làm việc.");
     },
     onError: (error) => toast.error(mapFoundationError(error)),
   });
@@ -69,7 +65,7 @@ export function useDeactivateShiftMutation(params: ShiftListParams | null) {
       if (params) {
         void queryClient.invalidateQueries({ queryKey: foundationKeys.shifts(params) });
       }
-      toast.success("Đã ngưng ca định nghĩa.");
+      toast.success("Đã ngưng ca làm việc.");
     },
     onError: (error) => toast.error(mapFoundationError(error)),
   });

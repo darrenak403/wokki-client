@@ -13,7 +13,7 @@ const FOUNDATION_ERROR_MESSAGES: Record<string, string> = {
   EMPLOYEE_DEPARTMENT_NOT_FOUND: "Phòng ban không hợp lệ.",
   EMPLOYEE_ALREADY_TERMINATED: "Nhân viên đã được chấm dứt hợp đồng.",
   EMPLOYEE_USER_EXISTS: "Email đã được sử dụng cho nhân viên khác.",
-  SHIFT_NOT_FOUND: "Không tìm thấy ca định nghĩa.",
+  SHIFT_NOT_FOUND: "Không tìm thấy ca làm việc.",
   SHIFT_LOCATION_NOT_FOUND: "Chi nhánh của ca không hợp lệ.",
   SHIFT_INVALID_TIME_RANGE: "Giờ kết thúc phải sau giờ bắt đầu.",
   USER_NOT_FOUND: "Không tìm thấy tài khoản.",
@@ -40,7 +40,7 @@ export function mapFoundationFailureMessage(message?: unknown, messageCode?: str
 }
 
 export function mapFoundationResponseFailure(
-  response: Pick<ApiResponse<unknown>, "message">,
+  response: Pick<ApiResponse<unknown>, "message">
 ): string {
   return mapFoundationFailureMessage(response.message, response.message.code);
 }

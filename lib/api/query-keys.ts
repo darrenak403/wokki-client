@@ -1,3 +1,11 @@
+export const employeeKeys = {
+  all: ["employee"] as const,
+  mySchedule: () => [...employeeKeys.all, "mySchedule"] as const,
+  swapTargets: (params: object) => [...employeeKeys.all, "swapTargets", params] as const,
+  swaps: () => [...employeeKeys.all, "swaps"] as const,
+  attendance: (params: object) => [...employeeKeys.all, "attendance", params] as const,
+};
+
 export const scheduleKeys = {
   all: ["schedule"] as const,
   lists: () => [...scheduleKeys.all, "list"] as const,

@@ -77,13 +77,13 @@ export function ScheduleGrid({
   } | null>(null);
 
   if (shiftsLoading) {
-    return <p className="text-sm text-muted-foreground">Đang tải ca định nghĩa…</p>;
+    return <p className="text-sm text-muted-foreground">Đang tải ca làm việc…</p>;
   }
 
   if (activeShifts.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Chưa có ca định nghĩa cho phòng ban này. Thêm ca tại mục Ca định nghĩa.
+        Chưa có ca làm việc cho phòng ban này. Thêm ca tại mục ca làm việc.
       </p>
     );
   }
@@ -94,9 +94,7 @@ export function ScheduleGrid({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[120px] sticky left-0 bg-background z-10">
-                Ca
-              </TableHead>
+              <TableHead className="min-w-[120px] sticky left-0 bg-background z-10">Ca</TableHead>
               {days.map((date, i) => (
                 <TableHead key={date} className="min-w-[100px] text-center">
                   <span className="block font-medium">{DAY_HEADERS[i]}</span>
