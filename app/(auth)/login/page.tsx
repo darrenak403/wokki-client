@@ -1,5 +1,5 @@
 import { LoginForm } from "@/app/(auth)/login/components/login-form";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
   title: "Đăng nhập",

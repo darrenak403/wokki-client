@@ -1,9 +1,9 @@
-import { mapFoundationResponseFailure } from "@/lib/auth/map-foundation-error";
+import { mapScheduleResponseFailure } from "@/lib/support/schedule/map-errors";
 import type { ApiResponse } from "@/types/api";
 
-export function assertApiSuccess<T>(response: ApiResponse<T>): T {
+export function assertScheduleSuccess<T>(response: ApiResponse<T>): T {
   if (!response.success || response.data === null) {
-    const message = mapFoundationResponseFailure(response);
+    const message = mapScheduleResponseFailure(response);
     throw {
       message,
       messageCode: response.message.code,

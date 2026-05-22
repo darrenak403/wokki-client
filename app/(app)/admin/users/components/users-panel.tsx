@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCreateUserMutation, useUsersQuery } from "@/lib/hooks/foundation/use-users";
+import { useCreateUserMutation, useUsersQuery } from "@/hooks/useUsers";
 import { APP_ROLES, type AppRole } from "@/lib/types/roles";
 
 const userSchema = z.object({

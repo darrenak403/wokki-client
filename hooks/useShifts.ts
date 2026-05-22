@@ -4,11 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { foundationKeys } from "@/lib/api/query-keys";
 import { fetchShifts } from "@/lib/api/services/fetchShifts";
-import { mapFoundationError } from "@/lib/auth/map-foundation-error";
+import { mapFoundationError } from "@/lib/support/foundation/map-errors";
 import {
   appendShiftDefinitionId,
   removeShiftDefinitionId,
-} from "@/lib/foundation/session-context";
+} from "@/lib/support/foundation/session-context";
 import type {
   CreateShiftRequest,
   ShiftListParams,

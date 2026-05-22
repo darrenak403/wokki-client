@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { fetchAuth } from "@/lib/api/services/fetchAuth";
-import { decodeJwtPayload, userFromToken } from "@/lib/auth/jwt-roles";
-import { mapAuthError, mapAuthResponseFailure } from "@/lib/auth/map-auth-error";
-import { sessionUserFromAccessToken } from "@/lib/auth/session-user";
+import { decodeJwtPayload, userFromToken } from "@/lib/support/auth/jwt-roles";
+import { mapAuthError, mapAuthResponseFailure } from "@/lib/support/auth/map-auth-error";
+import { sessionUserFromAccessToken } from "@/lib/support/auth/session-user";
 import {
   attachAccessToken,
   clearSessionCookies,
   persistSession,
   syncRoleCookie,
-} from "@/lib/auth/session-cookies";
+} from "@/lib/support/auth/session-cookies";
 import type { AuthUser, LoginRequest } from "@/types/auth";
 import type { AppRole } from "@/lib/types/roles";
 import type { RootState, AppDispatch } from "../store";

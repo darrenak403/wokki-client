@@ -1,4 +1,4 @@
-import { assertApiSuccess } from "@/lib/api/foundation/assert-success";
+import { assertFoundationSuccess } from "@/lib/support/foundation/assert-success";
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
@@ -23,14 +23,14 @@ export const fetchEmployees = {
         ...(params.includeTerminated ? { includeTerminated: true } : {}),
       },
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   getById: async (id: string): Promise<EmployeeResponse> => {
     const response = await apiService.get<ApiEnvelope<EmployeeResponse>>(
       `api/v1/employees/${id}`,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   create: async (data: CreateEmployeeRequest): Promise<CreateEmployeeResponse> => {
@@ -38,7 +38,7 @@ export const fetchEmployees = {
       "api/v1/employees",
       data,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   update: async (id: string, data: UpdateEmployeeRequest): Promise<EmployeeResponse> => {
@@ -46,13 +46,13 @@ export const fetchEmployees = {
       `api/v1/employees/${id}`,
       data,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   terminate: async (id: string): Promise<void> => {
     const response = await apiService.delete<ApiEnvelope<Record<string, never>>>(
       `api/v1/employees/${id}`,
     );
-    assertApiSuccess(normalizeApiResponse(response.data));
+    assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 };

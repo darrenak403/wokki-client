@@ -15,6 +15,7 @@ const ADMIN_NAV: AppNavItem[] = [
   { href: "/admin/shifts", label: "Ca định nghĩa", module: "wave2" },
   { href: "/admin/employees", label: "Nhân sự", module: "wave2" },
   { href: "/admin/users", label: "Tài khoản", module: "wave2" },
+  { href: "/admin/schedule", label: "Lịch ca", module: "wave3" },
 ];
 
 const MANAGER_NAV: AppNavItem[] = [

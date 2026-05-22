@@ -1,5 +1,5 @@
 import { LocationsPanel } from "@/app/(app)/admin/locations/components/locations-panel";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
   title: "Chi nhánh — Admin",

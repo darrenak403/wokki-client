@@ -1,5 +1,5 @@
 import { HomePage } from "@/app/(landing)/components/home-page";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
   title: "Trang chủ",

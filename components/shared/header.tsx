@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getAppHomePath } from "@/lib/auth/app-routes";
-import { normalizeAppRole } from "@/lib/auth/normalize-role";
+import { getAppHomePath } from "@/lib/support/auth/app-routes";
+import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { SITE_NAV } from "@/components/shared/site-nav";

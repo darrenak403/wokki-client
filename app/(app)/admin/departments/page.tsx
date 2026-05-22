@@ -1,5 +1,5 @@
 import { DepartmentsPanel } from "@/app/(app)/admin/departments/components/departments-panel";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
   title: "Phòng ban — Admin",

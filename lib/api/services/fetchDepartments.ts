@@ -1,4 +1,4 @@
-import { assertApiSuccess } from "@/lib/api/foundation/assert-success";
+import { assertFoundationSuccess } from "@/lib/support/foundation/assert-success";
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
@@ -14,7 +14,7 @@ export const fetchDepartments = {
       "api/v1/departments",
       locationId ? { locationId } : undefined,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   create: async (data: CreateDepartmentRequest): Promise<DepartmentResponse> => {
@@ -22,7 +22,7 @@ export const fetchDepartments = {
       "api/v1/departments",
       data,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   update: async (id: string, data: UpdateDepartmentRequest): Promise<DepartmentResponse> => {
@@ -30,6 +30,6 @@ export const fetchDepartments = {
       `api/v1/departments/${id}`,
       data,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 };

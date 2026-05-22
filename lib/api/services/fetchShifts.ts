@@ -1,4 +1,4 @@
-import { assertApiSuccess } from "@/lib/api/foundation/assert-success";
+import { assertFoundationSuccess } from "@/lib/support/foundation/assert-success";
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
@@ -18,7 +18,7 @@ export const fetchShifts = {
         ...(params.departmentId ? { departmentId: params.departmentId } : {}),
       },
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   create: async (data: CreateShiftRequest): Promise<ShiftDefinitionResponse> => {
@@ -26,7 +26,7 @@ export const fetchShifts = {
       "api/v1/shifts",
       data,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   update: async (id: string, data: UpdateShiftRequest): Promise<ShiftDefinitionResponse> => {
@@ -34,13 +34,13 @@ export const fetchShifts = {
       `api/v1/shifts/${id}`,
       data,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   deactivate: async (id: string): Promise<void> => {
     const response = await apiService.delete<ApiEnvelope<Record<string, never>>>(
       `api/v1/shifts/${id}`,
     );
-    assertApiSuccess(normalizeApiResponse(response.data));
+    assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 };

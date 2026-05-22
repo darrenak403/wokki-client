@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { foundationKeys } from "@/lib/api/query-keys";
 import { fetchEmployees } from "@/lib/api/services/fetchEmployees";
-import { mapFoundationError } from "@/lib/auth/map-foundation-error";
+import { mapFoundationError } from "@/lib/support/foundation/map-errors";
 import type {
   CreateEmployeeRequest,
   EmployeeListParams,

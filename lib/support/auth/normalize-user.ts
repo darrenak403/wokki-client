@@ -1,4 +1,4 @@
-import { normalizeAppRole } from "@/lib/auth/normalize-role";
+import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
 import type { AuthUser } from "@/types/auth";
 
 export function normalizeAuthUser(data: unknown): AuthUser | null {

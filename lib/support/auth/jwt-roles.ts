@@ -1,5 +1,5 @@
 import { jwtDecode } from "jwt-decode";
-import { normalizeAppRole } from "@/lib/auth/normalize-role";
+import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
 import { JWT_ROLE_CLAIM, type AppRole } from "@/lib/types/roles";
 
 type JwtPayload = Record<string, unknown> & {

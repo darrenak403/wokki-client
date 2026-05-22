@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { useDepartmentsQuery } from "@/lib/hooks/foundation/use-departments";
-import { useLocationsQuery } from "@/lib/hooks/foundation/use-locations";
+import { useDepartmentsQuery } from "@/hooks/useDepartments";
+import { useLocationsQuery } from "@/hooks/useLocations";
 import {
   readFoundationSession,
   writeFoundationSession,
-} from "@/lib/foundation/session-context";
+} from "@/lib/support/foundation/session-context";
 
 /**
  * Validates persisted session against live lists (Wave 2 Phase 05).

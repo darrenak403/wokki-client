@@ -36,7 +36,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Chi tiết: [`docs/fe/ui-architecture.md`](docs/fe/ui-architecture.md)
 
-**Home sau login:** `Admin` → `/admin/dashboard`, `Manager` → `/manager/dashboard`, `User` → `/user/dashboard` (`lib/auth/app-routes.ts`).
+**Home sau login:** `Admin` → `/admin/dashboard`, `Manager` → `/manager/dashboard`, `User` → `/user/dashboard` (`lib/support/auth/app-routes.ts`).
 
 **Khi thêm feature:** route mới dưới `app/(app)/{admin|manager|user}/`, cập nhật `components/app/app-nav.ts` — **không** đặt trên landing.
 
@@ -55,7 +55,7 @@ Chi tiết: [`docs/fe/ui-architecture.md`](docs/fe/ui-architecture.md)
 - **Manager/User** reuse panel Admin (read-only): import từ `@/app/(app)/admin/{feature}/components/...` + prop `canWrite={false}` khi cần
 - **Widget dùng chéo nhiều màn admin** (select, validator) → `components/shared/admin/` — **không** đặt panel ở đây
 - **Không** tạo `components/app/{feature}/` — `components/app/` chỉ `AppShell`, `app-nav.ts`
-- Logic/API: `lib/api/services/`, `lib/hooks/foundation/`, `lib/foundation/`, `types/foundation.ts`
+- Logic/API: `lib/api/services/`, `hooks/useXxx.ts`, `lib/support/{domain}/`, `types/{domain}.ts` — xem [Hooks](#hooks-bắt-buộc), [`lib/README.md`](lib/README.md)
 
 **Ví dụ Wave 2 (foundation):**
 
@@ -66,6 +66,39 @@ components/shared/admin/location-select.tsx
 components/shared/admin/foundation-session-validator.tsx
 app/(app)/manager/locations/page.tsx                 # import panel từ admin/locations/components
 ```
+
+## Hooks (bắt buộc)
+
+**Chủ:** `hooks/` phẳng — **không** subfolder, **không** `lib/hooks/`.
+
+| Quy tắc | Ví dụ |
+|---------|--------|
+| File | `useXxx.ts` camelCase | `useAuth.ts`, `useSchedule.ts`, `useDepartments.ts` |
+| Import | `@/hooks/useAuth` | |
+| Export | `useXxx`, `useYyyQuery`, `useCreateZzzMutation` | `useScheduleListQuery` |
+
+**Files hiện có:** `useAuth`, `useAuthSyncAcrossTabs`, `useLocations`, `useDepartments`, `useEmployees`, `useShifts`, `useUsers`, `useFoundationSession`, `useSchedule`.
+
+**Quy tắc:**
+
+- Mọi custom hook → **một file** trong `hooks/` (không `hooks/foundation/`).
+- TanStack Query → `hooks/useResource.ts`; gọi `lib/api/services/` + `lib/support/{domain}/map-errors`.
+- Wave mới → thêm `hooks/useEmployee.ts` (không tạo folder).
+
+Chi tiết: [`hooks/README.md`](hooks/README.md).
+
+## `lib/` — phân lớp (bắt buộc)
+
+| Lớp | Path | Đặt gì |
+|-----|------|--------|
+| HTTP | `lib/api/` | `core`, `services/fetchXxx` — **không** `api/{domain}/` |
+| **Support** | `lib/support/{domain}/` | Map lỗi, assert, session, helpers — `auth`, `foundation`, `schedule`, `seo` |
+| Utils thuần | `lib/utils/` | `cn`, format — không domain |
+| Hooks | `hooks/useXxx.ts` | TanStack Query — § Hooks |
+
+**Không** tạo `lib/auth/`, `lib/foundation/` ở root — chỉ dưới `lib/support/`.
+
+Chi tiết: [`lib/README.md`](lib/README.md), [`lib/support/README.md`](lib/support/README.md).
 
 ## Kiến trúc kỹ thuật
 

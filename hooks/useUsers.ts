@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { foundationKeys } from "@/lib/api/query-keys";
 import { fetchUsers } from "@/lib/api/services/fetchUsers";
-import { mapFoundationError } from "@/lib/auth/map-foundation-error";
+import { mapFoundationError } from "@/lib/support/foundation/map-errors";
 import type { CreateUserRequest, UserListParams } from "@/types/foundation";
 
 export function useUsersQuery(params: UserListParams) {

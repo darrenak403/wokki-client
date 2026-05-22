@@ -42,8 +42,8 @@ import {
   useDeactivateShiftMutation,
   useShiftsQuery,
   useUpdateShiftMutation,
-} from "@/lib/hooks/foundation/use-shifts";
-import { useFoundationSession } from "@/lib/hooks/foundation/use-foundation-session";
+} from "@/hooks/useShifts";
+import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { ROLE_USER } from "@/lib/types/roles";
 import type { ShiftDefinitionResponse } from "@/types/foundation";
 

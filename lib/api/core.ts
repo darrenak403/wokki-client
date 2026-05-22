@@ -101,8 +101,8 @@ class ApiService {
                   })
                 );
               }
-              const { syncRoleCookie } = await import("@/lib/auth/session-cookies");
-              const { userFromToken } = await import("@/lib/auth/jwt-roles");
+              const { syncRoleCookie } = await import("@/lib/support/auth/session-cookies");
+              const { userFromToken } = await import("@/lib/support/auth/jwt-roles");
               setCookie("authToken", newAccessToken, getAuthCookieConfig());
               syncRoleCookie(userFromToken(newAccessToken)?.role);
 

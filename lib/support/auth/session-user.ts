@@ -1,4 +1,4 @@
-import { userFromToken } from "@/lib/auth/jwt-roles";
+import { userFromToken } from "@/lib/support/auth/jwt-roles";
 import type { AuthUser } from "@/types/auth";
 
 /** User + role từ access token JWT (không gọi API). */

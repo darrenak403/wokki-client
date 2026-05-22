@@ -1,4 +1,4 @@
-import { assertApiSuccess } from "@/lib/api/foundation/assert-success";
+import { assertFoundationSuccess } from "@/lib/support/foundation/assert-success";
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
@@ -11,7 +11,7 @@ import type {
 export const fetchLocations = {
   list: async (): Promise<LocationResponse[]> => {
     const response = await apiService.get<ApiEnvelope<LocationResponse[]>>("api/v1/locations");
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   create: async (data: CreateLocationRequest): Promise<LocationResponse> => {
@@ -19,7 +19,7 @@ export const fetchLocations = {
       "api/v1/locations",
       data,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   update: async (id: string, data: UpdateLocationRequest): Promise<LocationResponse> => {
@@ -27,6 +27,6 @@ export const fetchLocations = {
       `api/v1/locations/${id}`,
       data,
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 };

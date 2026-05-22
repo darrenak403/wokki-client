@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocationsQuery } from "@/lib/hooks/foundation/use-locations";
+import { useLocationsQuery } from "@/hooks/useLocations";
 import { cn } from "@/lib/utils";
 
 type LocationSelectProps = {

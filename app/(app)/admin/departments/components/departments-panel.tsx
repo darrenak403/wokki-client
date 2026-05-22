@@ -31,8 +31,8 @@ import {
   useCreateDepartmentMutation,
   useDepartmentsQuery,
   useUpdateDepartmentMutation,
-} from "@/lib/hooks/foundation/use-departments";
-import { useFoundationSession } from "@/lib/hooks/foundation/use-foundation-session";
+} from "@/hooks/useDepartments";
+import { useFoundationSession } from "@/hooks/useFoundationSession";
 import type { DepartmentResponse } from "@/types/foundation";
 
 const departmentSchema = z.object({

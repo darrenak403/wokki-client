@@ -1,4 +1,4 @@
-import { normalizeAppRole } from "@/lib/auth/normalize-role";
+import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
 import {
   APP_ROLES,
   ROLE_ADMIN,

@@ -43,8 +43,8 @@ import {
   useEmployeesQuery,
   useTerminateEmployeeMutation,
   useUpdateEmployeeMutation,
-} from "@/lib/hooks/foundation/use-employees";
-import { useFoundationSession } from "@/lib/hooks/foundation/use-foundation-session";
+} from "@/hooks/useEmployees";
+import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
 import type { CreateEmployeeResponse, EmployeeResponse } from "@/types/foundation";
 

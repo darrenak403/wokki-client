@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { attachAccessToken } from "@/lib/auth/session-cookies";
+import { attachAccessToken } from "@/lib/support/auth/session-cookies";
 import {
   hydrateUserFromTokenAsync,
   logout,

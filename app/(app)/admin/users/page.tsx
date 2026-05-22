@@ -1,5 +1,5 @@
 import { UsersPanel } from "@/app/(app)/admin/users/components/users-panel";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
   title: "Tài khoản — Admin",

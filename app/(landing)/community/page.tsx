@@ -1,5 +1,5 @@
 import { CommunityPage } from "@/app/(landing)/components/community-page";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
   title: "Cộng đồng",

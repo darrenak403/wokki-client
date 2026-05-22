@@ -4,8 +4,8 @@ import {
   getAppHomePath,
   isAppAreaPath,
   roleCanAccessAppPath,
-} from "@/lib/auth/app-routes";
-import { readAuthCookies, resolveRoleFromRequest } from "@/lib/auth/resolve-request-role";
+} from "@/lib/support/auth/app-routes";
+import { readAuthCookies, resolveRoleFromRequest } from "@/lib/support/auth/resolve-request-role";
 import { MARKETING_PATHS } from "@/components/shared/site-nav";
 const AUTH_ROUTES = ["/login", "/register"];
 

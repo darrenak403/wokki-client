@@ -1,4 +1,4 @@
-import { readFoundationSession } from "@/lib/foundation/session-context";
+import { readFoundationSession } from "@/lib/support/foundation/session-context";
 import type { FoundationState } from "@/types/foundation";
 
 /**

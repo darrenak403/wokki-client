@@ -1,0 +1,12 @@
+import { SchedulePanel } from "@/app/(app)/admin/schedule/components/schedule-panel";
+import { buildPageMetadata } from "@/lib/support/seo/metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Lịch ca — Admin",
+  path: "/admin/schedule",
+  noindex: true,
+});
+
+export default function AdminSchedulePage() {
+  return <SchedulePanel />;
+}

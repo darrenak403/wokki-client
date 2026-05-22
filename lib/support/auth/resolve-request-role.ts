@@ -1,7 +1,7 @@
-import { getRolesFromToken } from "@/lib/auth/jwt-roles";
-import { resolveRoleFromRoles } from "@/lib/auth/app-routes";
-import { normalizeAppRole } from "@/lib/auth/normalize-role";
-import { AUTH_ROLE_COOKIE, AUTH_TOKEN_COOKIE } from "@/lib/auth/session-cookies";
+import { getRolesFromToken } from "@/lib/support/auth/jwt-roles";
+import { resolveRoleFromRoles } from "@/lib/support/auth/app-routes";
+import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
+import { AUTH_ROLE_COOKIE, AUTH_TOKEN_COOKIE } from "@/lib/support/auth/session-cookies";
 import type { AppRole } from "@/lib/types/roles";
 
 /** Role cho middleware: JWT claim trước, fallback cookie `authRole` (sync từ JWT). */

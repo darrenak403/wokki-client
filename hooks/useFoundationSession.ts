@@ -5,7 +5,7 @@ import {
   readFoundationSession,
   writeFoundationSession,
   type FoundationSession,
-} from "@/lib/foundation/session-context";
+} from "@/lib/support/foundation/session-context";
 
 export function useFoundationSession() {
   const [session, setSession] = useState<FoundationSession>(() => readFoundationSession());

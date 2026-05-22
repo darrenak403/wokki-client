@@ -1,5 +1,5 @@
 import { PricingPage } from "@/app/(landing)/components/pricing-page";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
   title: "Bảng giá",

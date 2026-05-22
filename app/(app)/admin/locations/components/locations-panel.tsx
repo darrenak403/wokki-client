@@ -29,7 +29,7 @@ import {
   useCreateLocationMutation,
   useLocationsQuery,
   useUpdateLocationMutation,
-} from "@/lib/hooks/foundation/use-locations";
+} from "@/hooks/useLocations";
 import type { LocationResponse } from "@/types/foundation";
 
 const locationSchema = z.object({

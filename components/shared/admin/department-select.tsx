@@ -1,6 +1,6 @@
 "use client";
 
-import { useDepartmentsQuery } from "@/lib/hooks/foundation/use-departments";
+import { useDepartmentsQuery } from "@/hooks/useDepartments";
 import { cn } from "@/lib/utils";
 
 type DepartmentSelectProps = {

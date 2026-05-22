@@ -1,5 +1,5 @@
 import { extractApiMessage } from "@/lib/api/normalize-response";
-import { mapAuthFailureMessage } from "@/lib/auth/map-auth-error";
+import { mapAuthFailureMessage } from "@/lib/support/auth/map-auth-error";
 import type { ApiError, ApiResponse } from "@/types/api";
 
 const FOUNDATION_ERROR_MESSAGES: Record<string, string> = {

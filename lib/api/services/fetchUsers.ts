@@ -1,4 +1,4 @@
-import { assertApiSuccess } from "@/lib/api/foundation/assert-success";
+import { assertFoundationSuccess } from "@/lib/support/foundation/assert-success";
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
@@ -18,16 +18,16 @@ export const fetchUsers = {
         pageSize: params.pageSize ?? 10,
       },
     );
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   getById: async (id: string): Promise<UserResponse> => {
     const response = await apiService.get<ApiEnvelope<UserResponse>>(`api/v1/users/${id}`);
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
   create: async (data: CreateUserRequest): Promise<string> => {
     const response = await apiService.post<ApiEnvelope<string>>("api/v1/users", data);
-    return assertApiSuccess(normalizeApiResponse(response.data));
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 };
