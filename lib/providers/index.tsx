@@ -1,7 +1,6 @@
 "use client";
 
 import { ReactNode } from "react";
-import { ThemeProvider } from "next-themes";
 import { ReduxProvider } from "./reduxProvider";
 import { QueryProvider } from "./queryProvider";
 import { SignalRProvider } from "./signalRProvider";
@@ -14,14 +13,12 @@ function AuthSyncProvider({ children }: { children: ReactNode }) {
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <ReduxProvider>
-        <QueryProvider>
-          <SignalRProvider>
-            <AuthSyncProvider>{children}</AuthSyncProvider>
-          </SignalRProvider>
-        </QueryProvider>
-      </ReduxProvider>
-    </ThemeProvider>
+    <ReduxProvider>
+      <QueryProvider>
+        <SignalRProvider>
+          <AuthSyncProvider>{children}</AuthSyncProvider>
+        </SignalRProvider>
+      </QueryProvider>
+    </ReduxProvider>
   );
 }

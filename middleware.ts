@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtDecode } from "jwt-decode";
+import { MARKETING_PATHS } from "@/components/shared/site-nav";
 import { ROLE_ADMIN } from "@/lib/types/roles";
 
 const getUserRoles = (token: string | undefined): string[] => {
@@ -24,12 +25,13 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("authToken")?.value;
   const userRoles = getUserRoles(token);
 
-  const publicRoutes = ["/", "/login", "/register"];
+  const publicRoutes = [...MARKETING_PATHS, "/login", "/register"];
   const authRoutes = ["/login", "/register"];
 
-  const isPublicRoute = publicRoutes.some(
-    (r) => pathname === r || pathname.startsWith(`${r}/`)
-  );
+  const isPublicRoute = publicRoutes.some((r) => {
+    if (r === "/") return pathname === "/";
+    return pathname === r || pathname.startsWith(`${r}/`);
+  });
   const isAuthRoute = authRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 
   const isAdminRoute = pathname.startsWith("/admin/");

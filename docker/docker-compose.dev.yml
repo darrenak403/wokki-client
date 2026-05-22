@@ -18,6 +18,8 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING_INTERVAL: "1000"
     restart: unless-stopped
 
 volumes:

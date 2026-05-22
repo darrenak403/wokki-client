@@ -1,111 +1,171 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-@layer base {
-  :root {
-    --background: #ffffff;
-    --foreground: #0a0a0a;
+@custom-variant dark (&:is(.dark *));
 
-    --primary: #171717;
-    --primary-foreground: #fafafa;
-
-    --secondary: #f4f4f5;
-    --secondary-foreground: #171717;
-
-    --accent: #f4f4f5;
-    --accent-foreground: #171717;
-
-    --muted: #f4f4f5;
-    --muted-foreground: #71717a;
-
-    --destructive: #ef4444;
-    --destructive-foreground: #fafafa;
-
-    --border: #e4e4e7;
-    --input: #e4e4e7;
-    --ring: #171717;
-
-    --card: #ffffff;
-    --card-foreground: #0a0a0a;
-
-    --popover: #ffffff;
-    --popover-foreground: #0a0a0a;
-
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: #0a0a0a;
-    --foreground: #fafafa;
-
-    --primary: #fafafa;
-    --primary-foreground: #171717;
-
-    --secondary: #27272a;
-    --secondary-foreground: #fafafa;
-
-    --accent: #27272a;
-    --accent-foreground: #fafafa;
-
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-
-    --destructive: #7f1d1d;
-    --destructive-foreground: #fafafa;
-
-    --border: #27272a;
-    --input: #27272a;
-    --ring: #d4d4d8;
-
-    --card: #0a0a0a;
-    --card-foreground: #fafafa;
-
-    --popover: #0a0a0a;
-    --popover-foreground: #fafafa;
-  }
-}
-
-@theme {
+@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand-black: var(--brand-black);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-medium: var(--brand-medium);
+  --color-brand-light: var(--brand-light);
+  --color-brand-surface: var(--brand-surface);
   --radius-sm: calc(var(--radius) - 4px);
-
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+:root {
+  --brand-black: #000000;
+  --brand-navy: #324e7b;
+  --brand-medium: #5068a9;
+  --brand-light: #86a6df;
+  --brand-surface: #f8f8f8;
+
+  --radius: 0.75rem;
+
+  /* Light — trắng chủ đạo, đen cho chữ, xanh chỉ nhấn */
+  --background: #ffffff;
+  --foreground: var(--brand-black);
+
+  --primary: var(--brand-medium);
+  --primary-foreground: #ffffff;
+
+  --secondary: #ffffff;
+  --secondary-foreground: var(--brand-black);
+
+  --accent: color-mix(in oklab, var(--brand-light) 10%, #ffffff);
+  --accent-foreground: var(--brand-medium);
+
+  --muted: var(--brand-surface);
+  --muted-foreground: #525252;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: #e8edf3;
+  --input: #e8edf3;
+  --ring: var(--brand-medium);
+
+  --card: #ffffff;
+  --card-foreground: var(--brand-black);
+
+  --popover: #ffffff;
+  --popover-foreground: var(--brand-black);
+
+  --chart-1: var(--brand-medium);
+  --chart-2: var(--brand-navy);
+  --chart-3: var(--brand-light);
+  --chart-4: #6b8fd4;
+  --chart-5: #e8edf3;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: var(--brand-black);
+  --sidebar-primary: var(--brand-medium);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--brand-surface);
+  --sidebar-accent-foreground: var(--brand-black);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+.dark {
+  --background: var(--brand-black);
+  --foreground: #ffffff;
+
+  --primary: var(--brand-medium);
+  --primary-foreground: #ffffff;
+
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+
+  --accent: color-mix(in oklab, var(--brand-navy) 35%, #111111);
+  --accent-foreground: var(--brand-light);
+
+  --muted: #1a1a1a;
+  --muted-foreground: #b8b8b8;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #2e2e2e;
+  --input: #1a1a1a;
+  --ring: var(--brand-light);
+
+  --card: #111111;
+  --card-foreground: #ffffff;
+
+  --popover: #111111;
+  --popover-foreground: #ffffff;
+
+  --chart-1: var(--brand-light);
+  --chart-2: var(--brand-medium);
+  --chart-3: var(--brand-navy);
+  --chart-4: #6b8fd4;
+  --chart-5: #2e2e2e;
+
+  --sidebar: #111111;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: var(--brand-medium);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1a1a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply min-h-screen bg-background text-foreground font-sans antialiased;
+  }
+  html.dark body {
+    background-color: var(--background);
+    background-image: radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      color-mix(in oklab, var(--brand-navy) 22%, transparent),
+      transparent 65%
+    );
+  }
+
+  .dark [data-slot="card"] {
+    --muted-foreground: #a8a8a8;
   }
 }

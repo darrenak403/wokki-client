@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata = buildPageMetadata({
   title: "Đăng nhập",
-};
+  description: "Đăng nhập vào tài khoản Wokki của bạn.",
+  path: "/login",
+});
 
 export default function LoginPage() {
   return (

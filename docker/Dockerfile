@@ -7,11 +7,12 @@ RUN apk add --no-cache libc6-compat
 # --- Development: hot reload ---
 FROM base AS dev
 ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 EXPOSE 6789
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0", "-p", "6789"]
 
 # --- Production: install dependencies ---
 FROM base AS deps
