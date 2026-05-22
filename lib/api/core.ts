@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { deleteCookie } from "cookies-next";
-import type { ApiError, RequestParams } from "@/types/api";
+import { getApiBaseUrl } from "@/lib/api/get-api-base-url";
+import { extractApiMessage, normalizeApiResponse } from "@/lib/api/normalize-response";
+import type { ApiEnvelope, ApiError, RequestParams } from "@/types/api";
+import type { AuthTokenPair } from "@/types/auth";
 
 let store: any;
 export const injectStore = (_store: any) => {
@@ -68,14 +71,23 @@ class ApiService {
             const refreshToken = store?.getState()?.auth?.refreshToken;
             if (!refreshToken) throw new Error("No refresh token");
 
-            const response = await axios.post(
-              `${process.env.NEXT_PUBLIC_API_URL}api/v1/auth/refresh-token`,
+            const accessToken = store?.getState()?.auth?.token;
+            const response = await axios.post<ApiEnvelope<AuthTokenPair>>(
+              `${getApiBaseUrl()}api/v1/auth/refresh-token`,
               { refreshToken },
-              { headers: { "Content-Type": "application/json" } }
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                },
+              }
             );
 
-            if (response.data?.data?.accessToken) {
-              const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+            const normalized = normalizeApiResponse(response.data);
+
+            if (normalized.success && normalized.data?.accessToken) {
+              const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+                normalized.data;
 
               const { setTokenWithRefresh } = await import("@/lib/redux/slices/authSlice");
               const { setCookie } = await import("cookies-next");
@@ -83,15 +95,21 @@ class ApiService {
 
               if (store) {
                 store.dispatch(
-                  setTokenWithRefresh({ accessToken, refreshToken: newRefreshToken })
+                  setTokenWithRefresh({
+                    accessToken: newAccessToken,
+                    refreshToken: newRefreshToken,
+                  })
                 );
               }
-              setCookie("authToken", accessToken, getAuthCookieConfig());
+              const { syncRoleCookie } = await import("@/lib/auth/session-cookies");
+              const { userFromToken } = await import("@/lib/auth/jwt-roles");
+              setCookie("authToken", newAccessToken, getAuthCookieConfig());
+              syncRoleCookie(userFromToken(newAccessToken)?.role);
 
-              this.processQueue(null, accessToken);
+              this.processQueue(null, newAccessToken);
               this.isRefreshing = false;
 
-              originalRequest.headers["Authorization"] = "Bearer " + accessToken;
+              originalRequest.headers["Authorization"] = "Bearer " + newAccessToken;
               return this.client(originalRequest);
             }
 
@@ -112,18 +130,25 @@ class ApiService {
             }
 
             return Promise.reject({
-              code: 401,
-              message: "Session expired. Please login again.",
+              httpStatus: 401,
+              messageCode: "AUTH_NOT_LOGGED_IN",
+              message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
               status: false,
             } as ApiError);
           }
         }
 
+        const errorData = error.response?.data as ApiEnvelope<unknown> | undefined;
+        const parsedMessage = extractApiMessage(errorData?.message);
+        const validationErrors = Array.isArray(errorData?.errors) ? errorData.errors : undefined;
+
         const apiError: ApiError = {
-          code: error.response?.status,
-          message: error.response?.data?.message || error.message || "Có lỗi xảy ra",
+          httpStatus: error.response?.status,
+          message: parsedMessage.text || error.message || "Có lỗi xảy ra",
+          messageCode: parsedMessage.code || undefined,
           status: false,
-          data: error.response?.data,
+          errors: validationErrors ?? undefined,
+          data: errorData,
         };
 
         return Promise.reject(apiError);
@@ -181,7 +206,7 @@ class ApiService {
   }
 }
 
-const apiService = new ApiService(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8386/");
+const apiService = new ApiService(getApiBaseUrl());
 
 export default apiService;
 export type { ApiError, RequestParams };

@@ -1,14 +1,37 @@
-export interface ApiResponse<T> {
-  isSuccess: boolean;
+/** BE envelope — bám docs/fe/2026-05-21-feat-wave1-auth.md §1 */
+export interface AppMessage {
+  code: string;
+  text: string;
+  statusCode: number;
+}
+
+export interface ApiValidationError {
+  field: string;
   message: string;
-  data: T;
-  metadata?: unknown;
+}
+
+/** JSON trả về từ API (wire format). */
+export interface ApiEnvelope<T> {
+  success: boolean;
+  data: T | null;
+  message: AppMessage | string | null;
+  errors: ApiValidationError[] | null;
+}
+
+/** Normalized response dùng trong FE sau `normalizeApiResponse`. */
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T | null;
+  message: AppMessage;
+  errors: ApiValidationError[] | null;
 }
 
 export interface ApiError {
-  code?: number;
+  httpStatus?: number;
   message: string;
-  status: boolean;
+  messageCode?: string;
+  status: false;
+  errors?: ApiValidationError[];
   data?: unknown;
 }
 

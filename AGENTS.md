@@ -24,26 +24,29 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Một từ đã chuẩn trong app/SaaS toàn cầu → **giữ English**, không dịch máy (vd. không dùng «Sáng/Tối» thay `Light`/`Dark`)
 - `html lang="vi"`, `SITE.locale` = `vi_VN`, VND, `dayjs` locale `vi`, GMT+7
 
-## Kiến trúc frontend
+## Kiến trúc UI — 3 vùng (bắt buộc)
+
+**Hệ thống quản lý:** guest xem landing; sau đăng nhập vào **khu app theo role** — mọi chức năng nghiệp vụ chỉ trong `(app)/`.
+
+| Vùng | Route group | URL ví dụ |
+|------|-------------|-----------|
+| Guest (marketing) | `(landing)/` | `/`, `/pricing`, `/about`, `/help`, `/community` |
+| Auth | `(auth)/` | `/login`, `/register` |
+| App (quản lý) | `(app)/` | `/admin/*`, `/manager/*`, `/user/*` |
+
+Chi tiết: [`docs/fe/ui-architecture.md`](docs/fe/ui-architecture.md)
+
+**Home sau login:** `Admin` → `/admin/dashboard`, `Manager` → `/manager/dashboard`, `User` → `/user/dashboard` (`lib/auth/app-routes.ts`).
+
+**Khi thêm feature:** route mới dưới `app/(app)/{admin|manager|user}/`, cập nhật `components/app/app-nav.ts` — **không** đặt trên landing.
+
+## Kiến trúc kỹ thuật
 
 - **App Router** — Server Components mặc định; `"use client"` khi cần tương tác
-- **Route groups:** `(landing)` marketing, `(auth)` đăng nhập/đăng ký
-- **Colocated components:** `app/[route]/components/`; `components/shared/` (Header/Footer); `components/ui/` (shadcn)
+- **Colocated components:** `app/[route]/components/`; `components/shared/` (guest); `components/app/` (shell app); `components/ui/` (shadcn)
 - **State:** TanStack Query + Redux (auth)
-- **API:** `lib/api/services/fetchXxx.ts`, cookie `authToken`, middleware RBAC
-- **SEO:** `buildPageMetadata()`, `lib/seo/site.ts`
-
-## Marketing routes (public)
-
-| Route        | Mục đích     |
-| ------------ | ------------ |
-| `/`          | Trang chủ    |
-| `/pricing`   | Bảng giá     |
-| `/about`     | Về chúng tôi |
-| `/help`      | Trợ giúp     |
-| `/community` | Cộng đồng    |
-
-Nav: `components/shared/site-nav.ts`
+- **API:** `lib/api/services/fetchXxx.ts`, envelope `success` + `message.code`, cookie `authToken`, middleware RBAC
+- **SEO:** `buildPageMetadata()` — app routes dùng `noindex: true`
 
 ## Tailwind v4
 
@@ -52,9 +55,10 @@ Nav: `components/shared/site-nav.ts`
 
 ## Trước khi hoàn thành task UI
 
-1. Nội dung người dùng → tiếng Việt; thuật ngữ UI → English nếu đã là convention
-2. `npm run type-check` / `npm run build` khi đổi cấu trúc lớn
+1. Đúng vùng Guest / Auth / App; feature nghiệp vụ trong `(app)/`
+2. Nội dung người dùng → tiếng Việt; thuật ngữ UI → English nếu đã là convention
+3. `npm run type-check` / `npm run build` khi đổi cấu trúc lớn
 
 ## Tài liệu tham chiếu
 
-- `docs/fe/`, `.frontend-os/architecture/`, `docs/setup/SETUP.md`
+- `docs/fe/ui-architecture.md`, `docs/fe/`, `.frontend-os/architecture/`, `docs/setup/SETUP.md`

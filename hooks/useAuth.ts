@@ -16,6 +16,9 @@ import {
   setupAutoRefresh,
 } from "@/lib/redux/slices/authSlice";
 import { getPostLoginPath } from "@/lib/auth/routing";
+import { userFromToken } from "@/lib/auth/jwt-roles";
+import { normalizeAppRole } from "@/lib/auth/normalize-role";
+import { ROLE_USER } from "@/lib/types/roles";
 import { ROLE_ADMIN, ROLE_MANAGER } from "@/lib/types/roles";
 import type { LoginRequest } from "@/types/auth";
 
@@ -43,12 +46,12 @@ export function useAuth() {
 
       toast.success("Đăng nhập thành công");
 
-      const userRole = result.user?.role;
-      if (userRole) {
-        router.push(getPostLoginPath(userRole));
-      } else {
-        router.push("/dashboard");
-      }
+      const role =
+        normalizeAppRole(result.user?.role) ??
+        userFromToken(result.token)?.role ??
+        ROLE_USER;
+
+      router.replace(getPostLoginPath(role));
 
       return result;
     } catch (message: unknown) {

@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
+import { decodeJwtPayload, readRoleFromPayload } from "@/lib/auth/jwt-roles";
+import { normalizeAppRole } from "@/lib/auth/normalize-role";
 import { getPostLoginPath } from "@/lib/auth/routing";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, isLoading, error, isAuthenticated, user, clearError } = useAuth();
+  const { login, isLoading, error, isAuthenticated, user, token, clearError } = useAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -30,10 +32,16 @@ export function LoginForm() {
   });
 
   useEffect(() => {
-    if (isAuthenticated && user?.role) {
-      router.replace(getPostLoginPath(user.role));
-    }
-  }, [isAuthenticated, user?.role, router]);
+    if (!isAuthenticated && !token) return;
+
+    const role =
+      normalizeAppRole(user?.role) ??
+      (token ? readRoleFromPayload(decodeJwtPayload(token) ?? {}) : null);
+
+    if (!role) return;
+
+    router.replace(getPostLoginPath(role));
+  }, [isAuthenticated, user?.role, token, router]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     clearError();

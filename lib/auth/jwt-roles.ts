@@ -1,5 +1,6 @@
 import { jwtDecode } from "jwt-decode";
-import { APP_ROLES, JWT_ROLE_CLAIM, type AppRole } from "@/lib/types/roles";
+import { normalizeAppRole } from "@/lib/auth/normalize-role";
+import { JWT_ROLE_CLAIM, type AppRole } from "@/lib/types/roles";
 
 type JwtPayload = Record<string, unknown> & {
   role?: string | string[];
@@ -12,9 +13,8 @@ export function readRoleFromPayload(payload: JwtPayload): AppRole | null {
   const raw = payload[JWT_ROLE_CLAIM] ?? payload.role;
   if (!raw) return null;
 
-  const value = Array.isArray(raw) ? raw[0] : String(raw);
-  if (APP_ROLES.includes(value as AppRole)) return value as AppRole;
-  return null;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return normalizeAppRole(value);
 }
 
 export function readRolesFromPayload(payload: JwtPayload): AppRole[] {
@@ -46,7 +46,7 @@ export function userFromToken(token: string): { id: string; email: string; role:
 
   const id = typeof payload.sub === "string" ? payload.sub : "";
   const email = typeof payload.email === "string" ? payload.email : "";
-  if (!id || !email) return null;
+  if (!id) return null;
 
   return { id, email, role };
 }

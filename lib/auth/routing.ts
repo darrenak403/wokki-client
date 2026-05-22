@@ -1,6 +1,6 @@
-import { ROLE_ADMIN, type AppRole } from "@/lib/types/roles";
+import { getAppHomePath } from "@/lib/auth/app-routes";
 
-export function getPostLoginPath(role: AppRole): string {
-  if (role === ROLE_ADMIN) return "/admin/dashboard";
-  return "/dashboard";
+/** Sau đăng nhập — vào dashboard quản lý của role. */
+export function getPostLoginPath(role: unknown): string {
+  return getAppHomePath(role);
 }

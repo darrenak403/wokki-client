@@ -1,4 +1,4 @@
-/** Role values from BE (`auth/me` and JWT claim). */
+/** Role values from BE (JWT claim; profile API sau Wave profile). */
 export const ROLE_ADMIN = "Admin";
 export const ROLE_MANAGER = "Manager";
 export const ROLE_USER = "User";

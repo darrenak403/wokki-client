@@ -24,11 +24,13 @@ async function fetchPage(page: number): Promise<PublicSeoEntry[]> {
     if (!res.ok) return [];
 
     const json = (await res.json()) as {
+      success?: boolean;
       isSuccess?: boolean;
       data?: PublicSeoEntry[];
     };
 
-    return json.isSuccess && Array.isArray(json.data) ? json.data : [];
+    const ok = json.success ?? json.isSuccess;
+    return ok && Array.isArray(json.data) ? json.data : [];
   } catch {
     return [];
   }

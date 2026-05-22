@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { setCookie, deleteCookie } from "cookies-next";
-import apiService from "@/lib/api/core";
 import { fetchAuth } from "@/lib/api/services/fetchAuth";
 import { decodeJwtPayload, userFromToken } from "@/lib/auth/jwt-roles";
-import { mapAuthError, mapAuthFailureMessage } from "@/lib/auth/map-auth-error";
-import { getAuthCookieConfig } from "@/utils/cookieConfig";
+import { mapAuthError, mapAuthResponseFailure } from "@/lib/auth/map-auth-error";
+import { sessionUserFromAccessToken } from "@/lib/auth/session-user";
+import {
+  attachAccessToken,
+  clearSessionCookies,
+  persistSession,
+  syncRoleCookie,
+} from "@/lib/auth/session-cookies";
 import type { AuthUser, LoginRequest } from "@/types/auth";
 import type { AppRole } from "@/lib/types/roles";
 import type { RootState, AppDispatch } from "../store";
@@ -39,7 +43,8 @@ export const setupAutoRefresh = (token: string, dispatch: AppDispatch) => {
   const payload = decodeJwtPayload(token);
   if (!payload?.exp) return;
 
-  const refreshTime = payload.exp * 1000 - Date.now() - 2 * 60 * 1000;
+  // Access token TTL 60 phút — refresh ~5 phút trước khi hết hạn (handoff §6)
+  const refreshTime = payload.exp * 1000 - Date.now() - 5 * 60 * 1000;
 
   if (refreshTime <= 0) {
     dispatch(refreshTokenAsync());
@@ -56,38 +61,31 @@ export const clearAutoRefresh = () => {
   }
 };
 
-async function persistSession(accessToken: string, refreshToken: string) {
-  setCookie("authToken", accessToken, getAuthCookieConfig());
-  apiService.setAuthToken(accessToken);
-  return { accessToken, refreshToken };
-}
-
 export const loginAsync = createAsyncThunk(
   "auth/login",
   async (credentials: LoginRequest, { rejectWithValue, dispatch }) => {
     try {
       const response = await fetchAuth.login(credentials);
 
-      if (!response.isSuccess || !response.data?.accessToken) {
-        return rejectWithValue(mapAuthFailureMessage(response.message) || "Đăng nhập thất bại");
+      if (!response.success || !response.data?.accessToken) {
+        return rejectWithValue(mapAuthResponseFailure(response) || "Đăng nhập thất bại");
       }
 
       const { accessToken, refreshToken } = response.data;
-      await persistSession(accessToken, refreshToken);
+      const user = sessionUserFromAccessToken(accessToken);
 
-      const meResponse = await fetchAuth.getMe();
-      if (!meResponse.isSuccess || !meResponse.data) {
-        return rejectWithValue(
-          mapAuthFailureMessage(meResponse.message) || "Không lấy được thông tin tài khoản"
-        );
+      if (!user) {
+        clearSessionCookies();
+        return rejectWithValue("Token đăng nhập không hợp lệ hoặc thiếu role.");
       }
 
+      await persistSession(accessToken, refreshToken, user.role);
       setupAutoRefresh(accessToken, dispatch as AppDispatch);
 
       return {
         token: accessToken,
         refreshToken,
-        user: meResponse.data,
+        user,
       };
     } catch (error: unknown) {
       return rejectWithValue(mapAuthError(error));
@@ -95,26 +93,25 @@ export const loginAsync = createAsyncThunk(
   }
 );
 
-export const fetchMeAsync = createAsyncThunk(
-  "auth/fetchMe",
+/** Khôi phục user từ JWT đã lưu (rehydrate) — không gọi GET /auth/me. */
+export const hydrateUserFromTokenAsync = createAsyncThunk(
+  "auth/hydrateFromToken",
   async (_, { getState, rejectWithValue }) => {
-    try {
-      const state = getState() as RootState;
-      if (!state.auth.token) {
-        return rejectWithValue("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-      }
-
-      const meResponse = await fetchAuth.getMe();
-      if (!meResponse.isSuccess || !meResponse.data) {
-        return rejectWithValue(
-          mapAuthFailureMessage(meResponse.message) || "Không lấy được thông tin tài khoản"
-        );
-      }
-
-      return meResponse.data;
-    } catch (error: unknown) {
-      return rejectWithValue(mapAuthError(error));
+    const token = (getState() as RootState).auth.token;
+    if (!token) {
+      return rejectWithValue("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
     }
+
+    attachAccessToken(token);
+
+    const user = sessionUserFromAccessToken(token);
+    if (!user) {
+      clearSessionCookies();
+      return rejectWithValue("Token không hợp lệ hoặc đã hết hạn.");
+    }
+
+    syncRoleCookie(user.role);
+    return user;
   }
 );
 
@@ -124,8 +121,7 @@ export const logoutAsync = createAsyncThunk("auth/logout", async (_, { rejectWit
   } catch {
     // Still clear local session if API fails
   } finally {
-    deleteCookie("authToken", { path: "/" });
-    apiService.setAuthToken(null);
+    clearSessionCookies();
     clearAutoRefresh();
   }
   return true;
@@ -143,22 +139,18 @@ export const refreshTokenAsync = createAsyncThunk(
 
       const response = await fetchAuth.refreshToken({ refreshToken });
 
-      if (!response.isSuccess || !response.data?.accessToken) {
-        return rejectWithValue("Làm mới phiên thất bại");
+      if (!response.success || !response.data?.accessToken) {
+        return rejectWithValue(mapAuthResponseFailure(response) || "Làm mới phiên thất bại");
       }
 
       const { accessToken, refreshToken: newRefreshToken } = response.data;
-      await persistSession(accessToken, newRefreshToken);
+      const user = sessionUserFromAccessToken(accessToken) ?? state.auth.user;
 
-      let user: AuthUser | null = state.auth.user;
-      try {
-        const meResponse = await fetchAuth.getMe();
-        if (meResponse.isSuccess && meResponse.data) {
-          user = meResponse.data;
-        }
-      } catch {
-        user = userFromToken(accessToken);
+      if (!user) {
+        return rejectWithValue("Token làm mới không hợp lệ.");
       }
+
+      await persistSession(accessToken, newRefreshToken, user.role);
 
       setupAutoRefresh(accessToken, dispatch as AppDispatch);
 
@@ -179,11 +171,13 @@ const authSlice = createSlice({
     ) => {
       state.token = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
-      apiService.setAuthToken(action.payload.accessToken);
+      attachAccessToken(action.payload.accessToken);
+
       const user = userFromToken(action.payload.accessToken);
       if (user) {
         state.user = user;
         state.isAuthenticated = true;
+        syncRoleCookie(user.role);
       }
     },
     logout: (state) => {
@@ -192,8 +186,7 @@ const authSlice = createSlice({
       state.refreshToken = null;
       state.isAuthenticated = false;
       state.error = null;
-      deleteCookie("authToken", { path: "/" });
-      apiService.setAuthToken(null);
+      clearSessionCookies();
       clearAutoRefresh();
     },
     clearError: (state) => {
@@ -220,16 +213,16 @@ const authSlice = createSlice({
       });
 
     builder
-      .addCase(fetchMeAsync.pending, (state) => {
+      .addCase(hydrateUserFromTokenAsync.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(fetchMeAsync.fulfilled, (state, action) => {
+      .addCase(hydrateUserFromTokenAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
         state.error = null;
       })
-      .addCase(fetchMeAsync.rejected, (state, action) => {
+      .addCase(hydrateUserFromTokenAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

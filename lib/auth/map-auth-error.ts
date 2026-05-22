@@ -1,4 +1,5 @@
-import type { ApiError } from "@/types/api";
+import { extractApiMessage } from "@/lib/api/normalize-response";
+import type { ApiError, ApiResponse } from "@/types/api";
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   AUTH_INVALID_CREDENTIALS: "Email hoặc mật khẩu không đúng.",
@@ -19,10 +20,23 @@ function isErrorCode(value: string): boolean {
   return /^[A-Z][A-Z0-9_]*$/.test(value);
 }
 
+function mapCode(code?: string): string | null {
+  if (!code) return null;
+  return AUTH_ERROR_MESSAGES[code] ?? null;
+}
+
 /** Safe message for API `message` fields shown in UI. */
-export function mapAuthFailureMessage(message?: string): string {
-  if (!message?.trim()) return GENERIC_AUTH_ERROR;
-  const trimmed = message.trim();
+export function mapAuthFailureMessage(message?: unknown, messageCode?: string): string {
+  const mapped = mapCode(messageCode);
+  if (mapped) return mapped;
+
+  const parsed = extractApiMessage(message);
+  const fromCode = mapCode(parsed.code);
+  if (fromCode) return fromCode;
+
+  if (!parsed.text.trim()) return GENERIC_AUTH_ERROR;
+
+  const trimmed = parsed.text.trim();
 
   if (TECHNICAL_MESSAGE_PATTERN.test(trimmed)) return GENERIC_AUTH_ERROR;
 
@@ -33,20 +47,34 @@ export function mapAuthFailureMessage(message?: string): string {
   return trimmed;
 }
 
+export function mapAuthResponseFailure(response: Pick<ApiResponse<unknown>, "message">): string {
+  return mapAuthFailureMessage(response.message, response.message.code);
+}
+
 export function mapAuthError(error: unknown): string {
   if (!error) return GENERIC_AUTH_ERROR;
 
   if (typeof error === "string") return mapAuthFailureMessage(error);
 
   const apiError = error as ApiError;
-  const body = apiError.data as { code?: string; message?: string } | undefined;
-  const code = body?.code;
-
-  if (code && AUTH_ERROR_MESSAGES[code]) {
-    return AUTH_ERROR_MESSAGES[code];
+  if (apiError.messageCode) {
+    const mapped = mapCode(apiError.messageCode);
+    if (mapped) return mapped;
   }
 
-  if (apiError.message) return mapAuthFailureMessage(apiError.message);
+  const body = apiError.data as Record<string, unknown> | undefined;
+  const fromBody = extractApiMessage(body?.message);
+  const code =
+    apiError.messageCode ??
+    (typeof body?.code === "string" ? body.code : undefined) ??
+    fromBody.code;
+
+  const mapped = mapCode(code);
+  if (mapped) return mapped;
+
+  const messageText = typeof apiError.message === "string" ? apiError.message : fromBody.text;
+
+  if (messageText) return mapAuthFailureMessage(messageText);
 
   return GENERIC_AUTH_ERROR;
 }

@@ -8,7 +8,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { fetchAuth } from "@/lib/api/services/fetchAuth";
-import { mapAuthError, mapAuthFailureMessage } from "@/lib/auth/map-auth-error";
+import { mapAuthError, mapAuthResponseFailure } from "@/lib/auth/map-auth-error";
+import { applyValidationErrors } from "@/lib/auth/validation-errors";
+import type { ApiError } from "@/types/api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,14 +50,17 @@ export function RegisterForm() {
     try {
       const response = await fetchAuth.register({ email, password });
 
-      if (!response.isSuccess) {
-        setSubmitError(mapAuthFailureMessage(response.message));
+      if (!response.success) {
+        if (applyValidationErrors(form.setError, response.errors)) return;
+        setSubmitError(mapAuthResponseFailure(response));
         return;
       }
 
       toast.success("Đăng ký thành công. Vui lòng đăng nhập để tiếp tục.");
       router.push("/login");
     } catch (error: unknown) {
+      const apiError = error as ApiError;
+      if (applyValidationErrors(form.setError, apiError.errors)) return;
       setSubmitError(mapAuthError(error));
     } finally {
       setIsSubmitting(false);

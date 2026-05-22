@@ -27,7 +27,20 @@ export interface RefreshTokenRequest {
 
 export type MeResponse = ApiResponse<AuthUser>;
 
+export type RegisterResponse = ApiResponse<AuthUser>;
+
 export interface ChangePasswordRequest {
   currentPassword: string;
+  newPassword: string;
+}
+
+export type ChangePasswordResponse = ApiResponse<AuthUser>;
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
   newPassword: string;
 }
