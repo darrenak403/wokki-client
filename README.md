@@ -2,19 +2,29 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Copy env mẫu (chạy local):
+
+```bash
+cp .env.example .env.local
+```
+
+Chạy dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:6789](http://localhost:6789) with your browser to see the result.
+Open [http://localhost:6789](http://localhost:6789). API mặc định: `http://localhost:8386/`.
+
+## Docker
+
+Cấu hình trong [`docker/`](docker/README.md). Env chuẩn: `.env.example` (mẫu), `.env.local` (dev), `.env` (prod).
+
+```bash
+# Chỉnh docker/.env.local và docker/.env theo docker/.env.example
+npm run docker:dev
+npm run docker:prod
+```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

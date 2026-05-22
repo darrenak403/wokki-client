@@ -1,3 +1,6 @@
+# Chạy từ repo root: npm run docker:dev
+# Env chuẩn: docker/.env.local
+
 name: wokki-client-dev
 
 services:

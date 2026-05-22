@@ -1,3 +1,6 @@
+# Chạy từ repo root: npm run docker:prod
+# Env chuẩn: docker/.env (compose cũng dùng file này cho build args)
+
 name: wokki-client-prod
 
 services:

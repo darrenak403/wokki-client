@@ -1,4 +1,4 @@
-# Bắt buộc đặt tại repo root (build context). Bản đồng bộ: docker/.dockerignore
+# Build context = repository root (../). File này mirror .dockerignore ở root.
 
 node_modules
 .next
