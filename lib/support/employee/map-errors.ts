@@ -11,6 +11,7 @@ const EMPLOYEE_ERROR_MESSAGES: Record<string, string> = {
   SWAP_NOT_FOUND: "Không tìm thấy yêu cầu đổi ca.",
   SWAP_ASSIGNMENT_NOT_FOUND: "Không tìm thấy phân ca.",
   ATTENDANCE_NO_ASSIGNMENT: "Hôm nay bạn không có ca để chấm công.",
+  ATTENDANCE_ASSIGNMENT_WINDOW_PASSED: "Ca này đã kết thúc, không thể clock in nữa.",
   SWAP_NOT_OWNER: "Bạn không phải người liên quan yêu cầu này.",
   SWAP_FORBIDDEN: "Không được phép thực hiện thao tác này.",
   SWAP_CUTOFF_EXCEEDED: "Đã quá hạn đổi ca tuần sau.",

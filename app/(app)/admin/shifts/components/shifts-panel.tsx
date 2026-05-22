@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { CheckIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +45,7 @@ import {
 } from "@/hooks/useShifts";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { ROLE_USER } from "@/lib/types/roles";
+import { cn } from "@/lib/utils";
 import type { ShiftDefinitionResponse } from "@/types/foundation";
 
 function toTimeInput(value: string): string {
@@ -72,6 +73,17 @@ const shiftSchema = z
   });
 
 type ShiftFormValues = z.infer<typeof shiftSchema>;
+
+const SHIFT_COLOR_OPTIONS = [
+  { label: "Xanh dương", value: "#3B82F6" },
+  { label: "Xanh lá", value: "#22C55E" },
+  { label: "Tím", value: "#8B5CF6" },
+  { label: "Hồng", value: "#EC4899" },
+  { label: "Cam", value: "#F97316" },
+  { label: "Vàng", value: "#EAB308" },
+  { label: "Xanh ngọc", value: "#14B8A6" },
+  { label: "Đỏ", value: "#EF4444" },
+] as const;
 
 export function ShiftsPanel() {
   const { session, setLocationId, setDepartmentId } = useFoundationSession();
@@ -104,6 +116,9 @@ export function ShiftsPanel() {
       departmentId: "",
     },
   });
+  const selectedFormDepartmentId = useWatch({ control: form.control, name: "departmentId" });
+  const selectedColor = useWatch({ control: form.control, name: "color" });
+  const selectedIsActive = useWatch({ control: form.control, name: "isActive" });
 
   const openCreate = () => {
     if (!locationId) return;
@@ -286,7 +301,7 @@ export function ShiftsPanel() {
                   <FieldLabel>Phòng ban (tuỳ chọn)</FieldLabel>
                   <DepartmentSelect
                     locationId={locationId}
-                    value={form.watch("departmentId") || null}
+                    value={selectedFormDepartmentId || null}
                     onChange={(id) => form.setValue("departmentId", id ?? "")}
                     allowEmpty
                   />
@@ -305,15 +320,47 @@ export function ShiftsPanel() {
                 </Field>
               </div>
               <Field>
-                <FieldLabel htmlFor="shift-color">Màu (hex)</FieldLabel>
-                <Input id="shift-color" {...form.register("color")} />
+                <FieldLabel>Màu</FieldLabel>
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                  {SHIFT_COLOR_OPTIONS.map((color) => {
+                    const selected = selectedColor === color.value;
+
+                    return (
+                      <button
+                        key={color.value}
+                        type="button"
+                        aria-label={color.label}
+                        aria-pressed={selected}
+                        title={color.label}
+                        className={cn(
+                          "flex aspect-square min-h-10 items-center justify-center rounded-lg border bg-background p-1 transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                          selected ? "border-foreground" : "border-input hover:border-foreground/40"
+                        )}
+                        onClick={() =>
+                          form.setValue("color", color.value, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                      >
+                        <span
+                          className="flex size-full items-center justify-center rounded-md"
+                          style={{ backgroundColor: color.value }}
+                        >
+                          {selected ? <CheckIcon className="size-4 text-white drop-shadow" /> : null}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <FieldError errors={[form.formState.errors.color]} />
               </Field>
               {editing ? (
                 <Field className="flex flex-row items-center justify-between gap-4">
                   <FieldLabel htmlFor="shift-active">Đang hoạt động</FieldLabel>
                   <Switch
                     id="shift-active"
-                    checked={form.watch("isActive")}
+                    checked={selectedIsActive}
                     onCheckedChange={(checked) => form.setValue("isActive", checked)}
                   />
                 </Field>

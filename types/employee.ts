@@ -42,16 +42,36 @@ export interface SwapActionRequest {
   note?: string | null;
 }
 
+export type AttendanceStatus = 0 | 1 | 2 | 3;
+
+export const ATTENDANCE_STATUS = {
+  Open: 0,
+  OnTime: 1,
+  Late: 2,
+  Adjusted: 3,
+} as const satisfies Record<string, AttendanceStatus>;
+
 export interface AttendanceResponse {
   id: string;
   employeeId: string;
-  assignmentId: string;
+  assignmentId: string | null;
   clockIn: string;
   clockOut: string | null;
   workedMinutes: number;
+  status: AttendanceStatus;
   adjustedBy: string | null;
   adjustmentNote: string | null;
   createdAt: string;
+  shiftDefinitionId?: string | null;
+  shiftName?: string | null;
+  shiftColor?: string | null;
+  scheduledDate?: string | null;
+  scheduledStartTime?: string | null;
+  scheduledEndTime?: string | null;
+  departmentId?: string | null;
+  departmentName?: string | null;
+  locationId?: string | null;
+  locationName?: string | null;
 }
 
 export interface ClockInRequest {
