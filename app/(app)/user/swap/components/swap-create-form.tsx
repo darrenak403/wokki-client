@@ -1,16 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { format, parseISO } from "date-fns";
+import { SendIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { useCreateSwapMutation, useSwapTargetsQuery } from "@/hooks/useSwapRequests";
-import { format, parseISO } from "date-fns";
 
 type SwapCreateFormProps = {
   myEmployeeId: string | null;
 };
+
+function formatAssignment(shiftName: string, startTime: string, endTime: string, date: string) {
+  return `${shiftName} (${startTime.slice(0, 5)} - ${endTime.slice(0, 5)}) · ${format(
+    parseISO(date),
+    "dd/MM",
+  )}`;
+}
 
 export function SwapCreateForm({ myEmployeeId }: SwapCreateFormProps) {
   const { data: myAssignments = [] } = useMyScheduleQuery();
@@ -24,36 +31,33 @@ export function SwapCreateForm({ myEmployeeId }: SwapCreateFormProps) {
   const [requesterId, setRequesterId] = useState("");
   const [targetId, setTargetId] = useState("");
   const [note, setNote] = useState("");
-  const [manualTargetId, setManualTargetId] = useState("");
 
-  const peerTargets = targets.filter((t) => t.employeeId !== myEmployeeId);
-  const useManualTarget = targetsError;
+  const peerTargets = targets.filter((target) => target.employeeId !== myEmployeeId);
 
   const handleSubmit = async () => {
-    const finalTarget = useManualTarget ? manualTargetId.trim() : targetId;
-    if (!requesterId || !finalTarget) return;
+    if (!requesterId || !targetId) return;
     await createMutation.mutateAsync({
       requesterAssignmentId: requesterId,
-      targetAssignmentId: finalTarget,
+      targetAssignmentId: targetId,
       requesterNote: note.trim() || null,
     });
     setRequesterId("");
     setTargetId("");
-    setManualTargetId("");
     setNote("");
   };
 
-  const formatAssignment = (id: string, shiftName: string, date: string) =>
-    `${shiftName} · ${format(parseISO(date), "dd/MM")} · ${id.slice(0, 8)}…`;
-
   return (
-    <div className="space-y-4 rounded-lg border p-4">
-      <h2 className="text-sm font-medium">Gửi yêu cầu mới</h2>
+    <div className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
+      <div>
+        <h2 className="text-base font-semibold tracking-tight">Gửi yêu cầu mới</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Chọn ca của bạn và ca đối tác để gửi yêu cầu đổi ca.
+        </p>
+      </div>
 
       {targetsError ? (
-        <p className="text-sm text-amber-700 dark:text-amber-400 rounded-md bg-amber-500/10 p-3">
-          API <code className="text-xs">GET /self/swap-targets</code> chưa sẵn sàng — nhập
-          GUID phân ca đối tác (tạm thời cho QA) hoặc chờ BE bổ sung endpoint.
+        <p className="rounded-md bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+          Chưa tải được danh sách ca đối tác. Vui lòng thử lại sau.
         </p>
       ) : null}
 
@@ -61,71 +65,71 @@ export function SwapCreateForm({ myEmployeeId }: SwapCreateFormProps) {
         <Field>
           <FieldLabel>Ca của bạn</FieldLabel>
           <select
-            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             value={requesterId}
-            onChange={(e) => setRequesterId(e.target.value)}
+            onChange={(event) => setRequesterId(event.target.value)}
             aria-label="Chọn ca của bạn"
           >
-            <option value="">Chọn ca</option>
-            {myAssignments.map((a) => (
-              <option key={a.id} value={a.id}>
-                {formatAssignment(a.id, a.shiftName, a.date)}
+            <option value="">Chọn ca của bạn</option>
+            {myAssignments.map((assignment) => (
+              <option key={assignment.id} value={assignment.id}>
+                {formatAssignment(
+                  assignment.shiftName,
+                  assignment.startTime,
+                  assignment.endTime,
+                  assignment.date,
+                )}
               </option>
             ))}
           </select>
         </Field>
 
-        {!useManualTarget && !targetsLoading && peerTargets.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+        {!targetsError && !targetsLoading && peerTargets.length === 0 ? (
+          <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
             Không có ca đối tác khả dụng trong khoảng thời gian này.
           </p>
         ) : null}
 
-        {useManualTarget ? (
-          <Field>
-            <FieldLabel>ID phân ca đối tác (GUID)</FieldLabel>
-            <Input
-              value={manualTargetId}
-              onChange={(e) => setManualTargetId(e.target.value)}
-              placeholder="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-            />
-          </Field>
-        ) : (
-          <Field>
-            <FieldLabel>Ca đối tác</FieldLabel>
-            <select
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
-              value={targetId}
-              disabled={targetsLoading}
-              onChange={(e) => setTargetId(e.target.value)}
-              aria-label="Chọn ca đối tác"
-            >
-              <option value="">
-                {targetsLoading ? "Đang tải…" : "Chọn ca đối tác"}
+        <Field>
+          <FieldLabel>Ca đối tác</FieldLabel>
+          <select
+            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+            value={targetId}
+            disabled={targetsLoading || targetsError}
+            onChange={(event) => setTargetId(event.target.value)}
+            aria-label="Chọn ca đối tác"
+          >
+            <option value="">{targetsLoading ? "Đang tải…" : "Chọn ca đối tác"}</option>
+            {peerTargets.map((assignment) => (
+              <option key={assignment.id} value={assignment.id}>
+                {formatAssignment(
+                  assignment.shiftName,
+                  assignment.startTime,
+                  assignment.endTime,
+                  assignment.date,
+                )}
               </option>
-              {peerTargets.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {formatAssignment(a.id, a.shiftName, a.date)}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
+            ))}
+          </select>
+        </Field>
 
         <Field>
-          <FieldLabel>Ghi chú</FieldLabel>
-          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Lý do đổi ca…" />
+          <FieldLabel>Lý do</FieldLabel>
+          <textarea
+            className="min-h-28 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Nhập lý do đổi ca của bạn..."
+          />
         </Field>
       </FieldGroup>
 
       <Button
-        disabled={
-          !requesterId ||
-          (!useManualTarget ? !targetId : !manualTargetId.trim()) ||
-          createMutation.isPending
-        }
+        className="h-11 w-full"
+        disabled={!requesterId || !targetId || createMutation.isPending}
         onClick={() => void handleSubmit()}
       >
+        <SendIcon className="size-4" />
         {createMutation.isPending ? "Đang gửi…" : "Gửi yêu cầu"}
       </Button>
     </div>

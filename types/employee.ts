@@ -26,7 +26,13 @@ export interface SwapRequestResponse {
   managerNote: string | null;
   reviewedBy: string | null;
   requesterShiftDate: string;
+  requesterShiftName?: string | null;
+  requesterStartTime?: string | null;
+  requesterEndTime?: string | null;
   targetShiftDate: string;
+  targetShiftName?: string | null;
+  targetStartTime?: string | null;
+  targetEndTime?: string | null;
   departmentId: string;
   createdAt: string;
   updatedAt: string;

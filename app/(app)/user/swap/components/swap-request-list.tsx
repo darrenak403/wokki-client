@@ -1,6 +1,8 @@
 "use client";
 
-import { format, parseISO } from "date-fns";
+import { format, formatDistanceToNow, parseISO } from "date-fns";
+import { vi } from "date-fns/locale";
+import { CheckIcon, ClockIcon, XIcon, ArrowLeftRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +11,8 @@ import {
   useDeclineSwapMutation,
 } from "@/hooks/useSwapRequests";
 import { isSwapPending, swapStatusLabel } from "@/lib/support/employee/swap-status";
-import { SWAP_STATUS, type SwapRequestResponse } from "@/types/employee";
+import { cn } from "@/lib/utils";
+import { SWAP_STATUS, type SwapRequestResponse, type SwapStatus } from "@/types/employee";
 
 type SwapRequestListProps = {
   title: string;
@@ -18,6 +21,65 @@ type SwapRequestListProps = {
   myEmployeeId: string | null;
 };
 
+function toTime(value?: string | null) {
+  return value?.slice(0, 5) ?? "--:--";
+}
+
+function statusTone(status: SwapStatus) {
+  switch (status) {
+    case SWAP_STATUS.Pending:
+      return {
+        icon: ClockIcon,
+        badge: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
+        center: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+      };
+    case SWAP_STATUS.ManagerApproved:
+    case SWAP_STATUS.PeerAccepted:
+      return {
+        icon: CheckIcon,
+        badge: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300",
+        center: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+      };
+    default:
+      return {
+        icon: XIcon,
+        badge: "border-destructive/20 bg-destructive/10 text-destructive",
+        center: "bg-destructive/10 text-destructive",
+      };
+  }
+}
+
+function ShiftSummary({
+  label,
+  name,
+  date,
+  startTime,
+  endTime,
+}: {
+  label: string;
+  name?: string | null;
+  date?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+}) {
+  return (
+    <div className="min-w-0 flex-1 rounded-lg bg-primary/5 p-4">
+      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+      <p className="mt-2 truncate font-semibold text-brand-navy dark:text-foreground">
+        {name ?? "Ca làm việc"}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {toTime(startTime)} - {toTime(endTime)}
+      </p>
+      {date ? (
+        <p className="mt-1 text-sm text-muted-foreground">
+          {format(parseISO(date), "EEEE, dd/MM", { locale: vi })}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapRequestListProps) {
   const acceptMutation = useAcceptSwapMutation();
   const declineMutation = useDeclineSwapMutation();
@@ -25,14 +87,19 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-4">{title}: chưa có yêu cầu.</p>
+      <div className="rounded-lg border border-dashed p-8 text-center">
+        <p className="text-sm text-muted-foreground">{title}: chưa có yêu cầu.</p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium">{title}</h3>
-      <ul className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+        <span className="text-sm text-muted-foreground">{items.length} yêu cầu</span>
+      </div>
+      <ul className="space-y-4">
         {items.map((swap) => {
           const pending = isSwapPending(swap.status);
           const canAccept =
@@ -45,23 +112,51 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
             pending &&
             myEmployeeId &&
             swap.requesterId === myEmployeeId;
+          const tone = statusTone(swap.status);
+          const StatusIcon = tone.icon;
 
           return (
-            <li key={swap.id} className="rounded-lg border p-4 space-y-2 text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={pending ? "secondary" : "outline"}>
+            <li key={swap.id} className="rounded-lg border bg-card p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Badge variant="outline" className={cn("gap-1 rounded-md border", tone.badge)}>
+                  <StatusIcon className="size-3" />
                   {swapStatusLabel(swap.status)}
                 </Badge>
-                <span className="text-muted-foreground text-xs">{swap.id.slice(0, 8)}…</span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(parseISO(swap.updatedAt), {
+                    addSuffix: true,
+                    locale: vi,
+                  })}
+                </span>
               </div>
-              <p>
-                Ca bạn: {format(parseISO(swap.requesterShiftDate), "dd/MM")} → Đối tác:{" "}
-                {format(parseISO(swap.targetShiftDate), "dd/MM")}
-              </p>
+
+              <div className="mt-5 grid items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
+                <ShiftSummary
+                  label="Ca của bạn"
+                  name={swap.requesterShiftName}
+                  date={swap.requesterShiftDate}
+                  startTime={swap.requesterStartTime}
+                  endTime={swap.requesterEndTime}
+                />
+                <div className={cn("mx-auto rounded-full p-3", tone.center)}>
+                  <ArrowLeftRightIcon className="size-4" />
+                </div>
+                <ShiftSummary
+                  label="Ca đối tác"
+                  name={swap.targetShiftName}
+                  date={swap.targetShiftDate}
+                  startTime={swap.targetStartTime}
+                  endTime={swap.targetEndTime}
+                />
+              </div>
+
               {swap.requesterNote ? (
-                <p className="text-muted-foreground">“{swap.requesterNote}”</p>
+                <p className="mt-4 rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                  “{swap.requesterNote}”
+                </p>
               ) : null}
-              <div className="flex gap-2">
+
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
                 {canAccept ? (
                   <>
                     <Button
@@ -69,6 +164,7 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
                       disabled={acceptMutation.isPending || declineMutation.isPending}
                       onClick={() => void acceptMutation.mutateAsync({ swapId: swap.id })}
                     >
+                      <CheckIcon className="size-4" />
                       Chấp nhận
                     </Button>
                     <Button
@@ -77,6 +173,7 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
                       disabled={acceptMutation.isPending || declineMutation.isPending}
                       onClick={() => void declineMutation.mutateAsync({ swapId: swap.id })}
                     >
+                      <XIcon className="size-4" />
                       Từ chối
                     </Button>
                   </>
@@ -85,14 +182,13 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
                   <Button
                     size="sm"
                     variant="outline"
+                    className="text-destructive hover:text-destructive"
                     disabled={cancelMutation.isPending}
                     onClick={() => void cancelMutation.mutateAsync({ swapId: swap.id })}
                   >
+                    <XIcon className="size-4" />
                     Hủy yêu cầu
                   </Button>
-                ) : null}
-                {swap.status === SWAP_STATUS.ManagerApproved ? (
-                  <span className="text-xs text-muted-foreground">Đã hoàn tất đổi ca</span>
                 ) : null}
               </div>
             </li>
