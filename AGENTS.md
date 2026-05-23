@@ -48,15 +48,24 @@ Chi tiết: [`docs/fe/ui-architecture.md`](docs/fe/ui-architecture.md)
 | Auth | `app/(auth)/` | `login/`, `register/` | `app/(auth)/login/components/`, … | `components/shared/` |
 | App | `app/(app)/` | `admin/*`, `manager/*`, `user/*` | **`admin/{feature}/components/`** + `components/shared/admin/` | `components/app/` (`AppShell`, `app-nav.ts`) |
 
+## Quy tắc đặt tên file/component
+
+- **React component trong `app/**/components/` dùng PascalCase file name**: `HeroSection.tsx`, `HomePage.tsx`, `PricingCard.tsx`, `TeamAttendancePanel.tsx`.
+- File export component chính nên trùng tên file: `export function HeroSection()`, `export function TeamAttendancePanel()`.
+- **Next special files giữ nguyên lowercase theo framework**: `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `route.ts`.
+- **Route folders giữ kebab/lowercase theo URL**: `user/schedule`, `admin/attendance`, `reset-password`.
+- Non-component utilities/types trong `app/` nếu có thì dùng camelCase hoặc kebab-case theo convention local, nhưng không đặt dưới `components/` nếu không render UI.
+- `components/ui/` là shadcn-generated primitives nên giữ convention của shadcn, thường là lowercase/kebab-case như `button.tsx`, `alert-dialog.tsx`; không rename các file này sang PascalCase.
+
 **Quy tắc Landing (`(landing)`):**
 
-- **Home page**: `app/(landing)/page.tsx` render `app/(landing)/components/home-page.tsx`.
-- **Shared landing components** dùng chung nhiều trang đặt trong `app/(landing)/components/` (ví dụ `home-page.tsx` nếu chỉ dùng cho home nhưng nằm ở shared folder hiện tại).
+- **Home page**: `app/(landing)/page.tsx` render `app/(landing)/components/HomePage.tsx`.
+- **Shared landing components** dùng chung nhiều trang đặt trong `app/(landing)/components/` (ví dụ `HomePage.tsx` nếu chỉ dùng cho home nhưng nằm ở shared folder hiện tại).
 - **Page-specific marketing pages** đặt component trong folder route riêng:
-  - `app/(landing)/pricing/components/pricing-page.tsx`
-  - `app/(landing)/about/components/about-page.tsx`
-  - `app/(landing)/community/components/community-page.tsx`
-  - `app/(landing)/help/components/help-page.tsx`
+  - `app/(landing)/pricing/components/PricingPage.tsx`
+  - `app/(landing)/about/components/AboutPage.tsx`
+  - `app/(landing)/community/components/CommunityPage.tsx`
+  - `app/(landing)/help/components/HelpPage.tsx`
 - **Page files** trong landing vẫn mỏng: metadata + render component chính.
 - Landing là vùng marketing công khai, không đặt logic nghiệp vụ sau đăng nhập, hooks TanStack Query nghiệp vụ, hoặc dashboard quản trị ở đây.
 - Copy landing dùng tiếng Việt, hướng đến retail/F&B/dịch vụ theo ca; CTA chính thường dẫn `/register`, CTA phụ dẫn `/pricing`, `/help`, hoặc `/login`.
@@ -64,7 +73,7 @@ Chi tiết: [`docs/fe/ui-architecture.md`](docs/fe/ui-architecture.md)
 
 **Quy tắc App (`(app)`):**
 
-- **Panel / màn chính** → colocated cùng page: `app/(app)/admin/{feature}/components/` (vd. `admin/locations/components/locations-panel.tsx`)
+- **Panel / màn chính** → colocated cùng page: `app/(app)/admin/{feature}/components/` (vd. `admin/locations/components/LocationsPanel.tsx`)
 - **Page** (`page.tsx`) mỏng — chỉ metadata + render panel từ `./components/` hoặc `@/app/(app)/admin/.../components/...`
 - **Manager/User** reuse panel Admin (read-only): import từ `@/app/(app)/admin/{feature}/components/...` + prop `canWrite={false}` khi cần
 - **Widget dùng chéo nhiều màn admin** (select, validator) → `components/shared/admin/` — **không** đặt panel ở đây
@@ -75,7 +84,7 @@ Chi tiết: [`docs/fe/ui-architecture.md`](docs/fe/ui-architecture.md)
 
 ```
 app/(app)/admin/locations/page.tsx
-app/(app)/admin/locations/components/locations-panel.tsx
+app/(app)/admin/locations/components/LocationsPanel.tsx
 components/shared/admin/location-select.tsx
 components/shared/admin/foundation-session-validator.tsx
 app/(app)/manager/locations/page.tsx                 # import panel từ admin/locations/components

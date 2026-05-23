@@ -1,4 +1,4 @@
-import { MarketingPageHeader } from "@/app/(landing)/about/components/marketing-page-header";
+import { MarketingPageHeader } from "@/app/(landing)/about/components/MarketingPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const values = [

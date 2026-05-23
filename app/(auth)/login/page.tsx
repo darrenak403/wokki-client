@@ -1,4 +1,4 @@
-import { LoginForm } from "@/app/(auth)/login/components/login-form";
+import { LoginForm } from "@/app/(auth)/login/components/LoginForm";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

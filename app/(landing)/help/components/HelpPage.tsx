@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MarketingPageHeader } from "@/app/(landing)/about/components/marketing-page-header";
+import { MarketingPageHeader } from "@/app/(landing)/about/components/MarketingPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

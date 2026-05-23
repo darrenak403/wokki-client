@@ -1,4 +1,4 @@
-import { CommunityPage } from "@/app/(landing)/community/components/community-page";
+import { CommunityPage } from "@/app/(landing)/community/components/CommunityPage";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

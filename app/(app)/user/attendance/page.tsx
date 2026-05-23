@@ -1,4 +1,4 @@
-import { AttendancePanel } from "@/app/(app)/user/attendance/components/attendance-panel";
+import { AttendancePanel } from "@/app/(app)/user/attendance/components/AttendancePanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

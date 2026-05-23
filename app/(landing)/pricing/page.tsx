@@ -1,4 +1,4 @@
-import { PricingPage } from "@/app/(landing)/pricing/components/pricing-page";
+import { PricingPage } from "@/app/(landing)/pricing/components/PricingPage";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

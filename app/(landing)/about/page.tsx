@@ -1,4 +1,4 @@
-import { AboutPage } from "@/app/(landing)/about/components/about-page";
+import { AboutPage } from "@/app/(landing)/about/components/AboutPage";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

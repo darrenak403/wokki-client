@@ -1,4 +1,4 @@
-import { PayrollPanel } from "@/app/(app)/admin/payroll/components/payroll-panel";
+import { PayrollPanel } from "@/app/(app)/admin/payroll/components/PayrollPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

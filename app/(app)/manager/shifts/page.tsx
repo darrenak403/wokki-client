@@ -1,4 +1,4 @@
-import { ShiftsPanel } from "@/app/(app)/admin/shifts/components/shifts-panel";
+import { ShiftsPanel } from "@/app/(app)/admin/shifts/components/ShiftsPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

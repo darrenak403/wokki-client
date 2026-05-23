@@ -1,4 +1,4 @@
-import { HelpPage } from "@/app/(landing)/help/components/help-page";
+import { HelpPage } from "@/app/(landing)/help/components/HelpPage";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

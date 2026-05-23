@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2Icon, Clock3Icon, XCircleIcon } from "lucide-react";
-import { SwapCreateForm } from "@/app/(app)/user/swap/components/swap-create-form";
-import { SwapRequestList } from "@/app/(app)/user/swap/components/swap-request-list";
+import { SwapCreateForm } from "@/app/(app)/user/swap/components/SwapCreateForm";
+import { SwapRequestList } from "@/app/(app)/user/swap/components/SwapRequestList";
 import { Button } from "@/components/ui/button";
-import { NoEmployeeLinked } from "@/app/(app)/user/components/no-employee-linked";
+import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { useMySwapRequestsQuery } from "@/hooks/useSwapRequests";
 import { inferMyEmployeeId } from "@/lib/support/employee/infer-employee-id";

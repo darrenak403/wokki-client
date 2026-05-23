@@ -15,9 +15,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CopyWeekDialog } from "@/app/(app)/admin/schedule/components/copy-week-dialog";
-import { ScheduleGrid } from "@/app/(app)/admin/schedule/components/schedule-grid";
-import { SuggestionsSheet } from "@/app/(app)/admin/schedule/components/suggestions-sheet";
+import { CopyWeekDialog } from "@/app/(app)/admin/schedule/components/CopyWeekDialog";
+import { ScheduleGrid } from "@/app/(app)/admin/schedule/components/ScheduleGrid";
+import { SuggestionsSheet } from "@/app/(app)/admin/schedule/components/SuggestionsSheet";
 import { DepartmentSelect } from "@/components/shared/admin/department-select";
 import { LocationSelect } from "@/components/shared/admin/location-select";
 import { scheduleKeys } from "@/lib/api/query-keys";

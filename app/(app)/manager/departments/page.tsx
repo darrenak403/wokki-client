@@ -1,4 +1,4 @@
-import { DepartmentsPanel } from "@/app/(app)/admin/departments/components/departments-panel";
+import { DepartmentsPanel } from "@/app/(app)/admin/departments/components/DepartmentsPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

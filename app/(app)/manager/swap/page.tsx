@@ -1,4 +1,4 @@
-import { SwapInboxPanel } from "@/app/(app)/admin/swap/components/swap-inbox-panel";
+import { SwapInboxPanel } from "@/app/(app)/admin/swap/components/SwapInboxPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

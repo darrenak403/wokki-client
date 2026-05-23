@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { HubConnectionState } from "@microsoft/signalr";
 import { Trash2Icon } from "lucide-react";
-import { CreateChannelDialog } from "@/app/(app)/admin/chat/components/create-channel-dialog";
-import { NoEmployeeLinked } from "@/app/(app)/user/components/no-employee-linked";
+import { CreateChannelDialog } from "@/app/(app)/admin/chat/components/CreateChannelDialog";
+import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
 import {
   AlertDialog,
   AlertDialogAction,

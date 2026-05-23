@@ -1,4 +1,4 @@
-import { UsersPanel } from "@/app/(app)/admin/users/components/users-panel";
+import { UsersPanel } from "@/app/(app)/admin/users/components/UsersPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

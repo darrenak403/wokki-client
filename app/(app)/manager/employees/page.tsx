@@ -1,4 +1,4 @@
-import { EmployeesPanel } from "@/app/(app)/admin/employees/components/employees-panel";
+import { EmployeesPanel } from "@/app/(app)/admin/employees/components/EmployeesPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

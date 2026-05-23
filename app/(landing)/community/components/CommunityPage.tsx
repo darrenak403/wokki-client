@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BookOpenIcon, MessageCircleIcon, UsersIcon } from "lucide-react";
-import { MarketingPageHeader } from "@/app/(landing)/about/components/marketing-page-header";
+import { MarketingPageHeader } from "@/app/(landing)/about/components/MarketingPageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";

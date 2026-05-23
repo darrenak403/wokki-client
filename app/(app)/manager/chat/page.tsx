@@ -1,4 +1,4 @@
-import { ChatPanel } from "@/app/(app)/admin/chat/components/chat-panel";
+import { ChatPanel } from "@/app/(app)/admin/chat/components/ChatPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

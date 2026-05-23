@@ -12,7 +12,7 @@ import {
   TimerIcon,
   UsersIcon,
 } from "lucide-react";
-import { NoEmployeeLinked } from "@/app/(app)/user/components/no-employee-linked";
+import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

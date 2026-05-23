@@ -9,8 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AssignEmployeeDialog } from "@/app/(app)/admin/schedule/components/assign-employee-dialog";
-import { AssignmentCell } from "@/app/(app)/admin/schedule/components/assignment-cell";
+import { AssignEmployeeDialog } from "@/app/(app)/admin/schedule/components/AssignEmployeeDialog";
+import { AssignmentCell } from "@/app/(app)/admin/schedule/components/AssignmentCell";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { useShiftsQuery } from "@/hooks/useShifts";
 import { weekDayDates } from "@/lib/support/schedule/week";

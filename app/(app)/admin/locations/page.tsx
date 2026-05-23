@@ -1,4 +1,4 @@
-import { LocationsPanel } from "@/app/(app)/admin/locations/components/locations-panel";
+import { LocationsPanel } from "@/app/(app)/admin/locations/components/LocationsPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

@@ -12,7 +12,7 @@ import {
 } from "date-fns";
 import { vi } from "date-fns/locale";
 import { CalendarDaysIcon, ClockIcon, MapPinIcon, ShieldCheckIcon, ZapIcon } from "lucide-react";
-import { NoEmployeeLinked } from "@/app/(app)/user/components/no-employee-linked";
+import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
 import { Badge } from "@/components/ui/badge";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";

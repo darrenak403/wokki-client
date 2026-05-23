@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CheckIcon } from "lucide-react";
-import { MarketingPageHeader } from "@/app/(landing)/about/components/marketing-page-header";
+import { MarketingPageHeader } from "@/app/(landing)/about/components/MarketingPageHeader";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,

@@ -1,4 +1,4 @@
-import { SwapPanel } from "@/app/(app)/user/swap/components/swap-panel";
+import { SwapPanel } from "@/app/(app)/user/swap/components/SwapPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

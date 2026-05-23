@@ -1,4 +1,4 @@
-import { SchedulePanel } from "@/app/(app)/admin/schedule/components/schedule-panel";
+import { SchedulePanel } from "@/app/(app)/admin/schedule/components/SchedulePanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({

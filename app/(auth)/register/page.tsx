@@ -1,4 +1,4 @@
-import { RegisterForm } from "@/app/(auth)/register/components/register-form";
+import { RegisterForm } from "@/app/(auth)/register/components/RegisterForm";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
