@@ -6,7 +6,7 @@ import { LogOutIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getAppNavForRole } from "@/components/app/app-nav";
 import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

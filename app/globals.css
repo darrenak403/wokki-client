@@ -39,8 +39,11 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-brand-black: var(--brand-black);
   --color-brand-navy: var(--brand-navy);
+  --color-brand-blue: var(--brand-blue);
   --color-brand-medium: var(--brand-medium);
   --color-brand-light: var(--brand-light);
+  --color-brand-mist: var(--brand-mist);
+  --color-brand-deep: var(--brand-deep);
   --color-brand-surface: var(--brand-surface);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -52,10 +55,13 @@
 
 :root {
   --brand-black: #000000;
-  --brand-navy: #324e7b;
-  --brand-medium: #5068a9;
-  --brand-light: #86a6df;
-  --brand-surface: #f8f8f8;
+  --brand-navy: #102854;
+  --brand-blue: #1d4d8f;
+  --brand-medium: #4c88c6;
+  --brand-light: #bce8f5;
+  --brand-mist: #eef6fb;
+  --brand-deep: #0b1e3d;
+  --brand-surface: #eef6fb;
 
   --radius: 0.75rem;
 
@@ -63,14 +69,14 @@
   --background: #ffffff;
   --foreground: var(--brand-black);
 
-  --primary: var(--brand-medium);
+  --primary: var(--brand-blue);
   --primary-foreground: #ffffff;
 
   --secondary: #ffffff;
   --secondary-foreground: var(--brand-black);
 
-  --accent: color-mix(in oklab, var(--brand-light) 10%, #ffffff);
-  --accent-foreground: var(--brand-medium);
+  --accent: var(--brand-mist);
+  --accent-foreground: var(--brand-blue);
 
   --muted: var(--brand-surface);
   --muted-foreground: #525252;
@@ -78,8 +84,8 @@
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
-  --border: #e8edf3;
-  --input: #e8edf3;
+  --border: color-mix(in oklab, var(--brand-light) 45%, #e8edf3);
+  --input: color-mix(in oklab, var(--brand-light) 35%, #e8edf3);
   --ring: var(--brand-medium);
 
   --card: #ffffff;
@@ -88,15 +94,15 @@
   --popover: #ffffff;
   --popover-foreground: var(--brand-black);
 
-  --chart-1: var(--brand-medium);
-  --chart-2: var(--brand-navy);
+  --chart-1: var(--brand-blue);
+  --chart-2: var(--brand-medium);
   --chart-3: var(--brand-light);
-  --chart-4: #6b8fd4;
-  --chart-5: #e8edf3;
+  --chart-4: #6aaed9;
+  --chart-5: var(--brand-mist);
 
   --sidebar: #ffffff;
   --sidebar-foreground: var(--brand-black);
-  --sidebar-primary: var(--brand-medium);
+  --sidebar-primary: var(--brand-blue);
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--brand-surface);
   --sidebar-accent-foreground: var(--brand-black);
@@ -111,20 +117,20 @@
   --primary: var(--brand-medium);
   --primary-foreground: #ffffff;
 
-  --secondary: #1a1a1a;
+  --secondary: var(--brand-deep);
   --secondary-foreground: #ffffff;
 
-  --accent: color-mix(in oklab, var(--brand-navy) 35%, #111111);
+  --accent: color-mix(in oklab, var(--brand-deep) 75%, #111111);
   --accent-foreground: var(--brand-light);
 
-  --muted: #1a1a1a;
+  --muted: color-mix(in oklab, var(--brand-deep) 70%, #111111);
   --muted-foreground: #b8b8b8;
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  --border: #2e2e2e;
-  --input: #1a1a1a;
+  --border: color-mix(in oklab, var(--brand-deep) 70%, #2e2e2e);
+  --input: color-mix(in oklab, var(--brand-deep) 70%, #111111);
   --ring: var(--brand-light);
 
   --card: #111111;
@@ -135,15 +141,15 @@
 
   --chart-1: var(--brand-light);
   --chart-2: var(--brand-medium);
-  --chart-3: var(--brand-navy);
-  --chart-4: #6b8fd4;
+  --chart-3: var(--brand-blue);
+  --chart-4: #6aaed9;
   --chart-5: #2e2e2e;
 
   --sidebar: #111111;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: var(--brand-medium);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1a1a1a;
+  --sidebar-accent: var(--brand-deep);
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);

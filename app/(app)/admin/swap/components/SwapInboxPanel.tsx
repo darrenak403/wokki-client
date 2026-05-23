@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { DepartmentSelect } from "@/components/shared/admin/department-select";
-import { LocationSelect } from "@/components/shared/admin/location-select";
+import { DepartmentSelect } from "@/components/shared/department-select";
+import { LocationSelect } from "@/components/shared/location-select";
 import {
   useOverrideApproveSwapMutation,
   useOverrideRejectSwapMutation,
@@ -49,12 +49,12 @@ export function SwapInboxPanel() {
             weekStartDate,
           }
         : null,
-    [departmentId, weekStartDate],
+    [departmentId, weekStartDate]
   );
 
   const { data, isLoading, isError, error } = useSwapInboxQuery(
     listParams ?? { status: SWAP_STATUS.Pending },
-    Boolean(listParams),
+    Boolean(listParams)
   );
   const approveMutation = useOverrideApproveSwapMutation();
   const rejectMutation = useOverrideRejectSwapMutation();

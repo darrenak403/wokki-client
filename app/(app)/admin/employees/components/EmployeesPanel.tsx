@@ -36,8 +36,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/admin/department-select";
-import { LocationSelect } from "@/components/shared/admin/location-select";
+import { DepartmentSelect } from "@/components/shared/department-select";
+import { LocationSelect } from "@/components/shared/location-select";
 import {
   useCreateEmployeeMutation,
   useEmployeesQuery,
@@ -87,7 +87,7 @@ export function EmployeesPanel({ canWrite = false }: EmployeesPanelProps) {
       ...(locationId && !filterDepartmentId ? { locationId } : {}),
       ...(includeTerminated ? { includeTerminated: true } : {}),
     }),
-    [page, filterDepartmentId, locationId, includeTerminated],
+    [page, filterDepartmentId, locationId, includeTerminated]
   );
 
   const { data, isLoading, isError } = useEmployeesQuery(listParams);
@@ -454,10 +454,7 @@ export function EmployeesPanel({ canWrite = false }: EmployeesPanelProps) {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={Boolean(terminateTarget)}
-        onOpenChange={() => setTerminateTarget(null)}
-      >
+      <AlertDialog open={Boolean(terminateTarget)} onOpenChange={() => setTerminateTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Chấm dứt hợp đồng?</AlertDialogTitle>

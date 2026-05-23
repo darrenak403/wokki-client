@@ -134,7 +134,15 @@ Chi tiết: [`lib/README.md`](lib/README.md), [`lib/support/README.md`](lib/supp
 ## Tailwind v4
 
 - Token trong `app/globals.css` (`@theme`)
-- Nền trắng chủ đạo; đen cho chữ tối nhất; xanh brand làm điểm nhấn
+- Theme màu chính của Wokki dùng chung toàn hệ thống, bao gồm landing/reference:
+  - `--brand-navy: #102854`
+  - `--brand-medium: #4C88C6`
+  - `--brand-blue: #1D4D8F`
+  - `--brand-light: #BCE8F5`
+  - `--brand-mist` / `--brand-surface: #EEF6FB`
+  - `--brand-deep: #0B1E3D`
+- Nền sáng vẫn ưu tiên trắng; chữ tối dùng đen/neutral; xanh brand là điểm nhấn chính.
+- Khi port UI từ reference landing, đổi màu về token `brand-*`, `primary`, `accent`, `ring`, `chart-*` trong `globals.css`; tránh tạo palette hardcode mới nếu token đã có.
 
 ## UI implementation — Tailwind + shadcn (bắt buộc toàn hệ thống)
 

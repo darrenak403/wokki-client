@@ -26,7 +26,7 @@ const plans = [
       "1 chi nhánh",
     ],
     cta: "Bắt đầu",
-    href: "/register",
+    href: "/#dang-ky",
     highlighted: false,
   },
   {
@@ -42,7 +42,7 @@ const plans = [
       "Đến 5 chi nhánh",
     ],
     cta: "Dùng thử 14 ngày",
-    href: "/register",
+    href: "/#dang-ky",
     highlighted: true,
   },
   {

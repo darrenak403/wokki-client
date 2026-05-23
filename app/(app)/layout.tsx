@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/app/app-shell";
-import { FoundationSessionValidator } from "@/components/shared/admin/foundation-session-validator";
+import { FoundationSessionValidator } from "@/components/shared/foundation-session-validator";
 
 /**
  * Khu vực quản lý sau đăng nhập — mọi tính năng nghiệp vụ nằm trong `(app)/`.

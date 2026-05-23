@@ -25,8 +25,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/admin/department-select";
-import { LocationSelect } from "@/components/shared/admin/location-select";
+import { DepartmentSelect } from "@/components/shared/department-select";
+import { LocationSelect } from "@/components/shared/location-select";
 import {
   useCreateDepartmentMutation,
   useDepartmentsQuery,
@@ -146,12 +146,7 @@ export function DepartmentsPanel({ canWrite = false }: DepartmentsPanelProps) {
                   </TableCell>
                   {canWrite ? (
                     <TableCell>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(row)}
-                      >
+                      <Button type="button" variant="ghost" size="sm" onClick={() => openEdit(row)}>
                         <PencilIcon className="size-4" />
                         Sửa
                       </Button>

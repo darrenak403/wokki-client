@@ -12,8 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/admin/department-select";
-import { LocationSelect } from "@/components/shared/admin/location-select";
+import { DepartmentSelect } from "@/components/shared/department-select";
+import { LocationSelect } from "@/components/shared/location-select";
 import { useExportPayrollCsvMutation, usePayrollSummaryQuery } from "@/hooks/usePayroll";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { mapPayrollError } from "@/lib/support/payroll/map-errors";
@@ -33,11 +33,8 @@ export function PayrollPanel({ canExportCsv }: PayrollPanelProps) {
   const { startDate, endDate } = weekRangeFromMonday(weekStartDate);
 
   const summaryParams = useMemo(
-    () =>
-      departmentId
-        ? { departmentId, startDate, endDate }
-        : null,
-    [departmentId, startDate, endDate],
+    () => (departmentId ? { departmentId, startDate, endDate } : null),
+    [departmentId, startDate, endDate]
   );
 
   const { data, isLoading, isError, error } = usePayrollSummaryQuery(summaryParams);
@@ -98,18 +95,13 @@ export function PayrollPanel({ canExportCsv }: PayrollPanelProps) {
           </div>
         </div>
         {canExportCsv && summaryParams ? (
-          <Button
-            disabled={exportMutation.isPending || isLoading}
-            onClick={handleExport}
-          >
+          <Button disabled={exportMutation.isPending || isLoading} onClick={handleExport}>
             {exportMutation.isPending ? "Đang xuất…" : "Export CSV"}
           </Button>
         ) : null}
       </div>
 
-      {data && isLocked ? (
-        <Badge variant="secondary">Kỳ lương đã khóa — chỉ đọc</Badge>
-      ) : null}
+      {data && isLocked ? <Badge variant="secondary">Kỳ lương đã khóa — chỉ đọc</Badge> : null}
 
       <p className="text-xs text-muted-foreground">
         grossPay ≈ (phút làm / 60) × lương giờ — chỉ bản ghi đã clock-out (BR-055).

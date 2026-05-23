@@ -1,13 +1,29 @@
-import { HomePage } from "@/app/(landing)/components/HomePage";
-import { buildPageMetadata } from "@/lib/support/seo/metadata";
+"use client";
+import { useState } from "react";
+import HeroSection from "./components/HeroSection";
+import Problem from "./components/Problem";
+import Blog from "./components/Blog";
+import Subscription from "./components/Supscription";
+import AboutQuestion from "./components/AboutQuestion";
+import Register from "./components/Register";
+import SplashScreen from "@/components/layout/SplashScreen";
+import Conclusion from "./components/Conclusion";
 
-export const metadata = buildPageMetadata({
-  title: "Trang chủ",
-  description:
-    "Wokki — nền tảng quản lý lịch ca, chấm công và đội ngũ. Vận hành minh bạch cho retail, F&B và dịch vụ theo ca.",
-  path: "/",
-});
+export default function Home() {
+  const [showSplash, setShowSplash] = useState(true);
 
-export default function Page() {
-  return <HomePage />;
+  return (
+    <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      <div className={showSplash ? "h-screen overflow-hidden" : ""}>
+        <HeroSection />
+        <Problem />
+        <Blog />
+        <Subscription />
+        <Register />
+        <AboutQuestion />
+        <Conclusion />
+      </div>
+    </>
+  );
 }

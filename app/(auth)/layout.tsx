@@ -1,5 +1,5 @@
-import { SiteFooter } from "@/components/shared/footer";
-import { SiteHeader } from "@/components/shared/header";
+import { SiteFooter } from "@/components/layout/Footer";
+import { SiteHeader } from "@/components/layout/Header";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

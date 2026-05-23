@@ -103,7 +103,7 @@ export function HelpPage() {
               </a>
             </p>
             <p>Giờ làm việc: Thứ 2 – Thứ 6, 9:00–18:00 (GMT+7).</p>
-            <Link href="/register" className={cn(buttonVariants({ size: "sm" }))}>
+            <Link href="/#dang-ky" className={cn(buttonVariants({ size: "sm" }))}>
               Tạo tài khoản và thử ngay
             </Link>
           </CardContent>

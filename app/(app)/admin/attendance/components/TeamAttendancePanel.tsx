@@ -22,8 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/admin/department-select";
-import { LocationSelect } from "@/components/shared/admin/location-select";
+import { DepartmentSelect } from "@/components/shared/department-select";
+import { LocationSelect } from "@/components/shared/location-select";
 import { useAdjustAttendanceMutation, useTeamAttendanceQuery } from "@/hooks/useAttendance";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
@@ -54,16 +54,13 @@ export function TeamAttendancePanel() {
   const { startDate, endDate } = weekRangeFromMonday(weekStartDate);
 
   const listParams = useMemo(
-    () =>
-      departmentId
-        ? { page: 1, pageSize: 50, fromDate: startDate, toDate: endDate }
-        : null,
-    [departmentId, startDate, endDate],
+    () => (departmentId ? { page: 1, pageSize: 50, fromDate: startDate, toDate: endDate } : null),
+    [departmentId, startDate, endDate]
   );
 
   const { data, isLoading, isError, error } = useTeamAttendanceQuery(
     listParams ?? {},
-    Boolean(listParams),
+    Boolean(listParams)
   );
   const { data: employeesData } = useEmployeesQuery({
     locationId: locationId ?? "",
@@ -83,7 +80,7 @@ export function TeamAttendancePanel() {
 
   const departmentEmployeeIds = useMemo(
     () => new Set((employeesData?.items ?? []).map((e) => e.id)),
-    [employeesData?.items],
+    [employeesData?.items]
   );
 
   const items = useMemo(() => {
@@ -248,11 +245,7 @@ export function TeamAttendancePanel() {
               Hủy
             </Button>
             <Button
-              disabled={
-                !adjustmentNote.trim() ||
-                !clockOut ||
-                adjustMutation.isPending
-              }
+              disabled={!adjustmentNote.trim() || !clockOut || adjustMutation.isPending}
               onClick={() => void handleAdjust()}
             >
               Lưu

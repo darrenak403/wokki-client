@@ -35,8 +35,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/admin/department-select";
-import { LocationSelect } from "@/components/shared/admin/location-select";
+import { DepartmentSelect } from "@/components/shared/department-select";
+import { LocationSelect } from "@/components/shared/location-select";
 import {
   useCreateShiftMutation,
   useDeactivateShiftMutation,
@@ -347,7 +347,9 @@ export function ShiftsPanel() {
                           className="flex size-full items-center justify-center rounded-md"
                           style={{ backgroundColor: color.value }}
                         >
-                          {selected ? <CheckIcon className="size-4 text-white drop-shadow" /> : null}
+                          {selected ? (
+                            <CheckIcon className="size-4 text-white drop-shadow" />
+                          ) : null}
                         </span>
                       </button>
                     );

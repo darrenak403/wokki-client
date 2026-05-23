@@ -97,7 +97,7 @@ export function CommunityPage() {
             Để lại email khi đăng ký tài khoản — chúng tôi mời bạn vào kênh Discord và newsletter
             đầu tiên.
           </p>
-          <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "mt-6")}>
+          <Link href="/#dang-ky" className={cn(buttonVariants({ size: "lg" }), "mt-6")}>
             Đăng ký Wokki
           </Link>
         </div>

@@ -18,8 +18,8 @@ import {
 import { CopyWeekDialog } from "@/app/(app)/admin/schedule/components/CopyWeekDialog";
 import { ScheduleGrid } from "@/app/(app)/admin/schedule/components/ScheduleGrid";
 import { SuggestionsSheet } from "@/app/(app)/admin/schedule/components/SuggestionsSheet";
-import { DepartmentSelect } from "@/components/shared/admin/department-select";
-import { LocationSelect } from "@/components/shared/admin/location-select";
+import { DepartmentSelect } from "@/components/shared/department-select";
+import { LocationSelect } from "@/components/shared/location-select";
 import { scheduleKeys } from "@/lib/api/query-keys";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import {
@@ -29,7 +29,11 @@ import {
   useScheduleListQuery,
   useUnpublishScheduleMutation,
 } from "@/hooks/useSchedule";
-import { isScheduleDraft, isScheduleEditable, scheduleStatusLabel } from "@/lib/support/schedule/status";
+import {
+  isScheduleDraft,
+  isScheduleEditable,
+  scheduleStatusLabel,
+} from "@/lib/support/schedule/status";
 import { addWeeksISO, toMondayISO } from "@/lib/support/schedule/week";
 import { SCHEDULE_STATUS } from "@/types/schedule";
 import { addDays, format, parseISO } from "date-fns";
@@ -45,11 +49,13 @@ export function SchedulePanel() {
   const [copyOpen, setCopyOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
 
-  const listParams =
-    departmentId && weekStartDate ? { departmentId, weekStartDate } : null;
+  const listParams = departmentId && weekStartDate ? { departmentId, weekStartDate } : null;
 
-  const { data: listData, isLoading: listLoading, refetch: refetchList } =
-    useScheduleListQuery(listParams);
+  const {
+    data: listData,
+    isLoading: listLoading,
+    refetch: refetchList,
+  } = useScheduleListQuery(listParams);
   const scheduleId = listData?.items[0]?.id ?? null;
   const { data: detail, isLoading: detailLoading } = useScheduleDetailQuery(scheduleId);
 
@@ -226,9 +232,7 @@ export function SchedulePanel() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Huỷ</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void handlePublish()}>
-                  Công bố
-                </AlertDialogAction>
+                <AlertDialogAction onClick={() => void handlePublish()}>Công bố</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
