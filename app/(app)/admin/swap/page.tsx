@@ -8,15 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function AdminSwapPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Đổi ca</h1>
-        <p className="text-sm text-muted-foreground">
-          Duyệt hoặc từ chối yêu cầu đổi ca đang chờ (Pending).
-        </p>
-      </div>
-      <SwapInboxPanel />
-    </div>
-  );
+  return <SwapInboxPanel />;
 }

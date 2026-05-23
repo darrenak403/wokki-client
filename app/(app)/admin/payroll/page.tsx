@@ -8,15 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function AdminPayrollPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Lương</h1>
-        <p className="text-sm text-muted-foreground">
-          Tổng lương theo phòng ban và kỳ. Chủ quán có thể xuất CSV.
-        </p>
-      </div>
-      <PayrollPanel canExportCsv />
-    </div>
-  );
+  return <PayrollPanel canExportCsv />;
 }

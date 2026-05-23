@@ -14,6 +14,14 @@ import { vi } from "date-fns/locale";
 import { CalendarDaysIcon, ClockIcon, MapPinIcon, ShieldCheckIcon, ZapIcon } from "lucide-react";
 import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";
 import { cn } from "@/lib/utils";
@@ -177,102 +185,101 @@ export function MySchedulePanel() {
           <h2 className="text-lg font-semibold tracking-tight">Lịch làm việc chi tiết</h2>
         </div>
 
-        <div className="max-h-[520px] overflow-y-auto pr-2">
-          <ul className="space-y-3">
-          {weekDays.map((date) => {
-            const items = getAssignmentsForDate(assignments, date);
-            const today = isSameDay(date, now);
-
-            if (items.length === 0) {
-              return (
-                <li
-                  key={date.toISOString()}
-                  className="grid gap-4 rounded-lg border border-dashed bg-muted/30 p-4 text-muted-foreground sm:grid-cols-[160px_1fr]"
-                >
+        <div className="max-h-[520px] overflow-y-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Ngày</TableHead>
+                <TableHead>Ca làm</TableHead>
+                <TableHead>Thời gian</TableHead>
+                <TableHead>Địa điểm</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Ghi chú</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {weekDays.flatMap((date) => {
+                const items = getAssignmentsForDate(assignments, date);
+                const today = isSameDay(date, now);
+                const dateLabel = (
                   <div>
-                    <p className="text-sm font-medium">{format(date, "EEEE", { locale: vi })}</p>
-                    <p className="text-3xl font-semibold">{format(date, "dd/MM")}</p>
-                  </div>
-                  <div className="flex items-center border-border/60 sm:border-l sm:pl-6">
-                    <div className="border-l-4 border-muted-foreground/20 pl-5">
-                      <p className="font-semibold italic">Ngày nghỉ</p>
-                      <p className="text-sm">Không có ca làm việc</p>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("font-medium", today && "text-primary")}>
+                        {format(date, "EEEE", { locale: vi })}
+                      </span>
+                      {today ? (
+                        <Badge className="h-5 rounded-md px-2 text-[11px]">Hôm nay</Badge>
+                      ) : null}
                     </div>
+                    <p className="text-sm text-muted-foreground">{format(date, "dd/MM")}</p>
                   </div>
-                </li>
-              );
-            }
+                );
 
-            return (
-              <li
-                key={date.toISOString()}
-                className={cn(
-                  "grid gap-4 rounded-lg border bg-card p-4 shadow-sm sm:grid-cols-[160px_1fr]",
-                  today ? "border-primary ring-1 ring-primary/40" : "border-border"
-                )}
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-primary">
-                      {format(date, "EEEE", { locale: vi })}
-                    </p>
-                    {today ? (
-                      <Badge className="h-5 rounded-md px-2 text-[11px]">Hôm nay</Badge>
-                    ) : null}
-                  </div>
-                  <p className="text-3xl font-semibold text-brand-navy dark:text-foreground">
-                    {format(date, "dd/MM")}
-                  </p>
-                </div>
+                if (items.length === 0) {
+                  return [
+                    <TableRow key={date.toISOString()}>
+                      <TableCell>{dateLabel}</TableCell>
+                      <TableCell className="font-medium italic text-muted-foreground">
+                        Ngày nghỉ
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">—</TableCell>
+                      <TableCell className="text-muted-foreground">—</TableCell>
+                      <TableCell className="text-muted-foreground">Không có ca</TableCell>
+                      <TableCell className="text-muted-foreground">—</TableCell>
+                    </TableRow>,
+                  ];
+                }
 
-                <div className="space-y-3 border-border/60 sm:border-l sm:pl-6">
-                  {items.map((assignment) => (
-                    <div
-                      key={assignment.id}
-                      className="flex flex-wrap items-center justify-between gap-4"
-                    >
+                return items.map((assignment, index) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell>{index === 0 ? dateLabel : null}</TableCell>
+                    <TableCell>
                       <div
-                        className="border-l-4 pl-5"
+                        className="border-l-4 pl-3 font-medium text-brand-navy dark:text-foreground"
                         style={{ borderColor: assignment.shiftColor ?? "#5068a9" }}
                       >
-                        <p className="font-semibold text-brand-navy dark:text-foreground">
-                          {assignment.shiftName}
-                        </p>
-                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                          <span className="inline-flex items-center gap-1.5">
-                            <ClockIcon className="size-4" />
-                            {toTime(assignment.startTime)} - {toTime(assignment.endTime)}
-                          </span>
-                          {assignment.locationName ? (
-                            <span className="inline-flex items-center gap-1.5">
-                              <MapPinIcon className="size-4" />
-                              {assignment.locationName}
-                            </span>
-                          ) : null}
-                        </div>
+                        {assignment.shiftName}
                       </div>
-
-                      <div className="flex items-center gap-2">
-                        {assignment.note ? (
-                          <Badge variant="outline" className="rounded-md">
-                            {assignment.note}
-                          </Badge>
-                        ) : null}
-                        <Badge
-                          variant="outline"
-                          className="gap-1 rounded-md border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
-                        >
-                          <ShieldCheckIcon className="size-3" />
-                          Đã công bố
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1.5">
+                        <ClockIcon className="size-4 text-muted-foreground" />
+                        {toTime(assignment.startTime)} - {toTime(assignment.endTime)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {assignment.locationName ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <MapPinIcon className="size-4 text-muted-foreground" />
+                          {assignment.locationName}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className="gap-1 rounded-md border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      >
+                        <ShieldCheckIcon className="size-3" />
+                        Đã công bố
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {assignment.note ? (
+                        <Badge variant="outline" className="rounded-md">
+                          {assignment.note}
                         </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </li>
-            );
-          })}
-          </ul>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ));
+              })}
+            </TableBody>
+          </Table>
         </div>
       </section>
 

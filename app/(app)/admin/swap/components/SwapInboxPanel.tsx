@@ -14,6 +14,14 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DepartmentSelect } from "@/components/shared/department-select";
 import { LocationSelect } from "@/components/shared/location-select";
 import {
@@ -145,31 +153,46 @@ export function SwapInboxPanel() {
       ) : items.length === 0 ? (
         <p className="text-sm text-muted-foreground">Không có yêu cầu đổi ca đang chờ.</p>
       ) : (
-        <ul className="space-y-3">
-          {items.map((swap) => (
-            <li key={swap.id} className="rounded-lg border p-4 space-y-2 text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">{swapStatusLabel(swap.status)}</Badge>
-                <span className="text-muted-foreground text-xs">{swap.id.slice(0, 8)}…</span>
-              </div>
-              <p>
-                Người gửi: {format(parseISO(swap.requesterShiftDate), "dd/MM")} → Đối tác:{" "}
-                {format(parseISO(swap.targetShiftDate), "dd/MM")}
-              </p>
-              {swap.requesterNote ? (
-                <p className="text-muted-foreground">“{swap.requesterNote}”</p>
-              ) : null}
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => openAction("approve", swap)}>
-                  Duyệt thay
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => openAction("reject", swap)}>
-                  Từ chối
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead>Người gửi</TableHead>
+              <TableHead>Đối tác</TableHead>
+              <TableHead>Ghi chú</TableHead>
+              <TableHead className="w-[180px]" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((swap) => (
+              <TableRow key={swap.id}>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant="secondary" className="w-fit">
+                      {swapStatusLabel(swap.status)}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{swap.id.slice(0, 8)}…</span>
+                  </div>
+                </TableCell>
+                <TableCell>{format(parseISO(swap.requesterShiftDate), "dd/MM")}</TableCell>
+                <TableCell>{format(parseISO(swap.targetShiftDate), "dd/MM")}</TableCell>
+                <TableCell className="max-w-sm truncate text-muted-foreground">
+                  {swap.requesterNote ? `“${swap.requesterNote}”` : "—"}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => openAction("approve", swap)}>
+                      Duyệt thay
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => openAction("reject", swap)}>
+                      Từ chối
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       <Dialog open={actionKind !== null} onOpenChange={(open) => !open && closeAction()}>

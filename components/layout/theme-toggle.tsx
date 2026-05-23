@@ -5,14 +5,24 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   if (!mounted) {
-    return <Button variant="outline" size="sm" disabled className="min-w-[108px]" />;
+    return (
+      <Button
+        variant="outline"
+        size={compact ? "icon-sm" : "sm"}
+        disabled
+        className={compact ? undefined : "min-w-[108px]"}
+      />
+    );
   }
 
   const isDark = (theme === "system" ? resolvedTheme : theme) === "dark";
@@ -20,12 +30,16 @@ export function ThemeToggle() {
   return (
     <Button
       variant="outline"
-      size="sm"
-      className="min-w-[108px] gap-2"
+      size={compact ? "icon-sm" : "sm"}
+      className={compact ? undefined : "min-w-[108px] gap-2"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
       {isDark ? <SunIcon /> : <MoonIcon />}
-      {isDark ? "Light" : "Dark"}
+      {compact ? (
+        <span className="sr-only">{isDark ? "Light" : "Dark"}</span>
+      ) : (
+        isDark ? "Light" : "Dark"
+      )}
     </Button>
   );
 }

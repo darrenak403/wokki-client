@@ -8,15 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function AdminAttendancePage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Chấm công team</h1>
-        <p className="text-sm text-muted-foreground">
-          Xem và điều chỉnh chấm công nhân viên (ghi chú bắt buộc khi chỉnh).
-        </p>
-      </div>
-      <TeamAttendancePanel />
-    </div>
-  );
+  return <TeamAttendancePanel />;
 }

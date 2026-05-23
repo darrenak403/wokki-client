@@ -8,15 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function UserSwapPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Đổi ca</h1>
-        <p className="text-sm text-muted-foreground">
-          Gửi yêu cầu đổi ca hoặc phản hồi yêu cầu từ đồng nghiệp.
-        </p>
-      </div>
-      <SwapPanel />
-    </div>
-  );
+  return <SwapPanel />;
 }

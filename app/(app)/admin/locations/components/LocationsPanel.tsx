@@ -101,15 +101,7 @@ export function LocationsPanel({ canWrite = false }: LocationsPanelProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Chi nhánh</h1>
-          <p className="text-sm text-muted-foreground">
-            {canWrite
-              ? "Quản lý chi nhánh và múi giờ làm việc."
-              : "Xem danh sách chi nhánh (chỉ đọc)."}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-start justify-end gap-4">
         {canWrite ? (
           <Button type="button" onClick={openCreate}>
             <PlusIcon className="size-4" />

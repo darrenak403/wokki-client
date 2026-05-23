@@ -2,9 +2,17 @@
 
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CheckIcon, ClockIcon, XIcon, ArrowLeftRightIcon } from "lucide-react";
+import { CheckIcon, ClockIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   useAcceptSwapMutation,
   useCancelSwapMutation,
@@ -99,7 +107,18 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
         <h3 className="text-base font-semibold tracking-tight">{title}</h3>
         <span className="text-sm text-muted-foreground">{items.length} yêu cầu</span>
       </div>
-      <ul className="space-y-4">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Trạng thái</TableHead>
+            <TableHead>Ca của bạn</TableHead>
+            <TableHead>Ca đối tác</TableHead>
+            <TableHead>Cập nhật</TableHead>
+            <TableHead>Ghi chú</TableHead>
+            <TableHead className="w-[180px]" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
         {items.map((swap) => {
           const pending = isSwapPending(swap.status);
           const canAccept =
@@ -116,21 +135,14 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
           const StatusIcon = tone.icon;
 
           return (
-            <li key={swap.id} className="rounded-lg border bg-card p-4 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+            <TableRow key={swap.id}>
+              <TableCell>
                 <Badge variant="outline" className={cn("gap-1 rounded-md border", tone.badge)}>
                   <StatusIcon className="size-3" />
                   {swapStatusLabel(swap.status)}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(parseISO(swap.updatedAt), {
-                    addSuffix: true,
-                    locale: vi,
-                  })}
-                </span>
-              </div>
-
-              <div className="mt-5 grid items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
+              </TableCell>
+              <TableCell>
                 <ShiftSummary
                   label="Ca của bạn"
                   name={swap.requesterShiftName}
@@ -138,9 +150,8 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
                   startTime={swap.requesterStartTime}
                   endTime={swap.requesterEndTime}
                 />
-                <div className={cn("mx-auto rounded-full p-3", tone.center)}>
-                  <ArrowLeftRightIcon className="size-4" />
-                </div>
+              </TableCell>
+              <TableCell>
                 <ShiftSummary
                   label="Ca đối tác"
                   name={swap.targetShiftName}
@@ -148,15 +159,18 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
                   startTime={swap.targetStartTime}
                   endTime={swap.targetEndTime}
                 />
-              </div>
-
-              {swap.requesterNote ? (
-                <p className="mt-4 rounded-md bg-muted p-3 text-sm text-muted-foreground">
-                  “{swap.requesterNote}”
-                </p>
-              ) : null}
-
-              <div className="mt-4 flex flex-wrap justify-end gap-2">
+              </TableCell>
+              <TableCell className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(parseISO(swap.updatedAt), {
+                    addSuffix: true,
+                    locale: vi,
+                  })}
+              </TableCell>
+              <TableCell className="max-w-sm truncate text-muted-foreground">
+                {swap.requesterNote ? `“${swap.requesterNote}”` : "—"}
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-wrap justify-end gap-2">
                 {canAccept ? (
                   <>
                     <Button
@@ -190,11 +204,13 @@ export function SwapRequestList({ title, items, mode, myEmployeeId }: SwapReques
                     Hủy yêu cầu
                   </Button>
                 ) : null}
-              </div>
-            </li>
+                </div>
+              </TableCell>
+            </TableRow>
           );
         })}
-      </ul>
+        </TableBody>
+      </Table>
     </div>
   );
 }

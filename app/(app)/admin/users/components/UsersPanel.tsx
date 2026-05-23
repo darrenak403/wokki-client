@@ -56,14 +56,7 @@ export function UsersPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tài khoản hệ thống</h1>
-          <p className="text-sm text-muted-foreground">
-            Tạo tài khoản đăng nhập (Admin / Manager / User) — không tự tạo hồ sơ nhân viên.
-            Dùng màn <span className="font-medium">Nhân sự</span> để gắn ca và chấm công.
-          </p>
-        </div>
+      <div className="flex flex-wrap items-start justify-end gap-4">
         <Button type="button" onClick={() => setOpen(true)}>
           <PlusIcon className="size-4" />
           Thêm tài khoản

@@ -8,13 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function ManagerChatPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Tin nhắn</h1>
-        <p className="text-sm text-muted-foreground">Chat nội bộ — tạo kênh và nhắn với team.</p>
-      </div>
-      <ChatPanel canCreateChannel canModerateDelete={false} />
-    </div>
-  );
+  return <ChatPanel canCreateChannel canModerateDelete={false} />;
 }

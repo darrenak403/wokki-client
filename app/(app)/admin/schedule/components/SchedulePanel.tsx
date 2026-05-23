@@ -102,13 +102,6 @@ export function SchedulePanel() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Lịch ca tuần</h1>
-        <p className="text-sm text-muted-foreground">
-          Phân ca theo phòng ban và tuần (bắt đầu thứ Hai). Công bố để nhân viên xem lịch.
-        </p>
-      </div>
-
       <div className="flex flex-wrap items-end gap-4">
         <div className="space-y-1">
           <span className="text-xs text-muted-foreground">Chi nhánh</span>
