@@ -25,7 +25,6 @@ import {
   useSaveSchedulePreferencesMutation,
   useSubmitSchedulePreferencesMutation,
 } from "@/hooks/useSchedulePreferences";
-import { usePreferenceBoardQuery } from "@/hooks/usePreferenceBoard";
 import { mapSchedulePreferenceError } from "@/lib/support/schedule-preference/map-errors";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -39,33 +38,73 @@ function lineKey(shiftDefinitionId: string, date: string) {
 }
 
 export function MyPreferencesTab() {
-  const [weekStartDate, setWeekStartDate] = useState(() => toMondayISO(new Date()));
+  const [weekStartDate, setWeekStartDate] = useState(() => addWeeksISO(toMondayISO(new Date()), 1));
 
   const { data: draft, isLoading: draftLoading, error: draftError } =
     useEmployeeDraftScheduleQuery(weekStartDate);
   const scheduleId = draft?.scheduleId ?? null;
 
   const { data: prefs, isLoading: prefsLoading } = useMySchedulePreferencesQuery(scheduleId);
-  const { data: board } = usePreferenceBoardQuery(scheduleId, Boolean(scheduleId));
 
   const saveMutation = useSaveSchedulePreferencesMutation(scheduleId ?? "");
   const submitMutation = useSubmitSchedulePreferencesMutation(scheduleId ?? "");
 
   const [lines, setLines] = useState<SchedulePreferenceLine[]>([]);
   const [dirty, setDirty] = useState(false);
+  const [editingSubmitted, setEditingSubmitted] = useState(false);
 
   useEffect(() => {
     if (prefs) {
+      // Local editable copy is needed before the employee saves the draft.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLines(prefs.lines);
       setDirty(false);
+      setEditingSubmitted(false);
     }
   }, [prefs]);
 
-  const submitted = prefs?.status === "Submitted";
-  const readOnly = submitted || !scheduleId;
-
   const weekDays = useMemo(() => weekDayDates(weekStartDate), [weekStartDate]);
-  const shifts = board?.shifts ?? [];
+  const shifts = draft?.shifts ?? [];
+  const submitted = prefs?.status === "Submitted";
+  const readOnly = !scheduleId || (submitted && !editingSubmitted);
+
+  const weekControls = (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label="Tuần trước"
+          onClick={() => setWeekStartDate((w) => addWeeksISO(w, -1))}
+        >
+          <ChevronLeftIcon className="size-4" />
+        </Button>
+        <span className="min-w-[160px] text-center text-sm font-medium">
+          Tuần {format(parseISO(weekStartDate), "dd/MM", { locale: vi })} -{" "}
+          {format(parseISO(weekDays[6]), "dd/MM", { locale: vi })}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label="Tuần sau"
+          onClick={() => setWeekStartDate((w) => addWeeksISO(w, 1))}
+        >
+          <ChevronRightIcon className="size-4" />
+        </Button>
+      </div>
+      {scheduleId ? (
+        submitted ? (
+          <Badge>Đã gửi đăng ký</Badge>
+        ) : (
+          <Badge variant="secondary">Nháp - chưa gửi</Badge>
+        )
+      ) : (
+        <Badge variant="outline">Chưa có lịch nháp</Badge>
+      )}
+    </div>
+  );
 
   const lineMap = useMemo(() => {
     const map = new Map<string, PreferenceType>();
@@ -105,6 +144,7 @@ export function MyPreferencesTab() {
     if (!scheduleId) return;
     if (dirty) await handleSave();
     await submitMutation.mutateAsync();
+    setEditingSubmitted(false);
   };
 
   const draftErrorCode =
@@ -117,59 +157,41 @@ export function MyPreferencesTab() {
   }
 
   if (draftLoading || prefsLoading) {
-    return <p className="text-sm text-muted-foreground">Đang tải đăng ký ca…</p>;
+    return (
+      <div className="space-y-6">
+        {weekControls}
+        <p className="text-sm text-muted-foreground">Đang tải đăng ký ca...</p>
+      </div>
+    );
   }
 
   if (!scheduleId) {
     return (
-      <div className="rounded-lg border border-dashed p-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          Chưa có lịch Nháp cho tuần {format(parseISO(weekStartDate), "dd/MM/yyyy")}. Trưởng ca
-          cần tạo lịch tuần trước khi bạn đăng ký ca.
-        </p>
+      <div className="space-y-6">
+        {weekControls}
+        <div className="rounded-lg border border-dashed bg-background p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Chưa có lịch Nháp cho tuần {format(parseISO(weekStartDate), "dd/MM/yyyy")}. Trưởng ca
+            cần tạo lịch tuần trước khi bạn đăng ký ca.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            aria-label="Tuần trước"
-            onClick={() => setWeekStartDate((w) => addWeeksISO(w, -1))}
-          >
-            <ChevronLeftIcon className="size-4" />
-          </Button>
-          <span className="min-w-[120px] text-center text-sm font-medium">
-            Tuần {format(parseISO(weekStartDate), "dd/MM", { locale: vi })}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            aria-label="Tuần sau"
-            onClick={() => setWeekStartDate((w) => addWeeksISO(w, 1))}
-          >
-            <ChevronRightIcon className="size-4" />
-          </Button>
-        </div>
-        {submitted ? (
-          <Badge>Đã gửi đăng ký</Badge>
-        ) : (
-          <Badge variant="secondary">Nháp — chưa gửi</Badge>
-        )}
-      </div>
+      {weekControls}
 
       <p className="text-sm text-muted-foreground">
-        Nhấn từng ô để chuyển: Ưu tiên → Có thể → Không → trống. Lưu nháp trước khi gửi.
+        Nhấn từng ô để chọn mức mong muốn làm ca đó: Ưu tiên, Có thể làm,
+        hoặc Trống nếu không đăng ký ca này. Lưu nháp trước khi gửi.
       </p>
 
-      {!board || shifts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Đang tải danh sách ca…</p>
+      {shifts.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Chưa có ca làm việc đang hoạt động cho lịch nháp tuần này.
+        </p>
       ) : (
         <ScrollArea className="w-full whitespace-nowrap rounded-md border">
           <Table>
@@ -199,10 +221,10 @@ export function MyPreferencesTab() {
                         <button
                           type="button"
                           disabled={readOnly}
-                          className="inline-flex disabled:opacity-60"
+                          className="inline-flex rounded-md disabled:opacity-60"
                           onClick={() => toggleCell(shift.shiftDefinitionId, date)}
                         >
-                          <PreferenceTypeCell type={type} compact />
+                          <PreferenceTypeCell type={type} compact showFullLabel />
                         </button>
                       </TableCell>
                     );
@@ -215,7 +237,13 @@ export function MyPreferencesTab() {
         </ScrollArea>
       )}
 
-      {!readOnly ? (
+      {submitted && !editingSubmitted ? (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setEditingSubmitted(true)}>
+            Chỉnh sửa đăng ký
+          </Button>
+        </div>
+      ) : !readOnly ? (
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -224,11 +252,32 @@ export function MyPreferencesTab() {
           >
             {saveMutation.isPending ? "Đang lưu…" : "Lưu nháp"}
           </Button>
+          {editingSubmitted ? (
+            <Button
+              variant="ghost"
+              disabled={saveMutation.isPending || submitMutation.isPending}
+              onClick={() => {
+                setLines(prefs?.lines ?? []);
+                setDirty(false);
+                setEditingSubmitted(false);
+              }}
+            >
+              Huỷ sửa
+            </Button>
+          ) : null}
           <Button
-            disabled={submitMutation.isPending || lines.length === 0}
+            disabled={
+              submitMutation.isPending ||
+              lines.length === 0 ||
+              (editingSubmitted && !dirty)
+            }
             onClick={() => void handleSubmit()}
           >
-            {submitMutation.isPending ? "Đang gửi…" : "Gửi đăng ký"}
+            {submitMutation.isPending
+              ? "Đang gửi…"
+              : editingSubmitted
+                ? "Gửi lại đăng ký"
+                : "Gửi đăng ký"}
           </Button>
         </div>
       ) : null}

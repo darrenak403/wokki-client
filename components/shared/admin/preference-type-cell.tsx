@@ -28,21 +28,31 @@ export function preferenceTypeLabel(type: PreferenceType): string {
 type PreferenceTypeCellProps = {
   type: PreferenceType | null;
   compact?: boolean;
+  showFullLabel?: boolean;
   className?: string;
 };
 
-export function PreferenceTypeCell({ type, compact, className }: PreferenceTypeCellProps) {
+export function PreferenceTypeCell({
+  type,
+  compact,
+  showFullLabel,
+  className,
+}: PreferenceTypeCellProps) {
+  const compactClassName = showFullLabel
+    ? "min-h-8 min-w-[76px] px-3 text-xs"
+    : "size-7 text-[10px]";
+
   if (!type) {
     return (
       <span
         className={cn(
           "inline-flex items-center justify-center rounded-md border border-dashed text-muted-foreground",
-          compact ? "size-7 text-[10px]" : "min-h-8 min-w-10 px-2 text-xs",
+          compact ? compactClassName : "min-h-8 min-w-10 px-2 text-xs",
           className,
         )}
         aria-label="Chưa đăng ký"
       >
-        —
+        {showFullLabel ? "Trống" : "—"}
       </span>
     );
   }
@@ -53,13 +63,13 @@ export function PreferenceTypeCell({ type, compact, className }: PreferenceTypeC
       className={cn(
         "inline-flex items-center justify-center rounded-md font-medium",
         style.className,
-        compact ? "size-7 text-[10px]" : "min-h-8 min-w-10 px-2 text-xs",
+        compact ? compactClassName : "min-h-8 min-w-10 px-2 text-xs",
         className,
       )}
       aria-label={style.label}
       title={style.label}
     >
-      {compact ? style.label.charAt(0) : style.label}
+      {compact && !showFullLabel ? style.label.charAt(0) : style.label}
     </span>
   );
 }
@@ -69,6 +79,5 @@ export function cyclePreferenceType(
 ): PreferenceType | null {
   if (current === null) return "Preferred";
   if (current === "Preferred") return "Available";
-  if (current === "Available") return "Unavailable";
   return null;
 }

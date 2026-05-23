@@ -11,8 +11,7 @@ import type {
 export const fetchSchedulePreferences = {
   getDraftSchedule: async (weekStartDate: string): Promise<EmployeeDraftScheduleResponse | null> => {
     const response = await apiService.get<ApiEnvelope<EmployeeDraftScheduleResponse | null>>(
-      "api/v1/self/schedule-preferences/draft",
-      { weekStartDate },
+      `api/v1/self/schedule-preferences/draft/${weekStartDate}`,
     );
     return assertSchedulePreferenceSuccess(normalizeApiResponse(response.data));
   },
