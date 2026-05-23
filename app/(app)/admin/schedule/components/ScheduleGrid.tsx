@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { useMemo, useState, type CSSProperties } from "react";
+import { PlusIcon } from "lucide-react";
 import { AssignEmployeeDialog } from "@/app/(app)/admin/schedule/components/AssignEmployeeDialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { useDeleteAssignmentMutation } from "@/hooks/useSchedule";
 import { useShiftsQuery } from "@/hooks/useShifts";
@@ -12,14 +18,9 @@ import { cn } from "@/lib/utils";
 import { isScheduleEditable } from "@/lib/support/schedule/status";
 import { weekDayDates } from "@/lib/support/schedule/week";
 import { format, parseISO } from "date-fns";
-import type { ShiftDefinitionResponse } from "@/types/foundation";
 import type { ShiftAssignmentResponse, ScheduleStatus } from "@/types/schedule";
 
 const DAY_HEADERS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const PX_PER_MINUTE = 1.05;
-const MIN_SHIFT_HEIGHT = 92;
-const DEFAULT_START = 8 * 60;
-const DEFAULT_END = 22 * 60;
 
 type ScheduleGridProps = {
   scheduleId: string;
@@ -30,46 +31,22 @@ type ScheduleGridProps = {
   assignments: ShiftAssignmentResponse[];
 };
 
-type TimeBounds = {
-  start: number;
-  end: number;
-};
-
 function timeToMinutes(value: string) {
   const [hours = "0", minutes = "0"] = value.slice(0, 5).split(":");
   return Number(hours) * 60 + Number(minutes);
 }
 
-function formatHour(minutes: number) {
-  const normalized = ((minutes % 1440) + 1440) % 1440;
-  return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:00`;
-}
-
-function formatTimeRange(startTime: string, endTime: string) {
-  return `${startTime.slice(0, 5)} - ${endTime.slice(0, 5)}`;
-}
-
-function getShiftEndMinutes(shift: ShiftDefinitionResponse) {
-  const start = timeToMinutes(shift.startTime);
-  const end = timeToMinutes(shift.endTime);
-  return end <= start ? end + 1440 : end;
-}
-
-function getTimeBounds(shifts: ShiftDefinitionResponse[]): TimeBounds {
-  if (shifts.length === 0) {
-    return { start: DEFAULT_START, end: DEFAULT_END };
-  }
-
-  const starts = shifts.map((shift) => timeToMinutes(shift.startTime));
-  const ends = shifts.map(getShiftEndMinutes);
-  const start = Math.max(0, Math.floor(Math.min(...starts) / 60) * 60 - 60);
-  const end = Math.ceil(Math.max(...ends) / 60) * 60 + 60;
-
-  return { start, end: Math.max(end, start + 4 * 60) };
-}
-
 function getAssignmentKey(shiftDefinitionId: string, date: string) {
   return `${shiftDefinitionId}|${date}`;
+}
+
+function shiftPillStyle(color: string): CSSProperties {
+  return {
+    backgroundColor: `color-mix(in srgb, ${color} 22%, white)`,
+    borderColor: `color-mix(in srgb, ${color} 38%, white)`,
+    color: `color-mix(in srgb, ${color} 72%, #0b1e3d)`,
+    boxShadow: `0 1px 2px color-mix(in srgb, ${color} 18%, transparent)`,
+  };
 }
 
 export function ScheduleGrid({
@@ -104,7 +81,7 @@ export function ScheduleGrid({
       shifts
         .filter((shift) => shift.isActive)
         .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)),
-    [shifts],
+    [shifts]
   );
 
   const employeeNameById = useMemo(() => {
@@ -125,17 +102,6 @@ export function ScheduleGrid({
     }
     return map;
   }, [assignments]);
-
-  const timeBounds = useMemo(() => getTimeBounds(activeShifts), [activeShifts]);
-  const hours = useMemo(() => {
-    const values: number[] = [];
-    for (let hour = timeBounds.start; hour <= timeBounds.end; hour += 60) {
-      values.push(hour);
-    }
-    return values;
-  }, [timeBounds]);
-
-  const calendarHeight = (timeBounds.end - timeBounds.start) * PX_PER_MINUTE;
 
   const handleDelete = async (assignmentId: string) => {
     if (!window.confirm("Xóa phân ca này?")) return;
@@ -158,160 +124,124 @@ export function ScheduleGrid({
 
   return (
     <>
-      <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
-        <div className="grid grid-cols-[72px_repeat(7,minmax(150px,1fr))] border-b bg-muted/30">
-          <div className="border-r px-3 py-4 text-xs font-medium text-muted-foreground">Giờ</div>
-          {days.map((date, index) => (
-            <div key={date} className="border-r px-3 py-3 last:border-r-0">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {DAY_HEADERS[index]}
-              </div>
-              <div className="text-lg font-semibold">{format(parseISO(date), "dd/MM")}</div>
-            </div>
-          ))}
-        </div>
-
+      <div className="overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-800 dark:bg-neutral-950/30">
         <div className="overflow-x-auto">
-          <div
-            className="grid min-w-[1120px] grid-cols-[72px_repeat(7,minmax(150px,1fr))]"
-            style={{ height: calendarHeight }}
-          >
-            <div className="relative border-r bg-muted/15">
-              {hours.map((hour) => (
-                <div
-                  key={hour}
-                  className="absolute left-0 right-0 border-t px-2 pt-1 text-[11px] font-medium text-muted-foreground"
-                  style={{ top: (hour - timeBounds.start) * PX_PER_MINUTE }}
-                >
-                  {formatHour(hour)}
-                </div>
-              ))}
-            </div>
-
-            {days.map((date) => (
-              <div key={date} className="relative border-r last:border-r-0">
-                {hours.map((hour) => (
-                  <div
-                    key={hour}
-                    className="pointer-events-none absolute left-0 right-0 border-t"
-                    style={{ top: (hour - timeBounds.start) * PX_PER_MINUTE }}
-                  />
+          <Table className="min-w-[1120px]">
+            <TableHeader>
+              <TableRow className="border-neutral-100 hover:bg-transparent dark:border-neutral-800">
+                <TableHead className="sticky left-0 z-10 min-w-[180px] bg-neutral-50/80 dark:bg-neutral-900/80">
+                  Khung ca
+                </TableHead>
+                {days.map((date, index) => (
+                  <TableHead
+                    key={date}
+                    className="min-w-[130px] bg-neutral-50/80 text-left dark:bg-neutral-900/80"
+                  >
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {DAY_HEADERS[index]}
+                    </div>
+                    <div className="text-base font-semibold text-foreground">
+                      {format(parseISO(date), "dd/MM")}
+                    </div>
+                  </TableHead>
                 ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {activeShifts.map((shift) => {
+                const color = shift.color || "#1d4d8f";
 
-                {activeShifts.map((shift) => {
-                  const start = timeToMinutes(shift.startTime);
-                  const end = getShiftEndMinutes(shift);
-                  const top = (start - timeBounds.start) * PX_PER_MINUTE;
-                  const height = Math.max(MIN_SHIFT_HEIGHT, (end - start) * PX_PER_MINUTE);
-                  const cellAssignments =
-                    assignmentsByKey.get(getAssignmentKey(shift.id, date)) ?? [];
-                  const color = shift.color || "#2563eb";
-
-                  return (
-                    <section
-                      key={shift.id}
-                      className={cn(
-                        "absolute left-2 right-2 overflow-hidden rounded-lg border bg-background shadow-sm transition-shadow",
-                        editable && "hover:shadow-md",
-                      )}
-                      style={{
-                        top,
-                        height,
-                        borderColor: color,
-                        backgroundColor: `${color}0f`,
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-2 border-b bg-background/85 px-3 py-2">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold">{shift.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatTimeRange(shift.startTime, shift.endTime)}
-                          </div>
-                        </div>
-                        {editable ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            className="size-7 shrink-0 rounded-full"
-                            onClick={() =>
-                              setDialog({
-                                shiftDefinitionId: shift.id,
-                                shiftName: shift.name,
-                                date,
-                              })
-                            }
-                          >
-                            <PlusIcon className="size-4" />
-                            <span className="sr-only">Phân ca</span>
-                          </Button>
-                        ) : null}
+                return (
+                  <TableRow key={shift.id} className="border-neutral-100 dark:border-neutral-800">
+                    <TableCell className="sticky left-0 z-10 bg-white align-top dark:bg-neutral-900">
+                      <div className="flex items-center gap-2 py-1">
+                        <span
+                          className="size-2.5 shrink-0 rounded-full ring-2 ring-white dark:ring-neutral-900"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="font-semibold text-foreground">{shift.name}</span>
                       </div>
+                    </TableCell>
+                    {days.map((date) => {
+                      const cellAssignments =
+                        assignmentsByKey.get(getAssignmentKey(shift.id, date)) ?? [];
+                      const hasAssignments = cellAssignments.length > 0;
 
-                      <div className="space-y-1.5 overflow-y-auto p-2" style={{ maxHeight: height - 48 }}>
-                        {cellAssignments.length > 0 ? (
-                          cellAssignments.map((assignment) => (
-                            <div
-                              key={assignment.id}
-                              className="group flex items-center justify-between gap-2 rounded-md border bg-background px-2 py-1.5 text-sm shadow-xs"
-                            >
-                              <div className="min-w-0">
-                                <div className="truncate font-medium">
-                                  {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
-                                </div>
-                                {assignment.note ? (
-                                  <div className="truncate text-xs text-muted-foreground">
-                                    {assignment.note}
-                                  </div>
-                                ) : null}
-                              </div>
-                              {editable ? (
-                                <Button
+                      return (
+                        <TableCell
+                          key={`${shift.id}-${date}`}
+                          className="align-top bg-white dark:bg-neutral-900"
+                        >
+                          <div className="min-h-[88px] space-y-1.5 py-0.5">
+                            {hasAssignments ? (
+                              cellAssignments.map((assignment) => (
+                                <button
                                   type="button"
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  className="size-7 shrink-0 opacity-70 hover:opacity-100"
-                                  disabled={deleteMutation.isPending}
+                                  key={assignment.id}
+                                  className={cn(
+                                    "block w-full truncate rounded-lg border px-2.5 py-2 text-left text-sm font-semibold transition-shadow",
+                                    editable &&
+                                      "hover:brightness-95 hover:ring-1 hover:ring-destructive/30"
+                                  )}
+                                  style={shiftPillStyle(color)}
+                                  disabled={!editable || deleteMutation.isPending}
+                                  title={editable ? "Bấm để xóa phân ca" : undefined}
                                   onClick={() => void handleDelete(assignment.id)}
                                 >
-                                  <Trash2Icon className="size-3.5" />
-                                  <span className="sr-only">Xóa phân ca</span>
-                                </Button>
-                              ) : null}
-                            </div>
-                          ))
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={!editable}
-                            className={cn(
-                              "flex min-h-10 w-full items-center justify-center rounded-md border border-dashed bg-background/70 px-2 text-xs font-medium text-muted-foreground",
-                              editable && "hover:border-primary/40 hover:text-foreground",
+                                  {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
+                                </button>
+                              ))
+                            ) : editable ? (
+                              <button
+                                type="button"
+                                className={cn(
+                                  "flex min-h-9 w-full items-center justify-center gap-1 rounded-lg border border-dashed border-neutral-200 bg-neutral-50/50 px-2 text-xs font-medium text-muted-foreground",
+                                  "hover:border-brand-medium/50 hover:bg-brand-mist/40 hover:text-foreground"
+                                )}
+                                onClick={() =>
+                                  setDialog({
+                                    shiftDefinitionId: shift.id,
+                                    shiftName: shift.name,
+                                    date,
+                                  })
+                                }
+                              >
+                                <PlusIcon className="size-3.5" />
+                                Thêm nhân viên
+                              </button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
                             )}
-                            onClick={() =>
-                              setDialog({
-                                shiftDefinitionId: shift.id,
-                                shiftName: shift.name,
-                                date,
-                              })
-                            }
-                          >
-                            {editable ? "Thêm nhân viên" : "Chưa phân ca"}
-                          </button>
-                        )}
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <Badge variant="outline">Nháp: có thể phân ca</Badge>
-        <Badge variant="outline">Đã công bố: nhân viên chỉ xem</Badge>
+                            {hasAssignments && editable ? (
+                              <button
+                                type="button"
+                                className={cn(
+                                  "flex min-h-7 w-full items-center justify-center gap-1 rounded-lg border border-dashed border-neutral-200 px-2 text-xs font-medium text-muted-foreground",
+                                  "hover:border-brand-medium/50 hover:text-brand-blue"
+                                )}
+                                onClick={() =>
+                                  setDialog({
+                                    shiftDefinitionId: shift.id,
+                                    shiftName: shift.name,
+                                    date,
+                                  })
+                                }
+                              >
+                                <PlusIcon className="size-3" />
+                                Thêm
+                              </button>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {dialog ? (

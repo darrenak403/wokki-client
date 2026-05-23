@@ -9,10 +9,10 @@ import type { SaveSchedulePreferencesRequest } from "@/types/schedule-preference
 
 const STALE_MS = 60 * 1000;
 
-export function useEmployeeDraftScheduleQuery(weekStartDate: string | null) {
+export function useEmployeePreferenceScheduleQuery(weekStartDate: string | null) {
   return useQuery({
     queryKey: preferenceKeys.draft(weekStartDate ?? ""),
-    queryFn: () => fetchSchedulePreferences.getDraftSchedule(weekStartDate!),
+    queryFn: () => fetchSchedulePreferences.getScheduleForWeek(weekStartDate!),
     enabled: Boolean(weekStartDate),
     staleTime: STALE_MS,
   });

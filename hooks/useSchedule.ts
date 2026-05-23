@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { scheduleKeys } from "@/lib/api/query-keys";
+import { preferenceKeys, scheduleKeys } from "@/lib/api/query-keys";
 import { fetchSchedules } from "@/lib/api/services/fetchSchedules";
 import { mapScheduleError } from "@/lib/support/schedule/map-errors";
 import type {
@@ -179,7 +179,17 @@ export function useCopyScheduleMutation(
         }),
       });
       void queryClient.invalidateQueries({ queryKey: scheduleKeys.detail(copied.id) });
-      toast.success("Đã sao chép lịch sang tuần mới.");
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === "schedule" &&
+          query.queryKey[1] === "preferenceBoard",
+      });
+      void queryClient.removeQueries({
+        queryKey: scheduleKeys.preferenceBoard(copied.id),
+      });
+      void queryClient.invalidateQueries({ queryKey: preferenceKeys.all });
+      toast.success("Đã sao chép lịch và đăng ký ca sang tuần đích.");
     },
     onError: (error) => toast.error(mapScheduleError(error)),
   });

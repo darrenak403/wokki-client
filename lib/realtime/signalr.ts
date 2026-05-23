@@ -7,7 +7,9 @@ import {
 import { store } from "@/lib/redux/store";
 
 let connection: HubConnection | null = null;
-let startPromise: Promise<void> | null = null;
+let startPromise: Promise<HubConnection | null> | null = null;
+/** Backend MVP chỉ có ChatHub `/ws/chat`; `/hubs/app` chưa triển khai. */
+let appHubUnavailable = false;
 
 function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8386/";
@@ -25,6 +27,19 @@ function getAccessToken(): string | null {
   }
 }
 
+function isAppHubMissingError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("404") ||
+    message.includes("Not Found") ||
+    message.includes("Failed to fetch")
+  );
+}
+
+export function isAppHubEnabled(): boolean {
+  return !appHubUnavailable;
+}
+
 export function getHubConnection(): HubConnection {
   if (typeof window === "undefined") throw new Error("SignalR chỉ chạy trên browser");
   if (connection) return connection;
@@ -33,7 +48,7 @@ export function getHubConnection(): HubConnection {
     .withUrl(getHubUrl(), { accessTokenFactory: () => getAccessToken() || "" })
     .withAutomaticReconnect()
     .configureLogging(
-      process.env.NODE_ENV === "development" ? LogLevel.Information : LogLevel.Warning,
+      process.env.NODE_ENV === "development" ? LogLevel.Warning : LogLevel.Warning,
     )
     .build();
 
@@ -44,27 +59,50 @@ export function getHubConnection(): HubConnection {
   return connection;
 }
 
-export async function startHubConnection(): Promise<HubConnection> {
+async function resetConnectionIfNeeded(conn: HubConnection): Promise<void> {
+  if (conn.state === HubConnectionState.Disconnected) return;
+  try {
+    await conn.stop();
+  } catch {
+    connection = null;
+    startPromise = null;
+  }
+}
+
+/** Kết nối app hub; trả về null nếu server chưa có `/hubs/app` (MVP). */
+export async function startHubConnection(): Promise<HubConnection | null> {
+  if (appHubUnavailable) return null;
+
   const conn = getHubConnection();
   if (conn.state === HubConnectionState.Connected) return conn;
 
   if (conn.state === HubConnectionState.Connecting && startPromise) {
-    await startPromise;
-    return conn;
+    return startPromise;
+  }
+
+  if (conn.state !== HubConnectionState.Disconnected) {
+    await resetConnectionIfNeeded(conn);
   }
 
   startPromise = conn
     .start()
     .then(() => {
       startPromise = null;
+      return conn;
     })
     .catch((err) => {
       startPromise = null;
+      if (isAppHubMissingError(err)) {
+        appHubUnavailable = true;
+        console.warn(
+          "[SignalR] App hub /hubs/app chưa có trên server — bỏ qua thông báo realtime (chat vẫn dùng /ws/chat).",
+        );
+        return null;
+      }
       throw err;
     });
 
-  await startPromise;
-  return conn;
+  return startPromise;
 }
 
 export async function stopHubConnection(): Promise<void> {

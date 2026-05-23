@@ -20,7 +20,7 @@ type CopyWeekDialogProps = {
   scheduleId: string;
   sourceWeekStartDate: string;
   listParams: { departmentId: string; weekStartDate: string };
-  onCopied: (targetWeekStartDate: string) => void;
+  onCopied: (targetWeekStartDate: string, targetScheduleId: string) => void;
 };
 
 export function CopyWeekDialog({
@@ -36,7 +36,7 @@ export function CopyWeekDialog({
 
   const handleCopy = async () => {
     const copied = await copyMutation.mutateAsync({ targetWeekStartDate: targetWeek });
-    onCopied(copied.weekStartDate);
+    onCopied(copied.weekStartDate, copied.id);
     onOpenChange(false);
   };
 
@@ -49,7 +49,9 @@ export function CopyWeekDialog({
           <DialogTitle>Sao chép lịch sang tuần khác</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Tuần đích phải bắt đầu thứ Hai. Lịch mới ở trạng thái Nháp.
+          Sao chép <strong>phân ca</strong> và <strong>đăng ký ca của nhân viên</strong> sang tuần đích
+          (thứ Hai). Tuần đích luôn ở trạng thái Nháp. Nếu tuần đích đã có lịch Nháp, nội dung sẽ
+          được ghi đè. Tuần đã công bố không thể ghi đè — hãy huỷ công bố trước.
         </p>
         <div className="flex items-center justify-center gap-3 py-4">
           <Button

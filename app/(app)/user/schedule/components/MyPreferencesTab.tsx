@@ -20,12 +20,14 @@ import {
   PreferenceTypeCell,
 } from "@/components/shared/admin/preference-type-cell";
 import {
-  useEmployeeDraftScheduleQuery,
+  useEmployeePreferenceScheduleQuery,
   useMySchedulePreferencesQuery,
   useSaveSchedulePreferencesMutation,
   useSubmitSchedulePreferencesMutation,
 } from "@/hooks/useSchedulePreferences";
 import { mapSchedulePreferenceError } from "@/lib/support/schedule-preference/map-errors";
+import { scheduleStatusLabel } from "@/lib/support/schedule/status";
+import { SCHEDULE_STATUS } from "@/types/schedule";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import type {
@@ -40,9 +42,9 @@ function lineKey(shiftDefinitionId: string, date: string) {
 export function MyPreferencesTab() {
   const [weekStartDate, setWeekStartDate] = useState(() => addWeeksISO(toMondayISO(new Date()), 1));
 
-  const { data: draft, isLoading: draftLoading, error: draftError } =
-    useEmployeeDraftScheduleQuery(weekStartDate);
-  const scheduleId = draft?.scheduleId ?? null;
+  const { data: preferenceSchedule, isLoading: scheduleLoading, error: scheduleError } =
+    useEmployeePreferenceScheduleQuery(weekStartDate);
+  const scheduleId = preferenceSchedule?.scheduleId ?? null;
 
   const { data: prefs, isLoading: prefsLoading } = useMySchedulePreferencesQuery(scheduleId);
 
@@ -64,9 +66,17 @@ export function MyPreferencesTab() {
   }, [prefs]);
 
   const weekDays = useMemo(() => weekDayDates(weekStartDate), [weekStartDate]);
-  const shifts = draft?.shifts ?? [];
+  const shifts = preferenceSchedule?.shifts ?? [];
+  const scheduleStatus = preferenceSchedule?.status;
+  const scheduleIsDraft = scheduleStatus === SCHEDULE_STATUS.Draft;
+  const scheduleIsPublished = scheduleStatus === SCHEDULE_STATUS.Published;
   const submitted = prefs?.status === "Submitted";
-  const readOnly = !scheduleId || (submitted && !editingSubmitted);
+  const preferenceStatusLabel = prefs?.submissionId
+    ? submitted
+      ? "Đã gửi đăng ký"
+      : "Nháp đăng ký"
+    : "Chưa có đăng ký";
+  const readOnly = !scheduleId || !scheduleIsDraft || (submitted && !editingSubmitted);
 
   const weekControls = (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -95,16 +105,28 @@ export function MyPreferencesTab() {
         </Button>
       </div>
       {scheduleId ? (
-        submitted ? (
-          <Badge>Đã gửi đăng ký</Badge>
-        ) : (
-          <Badge variant="secondary">Nháp - chưa gửi</Badge>
-        )
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={scheduleIsPublished ? "default" : "secondary"}>
+            {scheduleStatus !== undefined ? scheduleStatusLabel(scheduleStatus) : "Lịch"}
+          </Badge>
+          {prefs?.submissionId ? (
+            <Badge variant={submitted ? "default" : "secondary"}>{preferenceStatusLabel}</Badge>
+          ) : (
+            <Badge variant="outline">{preferenceStatusLabel}</Badge>
+          )}
+        </div>
       ) : (
-        <Badge variant="outline">Chưa có lịch nháp</Badge>
+        <Badge variant="outline">Chưa có lịch</Badge>
       )}
     </div>
   );
+
+  const guidanceText = scheduleIsPublished
+    ? "Đây là đăng ký ca của bạn cho tuần này. Lịch làm việc chính thức nằm ở tab Lịch đã công bố và do admin/manager quyết định cuối cùng."
+    : "Nhấn từng ô để chọn mức mong muốn làm ca đó: Ưu tiên, Có thể làm, hoặc Trống nếu không đăng ký ca này. Lưu nháp trước khi gửi." +
+      (submitted && !editingSubmitted
+        ? " Đã gửi - bấm Chỉnh sửa đăng ký để thay đổi và gửi lại."
+        : "");
 
   const lineMap = useMemo(() => {
     const map = new Map<string, PreferenceType>();
@@ -152,16 +174,16 @@ export function MyPreferencesTab() {
     setEditingSubmitted(false);
   };
 
-  const draftErrorCode =
-    draftError && typeof draftError === "object" && "messageCode" in draftError
-      ? String((draftError as { messageCode?: string }).messageCode)
+  const scheduleErrorCode =
+    scheduleError && typeof scheduleError === "object" && "messageCode" in scheduleError
+      ? String((scheduleError as { messageCode?: string }).messageCode)
       : undefined;
 
-  if (draftErrorCode === "ME_NO_EMPLOYEE") {
+  if (scheduleErrorCode === "ME_NO_EMPLOYEE") {
     return <NoEmployeeLinked />;
   }
 
-  if (draftLoading || prefsLoading) {
+  if (scheduleLoading || prefsLoading) {
     return (
       <div className="space-y-6">
         {weekControls}
@@ -176,8 +198,8 @@ export function MyPreferencesTab() {
         {weekControls}
         <div className="rounded-lg border border-dashed bg-background p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Chưa có lịch Nháp cho tuần {format(parseISO(weekStartDate), "dd/MM/yyyy")}. Trưởng ca
-            cần tạo lịch tuần trước khi bạn đăng ký ca.
+            Chưa có lịch cho tuần {format(parseISO(weekStartDate), "dd/MM/yyyy")}. Trưởng ca cần
+            tạo lịch tuần trước khi bạn đăng ký ca.
           </p>
         </div>
       </div>
@@ -188,17 +210,11 @@ export function MyPreferencesTab() {
     <div className="space-y-6">
       {weekControls}
 
-      <p className="text-sm text-muted-foreground">
-        Nhấn từng ô để chọn mức mong muốn làm ca đó: Ưu tiên, Có thể làm,
-        hoặc Trống nếu không đăng ký ca này. Lưu nháp trước khi gửi.
-        {submitted && !editingSubmitted
-          ? " Đã gửi — bấm «Chỉnh sửa đăng ký» để thay đổi và gửi lại."
-          : null}
-      </p>
+      <p className="text-sm text-muted-foreground">{guidanceText}</p>
 
       {shifts.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Chưa có ca làm việc đang hoạt động cho lịch nháp tuần này.
+          Chưa có ca làm việc đang hoạt động cho lịch tuần này.
         </p>
       ) : (
         <ScrollArea className="w-full whitespace-nowrap rounded-md border">
@@ -245,7 +261,7 @@ export function MyPreferencesTab() {
         </ScrollArea>
       )}
 
-      {submitted && !editingSubmitted ? (
+      {scheduleIsPublished ? null : submitted && !editingSubmitted ? (
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setEditingSubmitted(true)}>
             Chỉnh sửa đăng ký
@@ -290,8 +306,8 @@ export function MyPreferencesTab() {
         </div>
       ) : null}
 
-      {draftError && !draftErrorCode ? (
-        <p className="text-sm text-destructive">{mapSchedulePreferenceError(draftError)}</p>
+      {scheduleError && !scheduleErrorCode ? (
+        <p className="text-sm text-destructive">{mapSchedulePreferenceError(scheduleError)}</p>
       ) : null}
     </div>
   );

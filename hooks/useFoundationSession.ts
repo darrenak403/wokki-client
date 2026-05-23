@@ -1,37 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import {
-  readFoundationSession,
+  DEFAULT_FOUNDATION_SESSION,
+  getFoundationSessionSnapshot,
   writeFoundationSession,
-  type FoundationSession,
 } from "@/lib/support/foundation/session-context";
 
+const FOUNDATION_SESSION_EVENT = "wokki:foundation-session";
+
+function subscribeFoundationSession(onStoreChange: () => void) {
+  const handler = () => onStoreChange();
+  window.addEventListener(FOUNDATION_SESSION_EVENT, handler);
+  return () => window.removeEventListener(FOUNDATION_SESSION_EVENT, handler);
+}
+
 export function useFoundationSession() {
-  const [session, setSession] = useState<FoundationSession>(() => readFoundationSession());
+  const session = useSyncExternalStore(
+    subscribeFoundationSession,
+    getFoundationSessionSnapshot,
+    () => DEFAULT_FOUNDATION_SESSION,
+  );
 
   const sync = useCallback(() => {
-    setSession(readFoundationSession());
+    window.dispatchEvent(new CustomEvent(FOUNDATION_SESSION_EVENT));
   }, []);
 
-  useEffect(() => {
-    sync();
-    const handler = () => sync();
-    window.addEventListener("wokki:foundation-session", handler);
-    return () => window.removeEventListener("wokki:foundation-session", handler);
-  }, [sync]);
-
   const setLocationId = useCallback((selectedLocationId: string | null) => {
-    const next = writeFoundationSession({
+    writeFoundationSession({
       selectedLocationId,
       selectedDepartmentId: null,
     });
-    setSession(next);
   }, []);
 
   const setDepartmentId = useCallback((selectedDepartmentId: string | null) => {
-    const next = writeFoundationSession({ selectedDepartmentId });
-    setSession(next);
+    writeFoundationSession({ selectedDepartmentId });
   }, []);
 
   return {

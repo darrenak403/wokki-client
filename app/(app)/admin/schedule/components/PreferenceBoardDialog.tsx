@@ -47,7 +47,8 @@ type PreferenceBoardDialogProps = {
   onOpenChange: (open: boolean) => void;
   departmentId: string;
   weekStartDate: string;
-  initialScheduleId?: string | null;
+  /** Sau sao chép tuần — ép board dùng đúng scheduleId tuần đích. */
+  scheduleIdHint?: string | null;
   onWeekChange?: (weekStartDate: string) => void;
 };
 
@@ -56,26 +57,30 @@ export function PreferenceBoardDialog({
   onOpenChange,
   departmentId,
   weekStartDate: parentWeekStart,
-  initialScheduleId,
+  scheduleIdHint,
   onWeekChange,
 }: PreferenceBoardDialogProps) {
   const [weekStartDate, setWeekStartDate] = useState(parentWeekStart);
 
   const listParams = open ? { departmentId, weekStartDate } : null;
   const { data: listData, isLoading: listLoading } = useScheduleListQuery(listParams);
-  const currentWeekStartDate = useMemo(() => toMondayISO(new Date()), []);
-  const canViewAnySchedule = weekStartDate <= currentWeekStartDate;
-  const draftSchedule = listData?.items.find((s) => isScheduleDraft(s.status)) ?? null;
-  const selectedSchedule = canViewAnySchedule ? (listData?.items[0] ?? null) : draftSchedule;
-  const scheduleId =
-    weekStartDate === parentWeekStart
-      ? (selectedSchedule?.id ?? initialScheduleId ?? null)
-      : (selectedSchedule?.id ?? null);
+
+  const scheduleForBoard = useMemo(() => {
+    const items = listData?.items;
+    if (!items?.length) return null;
+    return items.find((s) => isScheduleDraft(s.status)) ?? items[0];
+  }, [listData]);
+
+  const scheduleId = useMemo(() => {
+    if (scheduleForBoard) return scheduleForBoard.id;
+    if (scheduleIdHint && weekStartDate === parentWeekStart) return scheduleIdHint;
+    return null;
+  }, [scheduleForBoard, scheduleIdHint, weekStartDate, parentWeekStart]);
+
+  const selectedSchedule = scheduleForBoard;
   const scheduleBadgeLabel = selectedSchedule
     ? scheduleStatusLabel(selectedSchedule.status)
-    : canViewAnySchedule
-      ? "Có lịch"
-      : "Lịch Nháp";
+    : "Lịch Nháp";
 
   const {
     data: board,
@@ -108,6 +113,8 @@ export function PreferenceBoardDialog({
     setWeekStartDate(next);
     onWeekChange?.(next);
   };
+
+  const canViewAnySchedule = weekStartDate <= toMondayISO(new Date());
 
   const loading = listLoading || (scheduleId && boardLoading);
 

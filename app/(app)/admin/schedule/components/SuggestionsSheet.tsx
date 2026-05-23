@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -48,17 +48,20 @@ export function SuggestionsSheet({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [hasGenerated, setHasGenerated] = useState(false);
 
-  useEffect(() => {
-    if (!open) {
-      setSuggestions([]);
-      setReason(null);
-      setProvider(null);
-      setFallbackUsed(false);
-      setSelected(new Set());
-      setHasGenerated(false);
-      setUseAi(false);
-    }
-  }, [open]);
+  const resetSheetState = () => {
+    setSuggestions([]);
+    setReason(null);
+    setProvider(null);
+    setFallbackUsed(false);
+    setSelected(new Set());
+    setHasGenerated(false);
+    setUseAi(false);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) resetSheetState();
+    onOpenChange(next);
+  };
 
   const handleGenerate = async () => {
     const data = await suggestMutation.mutateAsync({ useAi: useAi && aiAvailable });
@@ -93,14 +96,14 @@ export function SuggestionsSheet({
         note: null,
       })),
     });
-    onOpenChange(false);
+    handleOpenChange(false);
   };
 
   const loading = suggestMutation.isPending;
   const empty = hasGenerated && !loading && suggestions.length === 0;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Gợi ý phân ca</SheetTitle>
@@ -182,7 +185,7 @@ export function SuggestionsSheet({
         </div>
 
         <SheetFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Đóng
           </Button>
           <Button

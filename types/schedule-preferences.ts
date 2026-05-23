@@ -54,5 +54,6 @@ export interface SchedulePreferenceBoardResponse {
 export interface EmployeeDraftScheduleResponse {
   scheduleId: string;
   weekStartDate: string;
+  status: 0 | 1 | 2;
   shifts: SchedulePreferenceBoardShift[];
 }

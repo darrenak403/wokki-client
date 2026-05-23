@@ -4,7 +4,6 @@ import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
 import type { PagedResponse } from "@/types/foundation";
 import type { SchedulePreferenceBoardResponse } from "@/types/schedule-preferences";
-import type { RosterAssignmentResponse, ScheduleRosterParams } from "@/types/roster";
 import type {
   ApplySuggestionsRequest,
   CopyScheduleRequest,
@@ -84,19 +83,6 @@ export const fetchSchedules = {
       `api/v1/schedules/${scheduleId}/assignments/${assignmentId}`,
     );
     assertScheduleSuccess(normalizeApiResponse(response.data));
-  },
-
-  roster: async (params: ScheduleRosterParams): Promise<RosterAssignmentResponse[]> => {
-    const response = await apiService.get<ApiEnvelope<RosterAssignmentResponse[]>>(
-      "api/v1/schedules/roster",
-      {
-        weekStartDate: params.weekStartDate,
-        ...(params.weekEndDate ? { weekEndDate: params.weekEndDate } : {}),
-        ...(params.departmentId ? { departmentId: params.departmentId } : {}),
-        ...(params.employeeId ? { employeeId: params.employeeId } : {}),
-      },
-    );
-    return assertScheduleSuccess(normalizeApiResponse(response.data));
   },
 
   getPreferenceBoard: async (scheduleId: string): Promise<SchedulePreferenceBoardResponse> => {

@@ -2,8 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronLeftIcon, ChevronRightIcon, SparklesIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import {
+  CheckCircle2Icon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  SparklesIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -25,6 +30,7 @@ import { scheduleKeys } from "@/lib/api/query-keys";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import {
   useCreateScheduleMutation,
+  useDeleteScheduleMutation,
   usePublishScheduleMutation,
   useScheduleDetailQuery,
   useScheduleListQuery,
@@ -37,8 +43,12 @@ import {
 } from "@/lib/support/schedule/status";
 import { addWeeksISO, toMondayISO } from "@/lib/support/schedule/week";
 import { SCHEDULE_STATUS } from "@/types/schedule";
+import { cn } from "@/lib/utils";
 import { addDays, format, parseISO } from "date-fns";
 import type { ApiError } from "@/types/api";
+
+const primaryActionClass =
+  "bg-brand-blue text-white hover:bg-brand-navy dark:bg-brand-blue dark:hover:bg-brand-navy";
 
 export function SchedulePanel() {
   const queryClient = useQueryClient();
@@ -49,7 +59,9 @@ export function SchedulePanel() {
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [boardOpen, setBoardOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
+  const [boardScheduleIdHint, setBoardScheduleIdHint] = useState<string | null>(null);
 
   const listParams = departmentId && weekStartDate ? { departmentId, weekStartDate } : null;
 
@@ -62,6 +74,7 @@ export function SchedulePanel() {
   const { data: detail, isLoading: detailLoading } = useScheduleDetailQuery(scheduleId);
 
   const createMutation = useCreateScheduleMutation(listParams);
+  const deleteMutation = useDeleteScheduleMutation(scheduleId ?? "", listParams);
   const publishMutation = usePublishScheduleMutation(scheduleId ?? "", listParams);
   const unpublishMutation = useUnpublishScheduleMutation(scheduleId ?? "", listParams);
 
@@ -75,6 +88,8 @@ export function SchedulePanel() {
   const editable = isScheduleEditable(status);
   const isDraft = isScheduleDraft(status);
   const isPublished = status === SCHEDULE_STATUS.Published;
+  const canDeleteDraftSchedule =
+    Boolean(scheduleId && schedule) && isDraft && schedule!.weekStartDate > currentWeekStartDate;
 
   const weekRangeLabel = useMemo(() => {
     const start = parseISO(weekStartDate);
@@ -106,98 +121,135 @@ export function SchedulePanel() {
     setPublishOpen(false);
   };
 
+  const handleDeleteSchedule = async () => {
+    if (!scheduleId) return;
+    await deleteMutation.mutateAsync();
+    setDeleteOpen(false);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-4">
-        <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Chi nhánh</span>
-          <LocationSelect value={locationId} onChange={setLocationId} />
-        </div>
-        <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Phòng ban</span>
-          <DepartmentSelect
-            locationId={locationId}
-            value={departmentId}
-            onChange={setDepartmentId}
-            allowEmpty={false}
-          />
-        </div>
-        <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Tuần</span>
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Tuần trước"
-              onClick={() => setWeekStartDate((w) => addWeeksISO(w, -1))}
-            >
-              <ChevronLeftIcon className="size-4" />
-            </Button>
-            <span className="min-w-[130px] text-center text-sm font-medium">{weekRangeLabel}</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Tuần sau"
-              onClick={() => setWeekStartDate((w) => addWeeksISO(w, 1))}
-            >
-              <ChevronRightIcon className="size-4" />
-            </Button>
+    <div className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm md:p-6 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="flex flex-col gap-4 border-b border-neutral-100 pb-5 dark:border-neutral-800 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="space-y-1.5 min-w-[160px]">
+            <span className="text-xs font-medium text-muted-foreground">Chi nhánh</span>
+            <LocationSelect value={locationId} onChange={setLocationId} />
+          </div>
+          <div className="space-y-1.5 min-w-[160px]">
+            <span className="text-xs font-medium text-muted-foreground">Phòng ban</span>
+            <DepartmentSelect
+              locationId={locationId}
+              value={departmentId}
+              onChange={setDepartmentId}
+              allowEmpty={false}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Tuần</span>
+            <div className="flex h-9 items-center rounded-lg border border-input bg-background shadow-xs">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="rounded-none rounded-l-lg"
+                aria-label="Tuần trước"
+                onClick={() => setWeekStartDate((w) => addWeeksISO(w, -1))}
+              >
+                <ChevronLeftIcon className="size-4" />
+              </Button>
+              <span className="min-w-[148px] border-x border-input px-3 text-center text-sm font-semibold">
+                {weekRangeLabel}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="rounded-none rounded-r-lg"
+                aria-label="Tuần sau"
+                onClick={() => setWeekStartDate((w) => addWeeksISO(w, 1))}
+              >
+                <ChevronRightIcon className="size-4" />
+              </Button>
+            </div>
           </div>
         </div>
         {schedule ? (
-          <Badge variant={isDraft ? "secondary" : "default"}>
+          <div
+            className={cn(
+              "flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold",
+              isPublished
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                : isDraft
+                  ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                  : "border-neutral-200 bg-neutral-50 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+            )}
+          >
+            {isPublished ? <CheckCircle2Icon className="size-4 shrink-0" /> : null}
             {scheduleStatusLabel(schedule.status)}
-          </Badge>
+          </div>
         ) : null}
       </div>
 
       {!locationId || !departmentId ? (
-        <p className="text-sm text-muted-foreground">Chọn chi nhánh và phòng ban để xem lịch.</p>
+        <p className="pt-5 text-sm text-muted-foreground">Chọn chi nhánh và phòng ban để xem lịch.</p>
       ) : listLoading || (scheduleId && detailLoading) ? (
-        <p className="text-sm text-muted-foreground">Đang tải lịch…</p>
+        <p className="pt-5 text-sm text-muted-foreground">Đang tải lịch…</p>
       ) : !scheduleId ? (
-        <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground mb-4">
+        <div className="rounded-xl border border-dashed border-neutral-200 p-8 text-center pt-5 mt-5">
+          <p className="mb-4 text-sm text-muted-foreground">
             Chưa có lịch cho phòng ban và tuần này.
           </p>
-          <Button disabled={createMutation.isPending} onClick={() => void handleCreateSchedule()}>
+          <Button
+            className={primaryActionClass}
+            disabled={createMutation.isPending}
+            onClick={() => void handleCreateSchedule()}
+          >
             {createMutation.isPending ? "Đang tạo…" : "Tạo lịch tuần"}
           </Button>
         </div>
       ) : schedule && locationId ? (
         <>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pt-5 pb-4">
             {preferenceBoardSchedule ? (
-              <Button variant="outline" size="sm" onClick={() => setBoardOpen(true)}>
+              <Button className={primaryActionClass} onClick={() => setBoardOpen(true)}>
                 Bảng đăng ký ca
               </Button>
             ) : null}
             {editable ? (
-              <Button variant="outline" size="sm" onClick={() => setSuggestOpen(true)}>
-                <SparklesIcon className="size-4 mr-1" />
+              <Button variant="outline" onClick={() => setSuggestOpen(true)}>
+                <SparklesIcon />
                 Gợi ý phân ca
               </Button>
             ) : null}
             {isDraft ? (
-              <Button size="sm" onClick={() => setPublishOpen(true)}>
+              <Button className={primaryActionClass} onClick={() => setPublishOpen(true)}>
                 Công bố lịch
               </Button>
             ) : null}
             {isPublished ? (
               <Button
                 variant="outline"
-                size="sm"
+                className="border-brand-blue text-brand-blue hover:bg-brand-mist/60 dark:border-brand-medium dark:text-brand-light"
                 disabled={unpublishMutation.isPending}
                 onClick={() => void unpublishMutation.mutateAsync()}
               >
                 Huỷ công bố
               </Button>
             ) : null}
-            <Button variant="outline" size="sm" onClick={() => setCopyOpen(true)}>
+            <Button className={primaryActionClass} onClick={() => setCopyOpen(true)}>
               Sao chép tuần
             </Button>
+            {canDeleteDraftSchedule ? (
+              <Button
+                variant="outline"
+                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                disabled={deleteMutation.isPending}
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2Icon />
+                Xoá lịch nháp
+              </Button>
+            ) : null}
           </div>
 
           <ScheduleGrid
@@ -211,12 +263,16 @@ export function SchedulePanel() {
 
           {boardOpen ? (
             <PreferenceBoardDialog
+              key={`${weekStartDate}-${boardScheduleIdHint ?? preferenceBoardSchedule?.id ?? "board"}`}
               open={boardOpen}
               onOpenChange={setBoardOpen}
               departmentId={schedule.departmentId}
               weekStartDate={weekStartDate}
-              initialScheduleId={preferenceBoardSchedule?.id ?? null}
-              onWeekChange={setWeekStartDate}
+              scheduleIdHint={boardScheduleIdHint ?? preferenceBoardSchedule?.id ?? null}
+              onWeekChange={(nextWeek) => {
+                setWeekStartDate(nextWeek);
+                setBoardScheduleIdHint(null);
+              }}
             />
           ) : null}
 
@@ -233,7 +289,10 @@ export function SchedulePanel() {
             scheduleId={schedule.id}
             sourceWeekStartDate={schedule.weekStartDate}
             listParams={listParams!}
-            onCopied={(target) => setWeekStartDate(target)}
+            onCopied={(target, copiedScheduleId) => {
+              setWeekStartDate(target);
+              setBoardScheduleIdHint(copiedScheduleId);
+            }}
           />
 
           <AlertDialog open={publishOpen} onOpenChange={setPublishOpen}>
@@ -248,6 +307,27 @@ export function SchedulePanel() {
               <AlertDialogFooter>
                 <AlertDialogCancel>Huỷ</AlertDialogCancel>
                 <AlertDialogAction onClick={() => void handlePublish()}>Công bố</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Xoá lịch nháp?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Lịch nháp của tuần {weekRangeLabel} và các phân ca trong lịch này sẽ bị xoá.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Huỷ</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => void handleDeleteSchedule()}
+                >
+                  {deleteMutation.isPending ? "Đang xoá…" : "Xoá lịch"}
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

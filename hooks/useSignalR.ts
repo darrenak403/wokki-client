@@ -12,8 +12,8 @@ export function useSignalR() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    startHubConnection().catch((err) => {
-      console.error("[useSignalR] failed to connect", err);
+    void startHubConnection().catch((err) => {
+      console.warn("[useSignalR] app hub unavailable", err);
     });
 
     return () => {

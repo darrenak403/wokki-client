@@ -39,7 +39,6 @@ export const scheduleKeys = {
   detail: (id: string) => [...scheduleKeys.details(), id] as const,
   preferenceBoard: (scheduleId: string) =>
     [...scheduleKeys.all, "preferenceBoard", scheduleId] as const,
-  roster: (params: object) => [...scheduleKeys.all, "roster", params] as const,
 };
 
 export const preferenceKeys = {
