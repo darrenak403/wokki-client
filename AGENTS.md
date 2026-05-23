@@ -127,6 +127,15 @@ Chi tiết: [`lib/README.md`](lib/README.md), [`lib/support/README.md`](lib/supp
 - Token trong `app/globals.css` (`@theme`)
 - Nền trắng chủ đạo; đen cho chữ tối nhất; xanh brand làm điểm nhấn
 
+## UI implementation — Tailwind + shadcn (bắt buộc toàn hệ thống)
+
+- Ưu tiên dùng component trong `components/ui/` cho UI primitive: `Button`, `Card`, `Badge`, `Input`, `Select`, `Dialog`, `AlertDialog`, `Table`, `Tabs`, `ScrollArea`, `Tooltip`, v.v.
+- Tailwind chỉ dùng để compose layout, spacing, responsive, state và token màu; không viết HTML thuần dài/lặp lại khi đã có shadcn component hoặc component local phù hợp.
+- Khi một page có nhiều section/card giống nhau, tách thành component nhỏ colocated trong cùng file hoặc cùng `components/` của route: ví dụ `SectionHeader`, `PricingCard`, `StatCard`, `EmptyState`.
+- Không nhúng CDN UI, inline `<script>`, CSS framework ngoài, hoặc copy raw HTML từ tool design vào app. Chuyển thiết kế sang React component dùng Tailwind token và shadcn.
+- Form/control phải dùng primitive quen thuộc: `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Button`; trạng thái loading/error/disabled cần thể hiện qua props/class của component đó.
+- Marketing, auth và app routes đều theo quy tắc này. Nếu cần visual mockup đặc thù, vẫn dựng bằng component có tên rõ ràng thay vì một khối JSX dài khó bảo trì.
+
 ## Trước khi hoàn thành task UI
 
 1. Đúng vùng Guest / Auth / App; feature nghiệp vụ trong `(app)/`
