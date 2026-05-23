@@ -10,6 +10,7 @@ import type {
   CopyScheduleRequest,
   CreateAssignmentRequest,
   CreateScheduleRequest,
+  SuggestScheduleRequest,
   UpdateScheduleRequest,
 } from "@/types/schedule";
 
@@ -117,7 +118,7 @@ export function useDeleteAssignmentMutation(scheduleId: string, listParams: Sche
 
 export function useSuggestScheduleMutation(scheduleId: string) {
   return useMutation({
-    mutationFn: () => fetchSchedules.suggest(scheduleId),
+    mutationFn: (body: SuggestScheduleRequest = {}) => fetchSchedules.suggest(scheduleId, body),
     onError: (error) => toast.error(mapScheduleError(error)),
   });
 }

@@ -7,9 +7,10 @@ import {
 } from "@/lib/support/auth/app-routes";
 import { readAuthCookies, resolveRoleFromRequest } from "@/lib/support/auth/resolve-request-role";
 import { MARKETING_PATHS } from "@/components/shared/site-nav";
+
 const AUTH_ROUTES = ["/login", "/register"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const { token, roleCookie } = readAuthCookies(request);
   const role = resolveRoleFromRequest(token, roleCookie);

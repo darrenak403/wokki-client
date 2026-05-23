@@ -52,9 +52,17 @@ export interface ScheduleSuggestion {
   score: number;
 }
 
+export type SuggestScheduleProvider = "heuristic" | "bedrock";
+
+export interface SuggestScheduleRequest {
+  useAi?: boolean;
+}
+
 export interface SuggestScheduleResponse {
   suggestions: ScheduleSuggestion[];
   reason: string | null;
+  provider: SuggestScheduleProvider;
+  fallbackUsed: boolean;
 }
 
 export interface CreateScheduleRequest {

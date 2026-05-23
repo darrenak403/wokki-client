@@ -128,7 +128,7 @@ Chi tiết: [`lib/README.md`](lib/README.md), [`lib/support/README.md`](lib/supp
 - **App Router** — Server Components mặc định; `"use client"` khi cần tương tác
 - **Colocated components:** UI theo route group — xem bảng dưới; `components/ui/` (shadcn)
 - **State:** TanStack Query + Redux (auth)
-- **API:** `lib/api/services/fetchXxx.ts`, envelope `success` + `message.code`, cookie `authToken`, middleware RBAC
+- **API:** `lib/api/services/fetchXxx.ts`, envelope `success` + `message.code`, cookie `authToken`, `proxy.ts` RBAC
 - **SEO:** `buildPageMetadata()` — app routes dùng `noindex: true`
 
 ## Tailwind v4

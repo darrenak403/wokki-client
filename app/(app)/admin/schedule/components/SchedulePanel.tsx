@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CopyWeekDialog } from "@/app/(app)/admin/schedule/components/CopyWeekDialog";
+import { PreferenceBoardSheet } from "@/app/(app)/admin/schedule/components/PreferenceBoardSheet";
 import { ScheduleGrid } from "@/app/(app)/admin/schedule/components/ScheduleGrid";
 import { SuggestionsSheet } from "@/app/(app)/admin/schedule/components/SuggestionsSheet";
 import { DepartmentSelect } from "@/components/shared/department-select";
@@ -46,6 +47,7 @@ export function SchedulePanel() {
   const departmentId = session.selectedDepartmentId;
   const [weekStartDate, setWeekStartDate] = useState(() => toMondayISO(new Date()));
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [boardOpen, setBoardOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
 
@@ -163,10 +165,15 @@ export function SchedulePanel() {
       ) : schedule && locationId ? (
         <>
           <div className="flex flex-wrap gap-2">
+            {isDraft ? (
+              <Button variant="outline" size="sm" onClick={() => setBoardOpen(true)}>
+                Bảng đăng ký ca
+              </Button>
+            ) : null}
             {editable ? (
               <Button variant="outline" size="sm" onClick={() => setSuggestOpen(true)}>
                 <SparklesIcon className="size-4 mr-1" />
-                Gợi ý
+                Gợi ý phân ca
               </Button>
             ) : null}
             {isDraft ? (
@@ -196,6 +203,12 @@ export function SchedulePanel() {
             weekStartDate={schedule.weekStartDate}
             status={schedule.status}
             assignments={assignments}
+          />
+
+          <PreferenceBoardSheet
+            open={boardOpen}
+            onOpenChange={setBoardOpen}
+            scheduleId={schedule.id}
           />
 
           <SuggestionsSheet

@@ -3,6 +3,8 @@ import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
 import type { PagedResponse } from "@/types/foundation";
+import type { SchedulePreferenceBoardResponse } from "@/types/schedule-preferences";
+import type { RosterAssignmentResponse, ScheduleRosterParams } from "@/types/roster";
 import type {
   ApplySuggestionsRequest,
   CopyScheduleRequest,
@@ -12,6 +14,7 @@ import type {
   ScheduleListParams,
   ScheduleResponse,
   ShiftAssignmentResponse,
+  SuggestScheduleRequest,
   SuggestScheduleResponse,
   UpdateScheduleRequest,
 } from "@/types/schedule";
@@ -83,10 +86,33 @@ export const fetchSchedules = {
     assertScheduleSuccess(normalizeApiResponse(response.data));
   },
 
-  suggest: async (scheduleId: string): Promise<SuggestScheduleResponse> => {
+  roster: async (params: ScheduleRosterParams): Promise<RosterAssignmentResponse[]> => {
+    const response = await apiService.get<ApiEnvelope<RosterAssignmentResponse[]>>(
+      "api/v1/schedules/roster",
+      {
+        weekStartDate: params.weekStartDate,
+        ...(params.weekEndDate ? { weekEndDate: params.weekEndDate } : {}),
+        ...(params.departmentId ? { departmentId: params.departmentId } : {}),
+        ...(params.employeeId ? { employeeId: params.employeeId } : {}),
+      },
+    );
+    return assertScheduleSuccess(normalizeApiResponse(response.data));
+  },
+
+  getPreferenceBoard: async (scheduleId: string): Promise<SchedulePreferenceBoardResponse> => {
+    const response = await apiService.get<ApiEnvelope<SchedulePreferenceBoardResponse>>(
+      `api/v1/schedules/${scheduleId}/preference-board`,
+    );
+    return assertScheduleSuccess(normalizeApiResponse(response.data));
+  },
+
+  suggest: async (
+    scheduleId: string,
+    body: SuggestScheduleRequest = {},
+  ): Promise<SuggestScheduleResponse> => {
     const response = await apiService.post<ApiEnvelope<SuggestScheduleResponse>>(
       `api/v1/schedules/${scheduleId}/suggest`,
-      {},
+      body,
     );
     return assertScheduleSuccess(normalizeApiResponse(response.data));
   },

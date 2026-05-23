@@ -4,7 +4,7 @@ import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
 import { AUTH_ROLE_COOKIE, AUTH_TOKEN_COOKIE } from "@/lib/support/auth/session-cookies";
 import type { AppRole } from "@/lib/types/roles";
 
-/** Role cho middleware: JWT claim trước, fallback cookie `authRole` (sync từ JWT). */
+/** Role cho proxy (request gate): JWT claim trước, fallback cookie `authRole` (sync từ JWT). */
 export function resolveRoleFromRequest(
   token: string | undefined,
   roleCookie: string | undefined

@@ -112,6 +112,7 @@ export interface ShiftDefinitionResponse {
   startTime: string;
   endTime: string;
   requiredRole: string;
+  maxStaffPerSlot: number;
   color: string;
   isActive: boolean;
   createdAt: string;
@@ -129,6 +130,7 @@ export interface CreateShiftRequest {
   startTime: string;
   endTime: string;
   requiredRole: string;
+  maxStaffPerSlot?: number;
   color?: string;
 }
 
@@ -137,6 +139,7 @@ export interface UpdateShiftRequest {
   startTime: string;
   endTime: string;
   requiredRole: string;
+  maxStaffPerSlot: number;
   color: string;
   isActive: boolean;
 }

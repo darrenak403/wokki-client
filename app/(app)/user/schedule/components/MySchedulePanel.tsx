@@ -12,8 +12,10 @@ import {
 } from "date-fns";
 import { vi } from "date-fns/locale";
 import { CalendarDaysIcon, ClockIcon, MapPinIcon, ShieldCheckIcon, ZapIcon } from "lucide-react";
+import { MyPreferencesTab } from "@/app/(app)/user/schedule/components/MyPreferencesTab";
 import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -70,15 +72,9 @@ function getAssignmentsForDate(assignments: ShiftAssignmentResponse[], date: Dat
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
-export function MySchedulePanel() {
+function MyPublishedScheduleView() {
   const { data: assignments = [], isLoading, isError, error, dataUpdatedAt } = useMyScheduleQuery();
   const now = useMemo(() => new Date(), []);
-
-  const errorCode =
-    isError && error && typeof error === "object" && "messageCode" in error
-      ? (error as unknown as ApiError).messageCode
-      : undefined;
-  const noEmployee = errorCode === "ME_NO_EMPLOYEE";
 
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
@@ -91,10 +87,6 @@ export function MySchedulePanel() {
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Đang tải lịch…</p>;
-  }
-
-  if (noEmployee) {
-    return <NoEmployeeLinked />;
   }
 
   if (isError) {
@@ -290,5 +282,33 @@ export function MySchedulePanel() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export function MySchedulePanel() {
+  const { isError, error } = useMyScheduleQuery();
+  const errorCode =
+    isError && error && typeof error === "object" && "messageCode" in error
+      ? (error as unknown as ApiError).messageCode
+      : undefined;
+  const noEmployee = errorCode === "ME_NO_EMPLOYEE";
+
+  if (noEmployee) {
+    return <NoEmployeeLinked />;
+  }
+
+  return (
+    <Tabs defaultValue="published" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="published">Lịch đã công bố</TabsTrigger>
+        <TabsTrigger value="preferences">Đăng ký ca</TabsTrigger>
+      </TabsList>
+      <TabsContent value="published" className="mt-4">
+        <MyPublishedScheduleView />
+      </TabsContent>
+      <TabsContent value="preferences" className="mt-4">
+        <MyPreferencesTab />
+      </TabsContent>
+    </Tabs>
   );
 }

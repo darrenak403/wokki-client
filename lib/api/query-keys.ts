@@ -37,6 +37,27 @@ export const scheduleKeys = {
     [...scheduleKeys.lists(), params] as const,
   details: () => [...scheduleKeys.all, "detail"] as const,
   detail: (id: string) => [...scheduleKeys.details(), id] as const,
+  preferenceBoard: (scheduleId: string) =>
+    [...scheduleKeys.all, "preferenceBoard", scheduleId] as const,
+  roster: (params: object) => [...scheduleKeys.all, "roster", params] as const,
+};
+
+export const preferenceKeys = {
+  all: ["schedulePreference"] as const,
+  draft: (weekStartDate: string) => [...preferenceKeys.all, "draft", weekStartDate] as const,
+  mine: (scheduleId: string) => [...preferenceKeys.all, "mine", scheduleId] as const,
+};
+
+export const schedulingConfigKeys = {
+  all: ["schedulingConfig"] as const,
+  policy: (departmentId: string) => [...schedulingConfigKeys.all, "policy", departmentId] as const,
+  jobPositions: (departmentId: string) =>
+    [...schedulingConfigKeys.all, "jobPositions", departmentId] as const,
+};
+
+export const bedrockKeys = {
+  all: ["bedrock"] as const,
+  health: () => [...bedrockKeys.all, "health"] as const,
 };
 
 export const foundationKeys = {
