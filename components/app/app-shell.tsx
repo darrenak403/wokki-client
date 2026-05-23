@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, role, logout, isLoading } = useAuth();
   const navItems = role ? getAppNavForRole(role) : [];
   const swapPendingCount = useSwapInboxPendingCount();
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const homeHref = navItems[0]?.href ?? "/";
@@ -109,7 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className={cn("transition-[padding] duration-300 lg:pl-72", collapsed && "lg:pl-20")}>
           <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-4 border-b border-neutral-200 bg-white/85 px-4 backdrop-blur-xl md:px-6 lg:px-8 dark:border-neutral-800 dark:bg-neutral-900/85">
-            <div className="flex min-w-0 items-center gap-8">
+            <div className="flex min-w-0 items-center gap-3">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger
                   render={<Button variant="outline" size="icon" className="lg:hidden" />}
@@ -136,20 +136,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </SheetContent>
               </Sheet>
 
-              <div className="hidden shrink-0 border-r border-neutral-200 pr-6 lg:block dark:border-neutral-800">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-lg"
-                  onClick={() => setCollapsed((value) => !value)}
-                  className="rounded-2xl bg-white shadow-lg shadow-neutral-900/10 transition-transform duration-300 hover:scale-105 dark:bg-neutral-900"
-                >
-                  {collapsed ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
-                  <span className="sr-only">
-                    {collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-                  </span>
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-lg"
+                onClick={() => setCollapsed((value) => !value)}
+                className="hidden rounded-2xl bg-white shadow-lg shadow-neutral-900/10 lg:inline-flex dark:bg-neutral-900"
+              >
+                {collapsed ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
+                <span className="sr-only">{collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}</span>
+              </Button>
 
               <div className="flex min-w-0 items-center gap-3">
                 <div className="hidden size-10 items-center justify-center rounded-2xl bg-[#EEF6FB] text-[#1D4D8F] ring-1 ring-[#BCE8F5] sm:flex dark:bg-[#0B1E3D] dark:text-[#BCE8F5] dark:ring-[#4C88C6]/40">
@@ -160,8 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     {activeItem?.label ?? "Dashboard"}
                   </h1>
                   <p className="mt-0.5 hidden truncate text-sm text-neutral-500 md:block dark:text-neutral-400">
-                    {activeItem?.description ??
-                      `Khu làm việc dành cho ${role?.toLowerCase() ?? "người dùng"} trong Wokki.`}
+                    Khu làm việc dành cho {role?.toLowerCase() ?? "người dùng"} trong Wokki.
                   </p>
                 </div>
               </div>
@@ -183,7 +178,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="min-h-[calc(100vh-5rem)] bg-white p-4 md:p-6 lg:p-8 dark:bg-neutral-950">
+          <main className="min-h-[calc(100vh-5rem)] p-4 md:p-6 lg:p-8">
             <div className="mx-auto max-w-7xl">{children}</div>
           </main>
         </div>
@@ -223,19 +218,12 @@ function ShellSidebarContent({
           onClick={onNavigate}
           className={cn("flex min-w-0 flex-1 items-center gap-3", collapsed && "justify-center")}
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#102854] via-[#4C88C6] to-[#1D4D8F] font-black text-white shadow-lg shadow-[#4C88C6]/25">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-[#102854] via-[#4C88C6] to-[#1D4D8F] font-black text-white shadow-lg shadow-[#4C88C6]/25">
             W
           </span>
-          <span
-            className={cn(
-              "truncate text-xl font-extrabold tracking-tight transition-all duration-300 ease-out",
-              collapsed
-                ? "w-0 -translate-x-2 opacity-0"
-                : "w-36 translate-x-0 opacity-100 delay-150"
-            )}
-          >
-            Wokki
-          </span>
+          {!collapsed ? (
+            <span className="truncate text-xl font-extrabold tracking-tight">Wokki</span>
+          ) : null}
         </Link>
       </div>
 
@@ -243,8 +231,8 @@ function ShellSidebarContent({
 
       <nav
         className={cn(
-          "flex flex-1 flex-col gap-1 overflow-y-auto",
-          collapsed ? "items-center px-0 py-3" : "p-3"
+          "flex flex-1 flex-col gap-1 overflow-y-auto p-3",
+          collapsed && "items-center"
         )}
         aria-label="Điều hướng ứng dụng"
       >
@@ -286,15 +274,7 @@ function ShellSidebarContent({
           disabled={isLoading}
         >
           <LogOutIcon className="size-4" />
-          <span
-            className={cn(
-              "overflow-hidden whitespace-nowrap transition-all duration-300 ease-out",
-              collapsed ? "w-0 -translate-x-2 opacity-0" : "w-24 translate-x-0 opacity-100 delay-100"
-            )}
-          >
-            Đăng xuất
-          </span>
-          {collapsed ? <span className="sr-only">Đăng xuất</span> : null}
+          {!collapsed ? <span>Đăng xuất</span> : <span className="sr-only">Đăng xuất</span>}
         </Button>
       </div>
     </div>
@@ -325,8 +305,8 @@ function SidebarNavLink({
       href={href}
       onClick={onNavigate}
       className={cn(
-        "group relative flex h-11 items-center rounded-xl text-sm font-semibold transition-all duration-300 ease-out",
-        collapsed ? "w-11 justify-center px-0" : "w-full justify-between px-3",
+        "group relative flex h-11 items-center rounded-xl text-sm font-semibold transition-all",
+        collapsed ? "w-11 justify-center" : "w-full justify-between px-3",
         isActive
           ? "bg-[#EEF6FB] text-[#102854] shadow-sm ring-1 ring-[#BCE8F5] dark:bg-[#0B1E3D] dark:text-[#BCE8F5] dark:ring-[#4C88C6]/40"
           : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
@@ -334,17 +314,8 @@ function SidebarNavLink({
       aria-current={isActive ? "page" : undefined}
     >
       <span className={cn("flex min-w-0 items-center gap-3", collapsed && "justify-center")}>
-        {renderNavIcon(item)}
-        <span
-          className={cn(
-            "overflow-hidden truncate whitespace-nowrap transition-all duration-300 ease-out",
-            collapsed
-              ? "absolute w-0 -translate-x-2 opacity-0"
-              : "w-40 translate-x-0 opacity-100 delay-100"
-          )}
-        >
-          {label}
-        </span>
+        {renderNavIcon(item, "size-4 shrink-0")}
+        {!collapsed ? <span className="truncate">{label}</span> : null}
       </span>
       {badge ? (
         <span

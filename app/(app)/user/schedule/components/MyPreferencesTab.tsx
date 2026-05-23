@@ -142,7 +142,12 @@ export function MyPreferencesTab() {
 
   const handleSubmit = async () => {
     if (!scheduleId) return;
-    if (dirty) await handleSave();
+    // PUT resets Submitted → Draft on server; required before POST submit.
+    const mustSaveBeforeSubmit = dirty || submitted || editingSubmitted;
+    if (mustSaveBeforeSubmit) {
+      await saveMutation.mutateAsync({ lines });
+      setDirty(false);
+    }
     await submitMutation.mutateAsync();
     setEditingSubmitted(false);
   };
@@ -186,6 +191,9 @@ export function MyPreferencesTab() {
       <p className="text-sm text-muted-foreground">
         Nhấn từng ô để chọn mức mong muốn làm ca đó: Ưu tiên, Có thể làm,
         hoặc Trống nếu không đăng ký ca này. Lưu nháp trước khi gửi.
+        {submitted && !editingSubmitted
+          ? " Đã gửi — bấm «Chỉnh sửa đăng ký» để thay đổi và gửi lại."
+          : null}
       </p>
 
       {shifts.length === 0 ? (
@@ -268,8 +276,8 @@ export function MyPreferencesTab() {
           <Button
             disabled={
               submitMutation.isPending ||
-              lines.length === 0 ||
-              (editingSubmitted && !dirty)
+              saveMutation.isPending ||
+              lines.length === 0
             }
             onClick={() => void handleSubmit()}
           >

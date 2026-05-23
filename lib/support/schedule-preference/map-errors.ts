@@ -7,7 +7,8 @@ const PREFERENCE_ERROR_MESSAGES: Record<string, string> = {
   SCHEDULE_PREFERENCE_INVALID_SHIFT: "Ca không hợp lệ cho lịch tuần này.",
   SCHEDULE_PREFERENCE_DATE_OUT_OF_RANGE: "Ngày nằm ngoài tuần của lịch.",
   SCHEDULE_PREFERENCE_INVALID_TYPE: "Loại đăng ký không hợp lệ.",
-  SCHEDULE_PREFERENCE_ALREADY_SUBMITTED: "Đã gửi đăng ký — không thể sửa.",
+  SCHEDULE_PREFERENCE_ALREADY_SUBMITTED:
+    "Đã gửi đăng ký. Bấm «Chỉnh sửa đăng ký», lưu nháp rồi «Gửi lại đăng ký».",
   SCHEDULE_PREFERENCE_EMPTY: "Cần ít nhất một ô đăng ký trước khi gửi.",
   SCHEDULE_NOT_DRAFT: "Chỉ đăng ký ca khi lịch tuần đang ở trạng thái Nháp.",
   SCHEDULE_NOT_FOUND: "Không tìm thấy lịch tuần.",

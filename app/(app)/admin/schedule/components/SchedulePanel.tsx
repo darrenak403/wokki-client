@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CopyWeekDialog } from "@/app/(app)/admin/schedule/components/CopyWeekDialog";
-import { PreferenceBoardSheet } from "@/app/(app)/admin/schedule/components/PreferenceBoardSheet";
+import { PreferenceBoardDialog } from "@/app/(app)/admin/schedule/components/PreferenceBoardDialog";
 import { ScheduleGrid } from "@/app/(app)/admin/schedule/components/ScheduleGrid";
 import { SuggestionsSheet } from "@/app/(app)/admin/schedule/components/SuggestionsSheet";
 import { DepartmentSelect } from "@/components/shared/department-select";
@@ -66,6 +66,10 @@ export function SchedulePanel() {
   const unpublishMutation = useUnpublishScheduleMutation(scheduleId ?? "", listParams);
 
   const schedule = detail?.schedule ?? listData?.items[0];
+  const draftSchedule = listData?.items.find((item) => isScheduleDraft(item.status)) ?? null;
+  const currentWeekStartDate = useMemo(() => toMondayISO(new Date()), []);
+  const canViewAnySchedulePreferenceBoard = weekStartDate <= currentWeekStartDate;
+  const preferenceBoardSchedule = canViewAnySchedulePreferenceBoard ? schedule : draftSchedule;
   const assignments = detail?.assignments ?? [];
   const status = schedule?.status ?? SCHEDULE_STATUS.Draft;
   const editable = isScheduleEditable(status);
@@ -165,7 +169,7 @@ export function SchedulePanel() {
       ) : schedule && locationId ? (
         <>
           <div className="flex flex-wrap gap-2">
-            {isDraft ? (
+            {preferenceBoardSchedule ? (
               <Button variant="outline" size="sm" onClick={() => setBoardOpen(true)}>
                 Bảng đăng ký ca
               </Button>
@@ -205,11 +209,16 @@ export function SchedulePanel() {
             assignments={assignments}
           />
 
-          <PreferenceBoardSheet
-            open={boardOpen}
-            onOpenChange={setBoardOpen}
-            scheduleId={schedule.id}
-          />
+          {boardOpen ? (
+            <PreferenceBoardDialog
+              open={boardOpen}
+              onOpenChange={setBoardOpen}
+              departmentId={schedule.departmentId}
+              weekStartDate={weekStartDate}
+              initialScheduleId={preferenceBoardSchedule?.id ?? null}
+              onWeekChange={setWeekStartDate}
+            />
+          ) : null}
 
           <SuggestionsSheet
             open={suggestOpen}
