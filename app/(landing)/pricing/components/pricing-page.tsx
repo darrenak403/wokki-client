@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { CheckIcon } from "lucide-react";
-import { MarketingPageHeader } from "@/app/(landing)/components/marketing-page-header";
+import { MarketingPageHeader } from "@/app/(landing)/about/components/marketing-page-header";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

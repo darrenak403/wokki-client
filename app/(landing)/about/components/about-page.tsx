@@ -1,4 +1,4 @@
-import { MarketingPageHeader } from "@/app/(landing)/components/marketing-page-header";
+import { MarketingPageHeader } from "@/app/(landing)/about/components/marketing-page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const values = [
@@ -35,8 +35,7 @@ export function AboutPage() {
         <div className="max-w-3xl space-y-4 text-muted-foreground">
           <p className="text-base leading-relaxed md:text-lg">
             Wokki ra đời từ câu hỏi đơn giản: tại sao lịch làm việc — thứ ảnh hưởng trực tiếp đến
-            thu nhập và đời sống nhân viên — lại nằm rải rác trong chat, file Excel và sổ chấm
-            công?
+            thu nhập và đời sống nhân viên — lại nằm rải rác trong chat, file Excel và sổ chấm công?
           </p>
           <p className="leading-relaxed">
             Chúng tôi tin công nghệ phải phục vụ người quản lý chi nhánh và nhân viên ca, không

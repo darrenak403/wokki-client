@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MarketingPageHeader } from "@/app/(landing)/components/marketing-page-header";
+import { MarketingPageHeader } from "@/app/(landing)/about/components/marketing-page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,8 +28,14 @@ const faqs = [
 ] as const;
 
 const topics = [
-  { title: "Bắt đầu", items: ["Tạo chi nhánh & phòng ban", "Thêm nhân viên", "Tạo ca mẫu", "Xuất bản lịch tuần đầu"] },
-  { title: "Quản lý", items: ["Gợi ý phân ca", "Duyệt đổi ca", "Điều chỉnh chấm công", "Tổng hợp lương"] },
+  {
+    title: "Bắt đầu",
+    items: ["Tạo chi nhánh & phòng ban", "Thêm nhân viên", "Tạo ca mẫu", "Xuất bản lịch tuần đầu"],
+  },
+  {
+    title: "Quản lý",
+    items: ["Gợi ý phân ca", "Duyệt đổi ca", "Điều chỉnh chấm công", "Tổng hợp lương"],
+  },
   { title: "Nhân viên", items: ["Xem lịch", "Đổi ca", "Chấm vào / ra", "Chat đội"] },
 ] as const;
 
@@ -89,7 +95,10 @@ export function HelpPage() {
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
               Email:{" "}
-              <a href="mailto:support@wokki.app" className="font-medium text-foreground hover:underline">
+              <a
+                href="mailto:support@wokki.app"
+                className="font-medium text-foreground hover:underline"
+              >
                 support@wokki.app
               </a>
             </p>
