@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useEffect } from "react";
 import {
-  Clock,
   PerspectiveCamera,
   Scene,
   WebGLRenderer,
@@ -52,7 +51,7 @@ class X {
   #intersectionObserver?: IntersectionObserver;
   #resizeTimer?: number;
   #animationFrameId: number = 0;
-  #clock: Clock = new Clock();
+  #lastFrameTime?: number;
   #animationState = { elapsed: 0, delta: 0 };
   #isAnimating: boolean = false;
   #isVisible: boolean = false;
@@ -220,35 +219,45 @@ class X {
 
   #onIntersection(entries: IntersectionObserverEntry[]) {
     this.#isAnimating = entries[0].isIntersecting;
-    this.#isAnimating ? this.#startAnimation() : this.#stopAnimation();
+    if (this.#isAnimating) {
+      this.#startAnimation();
+    } else {
+      this.#stopAnimation();
+    }
   }
 
   #onVisibilityChange() {
     if (this.#isAnimating) {
-      document.hidden ? this.#stopAnimation() : this.#startAnimation();
+      if (document.hidden) {
+        this.#stopAnimation();
+      } else {
+        this.#startAnimation();
+      }
     }
   }
 
   #startAnimation() {
     if (this.#isVisible) return;
-    const animateFrame = () => {
+    const animateFrame = (time: number) => {
       this.#animationFrameId = requestAnimationFrame(animateFrame);
-      this.#animationState.delta = this.#clock.getDelta();
+      this.#animationState.delta =
+        this.#lastFrameTime === undefined ? 0 : (time - this.#lastFrameTime) / 1000;
+      this.#lastFrameTime = time;
       this.#animationState.elapsed += this.#animationState.delta;
       this.onBeforeRender(this.#animationState);
       this.render();
       this.onAfterRender(this.#animationState);
     };
     this.#isVisible = true;
-    this.#clock.start();
-    animateFrame();
+    this.#lastFrameTime = undefined;
+    this.#animationFrameId = requestAnimationFrame(animateFrame);
   }
 
   #stopAnimation() {
     if (this.#isVisible) {
       cancelAnimationFrame(this.#animationFrameId);
       this.#isVisible = false;
-      this.#clock.stop();
+      this.#lastFrameTime = undefined;
     }
   }
 

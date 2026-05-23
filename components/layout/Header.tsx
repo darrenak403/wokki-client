@@ -132,6 +132,7 @@ function HeaderLogo() {
         width={90}
         height={32}
         className="h-8 w-auto object-contain"
+        style={{ width: "auto" }}
         priority
       />
       <span className="text-xl font-extrabold tracking-tight text-black dark:text-white">
