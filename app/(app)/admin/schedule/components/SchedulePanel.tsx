@@ -280,6 +280,7 @@ export function SchedulePanel() {
             open={suggestOpen}
             onOpenChange={setSuggestOpen}
             scheduleId={schedule.id}
+            locationId={locationId}
             listParams={listParams!}
           />
 

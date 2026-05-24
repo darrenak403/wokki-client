@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Bot, CheckCircle2, SendHorizontal, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useApplySuggestionsMutation,
@@ -22,14 +30,35 @@ import {
   useScheduleInsightContextQuery,
   useSuggestScheduleMutation,
 } from "@/hooks/useSchedule";
+import { useShiftsQuery } from "@/hooks/useShifts";
 import { mapSuggestReason } from "@/lib/support/schedule/suggest-reasons";
+import { weekDayDates } from "@/lib/support/schedule/week";
+import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
+import type { CSSProperties } from "react";
 import type { ScheduleSuggestion } from "@/types/schedule";
+
+const DAY_HEADERS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+
+function timeToMinutes(value: string) {
+  const [hours = "0", minutes = "0"] = value.slice(0, 5).split(":");
+  return Number(hours) * 60 + Number(minutes);
+}
+
+function shiftPillStyle(color: string): CSSProperties {
+  return {
+    backgroundColor: `color-mix(in srgb, ${color} 22%, white)`,
+    borderColor: `color-mix(in srgb, ${color} 38%, white)`,
+    color: `color-mix(in srgb, ${color} 72%, #0b1e3d)`,
+    boxShadow: `0 1px 2px color-mix(in srgb, ${color} 18%, transparent)`,
+  };
+}
 
 type SuggestionsSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   scheduleId: string;
+  locationId: string;
   listParams: { departmentId: string; weekStartDate: string };
 };
 
@@ -43,6 +72,7 @@ export function SuggestionsSheet({
   open,
   onOpenChange,
   scheduleId,
+  locationId,
   listParams,
 }: SuggestionsSheetProps) {
   const router = useRouter();
@@ -144,6 +174,7 @@ export function SuggestionsSheet({
     if (!contextQuery.data?.jsonContent) return null;
     try {
       return JSON.parse(contextQuery.data.jsonContent) as {
+        shifts?: Array<{ id: string; name: string; startTime: string; endTime: string }>;
         existingAssignments?: Array<{
           date: string;
           shiftName: string;
@@ -170,6 +201,29 @@ export function SuggestionsSheet({
       contextQuery.data.weekStartDate === listParams.weekStartDate &&
       new Date(contextQuery.data.expiresAt).getTime() > Date.now(),
   );
+
+  const days = weekDayDates(listParams.weekStartDate);
+  const { data: shiftsData = [] } = useShiftsQuery({
+    locationId,
+    departmentId: listParams.departmentId,
+  });
+  const activeShifts = useMemo(
+    () =>
+      shiftsData
+        .filter((s) => s.isActive)
+        .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)),
+    [shiftsData],
+  );
+  const suggestionsByKey = useMemo(() => {
+    const map = new Map<string, ScheduleSuggestion[]>();
+    for (const s of suggestions) {
+      const key = `${s.shiftDefinitionId}|${s.date}`;
+      const list = map.get(key) ?? [];
+      list.push(s);
+      map.set(key, list);
+    }
+    return map;
+  }, [suggestions]);
   const contextGeneratedAt = contextQuery.data?.generatedAt
     ? format(parseISO(contextQuery.data.generatedAt), "dd/MM HH:mm")
     : null;
@@ -272,47 +326,13 @@ export function SuggestionsSheet({
                         ) : null}
                       </div>
                     )}
-                    {hasContext && parsedContext?.existingAssignments && parsedContext.existingAssignments.length > 0 ? (
-                      <div>
-                        <p className="mb-2 text-sm font-medium">Lịch hiện tại (từ snapshot gần nhất)</p>
-                        <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                          {parsedContext.existingAssignments.map((a) => (
-                            <li
-                              key={`${a.employeeId}-${a.shiftDefinitionId}-${a.date}`}
-                              className="flex min-h-16 items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">{a.employeeName}</p>
-                                <p className="truncate text-muted-foreground">{a.shiftName}</p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                  {format(parseISO(a.date), "dd/MM/yyyy")}
-                                </p>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                    {hasContext && parsedContext?.suggestedAssignments && parsedContext.suggestedAssignments.length > 0 ? (
-                      <div>
-                        <p className="mb-2 text-sm font-medium">Ca gợi ý (từ snapshot gần nhất)</p>
-                        <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                          {parsedContext.suggestedAssignments.map((a) => (
-                            <li
-                              key={`${a.employeeId}-${a.shiftDefinitionId}-${a.date}`}
-                              className="flex min-h-16 items-start gap-2 rounded-md border bg-background p-3 text-sm"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">{a.employeeName}</p>
-                                <p className="truncate text-muted-foreground">{a.shiftName}</p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                  {format(parseISO(a.date), "dd/MM/yyyy")}
-                                </p>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                    {hasContext && parsedContext?.shifts && parsedContext.shifts.length > 0 ? (
+                      <ContextCalendarTable
+                        label="Lịch hiện tại (snapshot)"
+                        shifts={parsedContext.shifts}
+                        assignments={parsedContext.existingAssignments ?? []}
+                        days={days}
+                      />
                     ) : null}
                   </div>
                 ) : (
@@ -333,27 +353,98 @@ export function SuggestionsSheet({
                         </Badge>
                       </div>
                     ) : null}
-                    <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {suggestions.map((s) => (
-                        <li
-                          key={s.id}
-                          className="flex min-h-24 items-start gap-3 rounded-md border p-3 text-sm"
-                        >
-                          <Checkbox
-                            checked={selected.has(s.id)}
-                            onCheckedChange={(c) => toggle(s.id, c === true)}
-                            aria-label={`Chọn gợi ý ${s.employeeName}`}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-medium">{s.employeeName}</p>
-                            <p className="truncate text-muted-foreground">{s.shiftName}</p>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                              {format(parseISO(s.date), "dd/MM/yyyy")} · Điểm {s.score}
-                            </p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-800 dark:bg-neutral-950/30">
+                      <div className="overflow-x-auto">
+                        <Table className="min-w-[900px]">
+                          <TableHeader>
+                            <TableRow className="border-neutral-100 hover:bg-transparent dark:border-neutral-800">
+                              <TableHead className="sticky left-0 z-10 min-w-[150px] bg-neutral-50/80 dark:bg-neutral-900/80">
+                                Khung ca
+                              </TableHead>
+                              {days.map((date, index) => (
+                                <TableHead
+                                  key={date}
+                                  className="min-w-[110px] bg-neutral-50/80 text-left dark:bg-neutral-900/80"
+                                >
+                                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    {DAY_HEADERS[index]}
+                                  </div>
+                                  <div className="text-sm font-semibold text-foreground">
+                                    {format(parseISO(date), "dd/MM")}
+                                  </div>
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {activeShifts.map((shift) => {
+                              const color = shift.color || "#1d4d8f";
+                              return (
+                                <TableRow
+                                  key={shift.id}
+                                  className="border-neutral-100 dark:border-neutral-800"
+                                >
+                                  <TableCell className="sticky left-0 z-10 bg-white align-top dark:bg-neutral-900">
+                                    <div className="flex items-center gap-2 py-1">
+                                      <span
+                                        className="size-2.5 shrink-0 rounded-full ring-2 ring-white dark:ring-neutral-900"
+                                        style={{ backgroundColor: color }}
+                                      />
+                                      <span className="text-sm font-semibold text-foreground">
+                                        {shift.name}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  {days.map((date) => {
+                                    const cell =
+                                      suggestionsByKey.get(`${shift.id}|${date}`) ?? [];
+                                    return (
+                                      <TableCell
+                                        key={`${shift.id}-${date}`}
+                                        className="align-top bg-white dark:bg-neutral-900"
+                                      >
+                                        <div className="min-h-[72px] space-y-1.5 py-0.5">
+                                          {cell.length === 0 ? (
+                                            <span className="text-xs text-muted-foreground">
+                                              —
+                                            </span>
+                                          ) : (
+                                            cell.map((s) => (
+                                              <label
+                                                key={s.id}
+                                                className="flex cursor-pointer items-center gap-1.5"
+                                              >
+                                                <Checkbox
+                                                  checked={selected.has(s.id)}
+                                                  onCheckedChange={(c) =>
+                                                    toggle(s.id, c === true)
+                                                  }
+                                                  aria-label={`Chọn ${s.employeeName}`}
+                                                  className="shrink-0"
+                                                />
+                                                <span
+                                                  className={cn(
+                                                    "block w-full truncate rounded-lg border px-2 py-1.5 text-xs font-semibold transition-opacity",
+                                                    !selected.has(s.id) && "opacity-40",
+                                                  )}
+                                                  style={shiftPillStyle(color)}
+                                                >
+                                                  {s.employeeName}
+                                                </span>
+                                              </label>
+                                            ))
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
@@ -469,6 +560,114 @@ export function SuggestionsSheet({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+type ContextShift = { id: string; name: string; startTime: string; endTime: string };
+type ContextAssignment = {
+  date: string;
+  shiftName: string;
+  employeeId: string;
+  employeeName: string;
+  shiftDefinitionId: string;
+};
+
+const CONTEXT_COLORS = ["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#ef4444"];
+
+function ContextCalendarTable({
+  label,
+  shifts,
+  assignments,
+  days,
+}: {
+  label: string;
+  shifts: ContextShift[];
+  assignments: ContextAssignment[];
+  days: string[];
+}) {
+  const sortedShifts = [...shifts].sort(
+    (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+  );
+  const byKey = new Map<string, ContextAssignment[]>();
+  for (const a of assignments) {
+    const key = `${a.shiftDefinitionId}|${a.date}`;
+    const list = byKey.get(key) ?? [];
+    list.push(a);
+    byKey.set(key, list);
+  }
+  return (
+    <div>
+      <p className="mb-2 text-sm font-medium">{label}</p>
+      <div className="overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-800 dark:bg-neutral-950/30">
+        <div className="overflow-x-auto">
+          <Table className="min-w-[900px]">
+            <TableHeader>
+              <TableRow className="border-neutral-100 hover:bg-transparent dark:border-neutral-800">
+                <TableHead className="sticky left-0 z-10 min-w-[150px] bg-neutral-50/80 dark:bg-neutral-900/80">
+                  Khung ca
+                </TableHead>
+                {days.map((date, index) => (
+                  <TableHead
+                    key={date}
+                    className="min-w-[110px] bg-neutral-50/80 text-left dark:bg-neutral-900/80"
+                  >
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {DAY_HEADERS[index]}
+                    </div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {format(parseISO(date), "dd/MM")}
+                    </div>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedShifts.map((shift, si) => {
+                const color = CONTEXT_COLORS[si % CONTEXT_COLORS.length]!;
+                return (
+                  <TableRow key={shift.id} className="border-neutral-100 dark:border-neutral-800">
+                    <TableCell className="sticky left-0 z-10 bg-white align-top dark:bg-neutral-900">
+                      <div className="flex items-center gap-2 py-1">
+                        <span
+                          className="size-2.5 shrink-0 rounded-full ring-2 ring-white dark:ring-neutral-900"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="text-sm font-semibold text-foreground">{shift.name}</span>
+                      </div>
+                    </TableCell>
+                    {days.map((date) => {
+                      const cell = byKey.get(`${shift.id}|${date}`) ?? [];
+                      return (
+                        <TableCell
+                          key={`${shift.id}-${date}`}
+                          className="align-top bg-white dark:bg-neutral-900"
+                        >
+                          <div className="min-h-[64px] space-y-1.5 py-0.5">
+                            {cell.length === 0 ? (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            ) : (
+                              cell.map((a) => (
+                                <span
+                                  key={`${a.employeeId}-${a.date}`}
+                                  className="block truncate rounded-lg border px-2 py-1.5 text-xs font-semibold"
+                                  style={shiftPillStyle(color)}
+                                >
+                                  {a.employeeName}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
   );
 }
 
