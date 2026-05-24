@@ -144,6 +144,8 @@ export function useScheduleInsightContextQuery(scheduleId: string | null, enable
     queryFn: () => fetchSchedules.getInsightContext(scheduleId!),
     enabled: Boolean(scheduleId) && enabled,
     staleTime: STALE_MS,
+    retry: false,
+    throwOnError: false,
   });
 }
 

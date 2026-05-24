@@ -78,14 +78,18 @@ export function SuggestionsSheet({
   };
 
   const handleGenerate = async () => {
-    const data = await suggestMutation.mutateAsync({});
-    setSuggestions(data.suggestions);
-    setReason(data.reason);
-    setProvider(data.provider);
-    setFallbackUsed(data.fallbackUsed);
-    setSelected(new Set(data.suggestions.map((s) => s.id)));
-    setHasGenerated(true);
-    await contextQuery.refetch();
+    try {
+      const data = await suggestMutation.mutateAsync({ useAi: true });
+      setSuggestions(data.suggestions);
+      setReason(data.reason);
+      setProvider(data.provider);
+      setFallbackUsed(data.fallbackUsed);
+      setSelected(new Set(data.suggestions.map((s) => s.id)));
+      setHasGenerated(true);
+      await contextQuery.refetch();
+    } catch {
+      resetSheetState();
+    }
   };
 
   const toggle = (id: string, checked: boolean) => {
