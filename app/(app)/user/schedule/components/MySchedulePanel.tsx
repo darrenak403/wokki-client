@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   differenceInMinutes,
   eachDayOfInterval,
   endOfWeek,
   format,
+  isBefore,
   isSameDay,
   parseISO,
   startOfWeek,
@@ -75,6 +76,11 @@ function getAssignmentsForDate(assignments: ShiftAssignmentResponse[], date: Dat
 function MyPublishedScheduleView() {
   const { data: assignments = [], isLoading, isError, error, dataUpdatedAt } = useMyScheduleQuery();
   const now = useMemo(() => new Date(), []);
+  const todayRowRef = useRef<HTMLTableRowElement>(null);
+
+  useEffect(() => {
+    todayRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
 
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
@@ -193,6 +199,7 @@ function MyPublishedScheduleView() {
               {weekDays.flatMap((date) => {
                 const items = getAssignmentsForDate(assignments, date);
                 const today = isSameDay(date, now);
+                const isPast = !today && isBefore(date, now);
                 const dateLabel = (
                   <div>
                     <div className="flex items-center gap-2">
@@ -209,7 +216,7 @@ function MyPublishedScheduleView() {
 
                 if (items.length === 0) {
                   return [
-                    <TableRow key={date.toISOString()}>
+                    <TableRow key={date.toISOString()} className={cn(isPast && "opacity-50")}>
                       <TableCell>{dateLabel}</TableCell>
                       <TableCell className="font-medium italic text-muted-foreground">
                         Ngày nghỉ
@@ -223,7 +230,11 @@ function MyPublishedScheduleView() {
                 }
 
                 return items.map((assignment, index) => (
-                  <TableRow key={assignment.id}>
+                  <TableRow
+                    key={assignment.id}
+                    ref={today && index === 0 ? todayRowRef : undefined}
+                    className={cn(isPast && "opacity-50")}
+                  >
                     <TableCell>{index === 0 ? dateLabel : null}</TableCell>
                     <TableCell>
                       <div
