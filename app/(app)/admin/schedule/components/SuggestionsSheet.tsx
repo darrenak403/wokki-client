@@ -298,34 +298,6 @@ export function SuggestionsSheet({
                   <p className="text-sm text-muted-foreground">Đang tạo gợi ý…</p>
                 ) : empty ? (
                   <div className="space-y-4">
-                    {isInfeasible ? (
-                      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-md border border-dashed border-amber-400 bg-amber-50/40 p-6 text-center dark:bg-amber-950/20">
-                        <AlertCircle className="mb-2 size-5 text-amber-600" aria-hidden />
-                        <p className="max-w-md text-sm font-medium">
-                          Solver không tìm được lịch hợp lệ. Ràng buộc hiện tại quá chặt (vd: ca chồng nhau, không đủ nhân viên phù hợp).
-                        </p>
-                        <p className="mt-2 max-w-md text-xs text-muted-foreground">
-                          Kiểm tra lại số lượng nhân viên, ca làm việc và đăng ký ca, sau đó thử lại.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 p-6 text-center">
-                        <p className="max-w-md text-sm font-medium">{mapSuggestReason(reason)}</p>
-                        <p className="mt-2 max-w-md text-xs text-muted-foreground">
-                          Auto-scheduling cần luật chi nhánh, nhân viên, ca làm và đăng ký ca trước khi chạy.
-                        </p>
-                        {setupTargetForReason(reason) ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="mt-4"
-                            onClick={() => goToSetup(setupTargetForReason(reason)!)}
-                          >
-                            Kiểm tra cấu hình
-                          </Button>
-                        ) : null}
-                      </div>
-                    )}
                     {hasContext && parsedContext?.shifts && parsedContext.shifts.length > 0 ? (
                       <ContextCalendarTable
                         label="Lịch hiện tại (snapshot)"
@@ -334,6 +306,30 @@ export function SuggestionsSheet({
                         days={days}
                       />
                     ) : null}
+                    {isInfeasible ? (
+                      <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50/60 px-3 py-2 text-xs dark:bg-amber-950/20">
+                        <AlertCircle className="size-3.5 shrink-0 text-amber-600" aria-hidden />
+                        <span className="text-amber-800 dark:text-amber-300">
+                          Solver không tìm được lịch hợp lệ — ràng buộc quá chặt. Kiểm tra nhân viên, ca và đăng ký ca, sau đó thử lại.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                        <AlertCircle className="size-3.5 shrink-0" aria-hidden />
+                        <span>{mapSuggestReason(reason)}</span>
+                        {setupTargetForReason(reason) ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="ml-auto h-auto px-2 py-0.5 text-xs"
+                            onClick={() => goToSetup(setupTargetForReason(reason)!)}
+                          >
+                            Kiểm tra
+                          </Button>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
