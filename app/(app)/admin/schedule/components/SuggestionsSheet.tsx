@@ -15,7 +15,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useApplySuggestionsMutation,
@@ -138,6 +137,33 @@ export function SuggestionsSheet({
 
   const loading = suggestMutation.isPending;
   const empty = hasGenerated && !loading && suggestions.length === 0;
+  const isInfeasible = empty && reason === "infeasible";
+
+  // Parse insight context JSON for schedule display when suggestions are empty.
+  const parsedContext = (() => {
+    if (!contextQuery.data?.jsonContent) return null;
+    try {
+      return JSON.parse(contextQuery.data.jsonContent) as {
+        existingAssignments?: Array<{
+          date: string;
+          shiftName: string;
+          employeeId: string;
+          employeeName: string;
+          shiftDefinitionId: string;
+        }>;
+        suggestedAssignments?: Array<{
+          date: string;
+          shiftName: string;
+          employeeId: string;
+          employeeName: string;
+          shiftDefinitionId: string;
+        }>;
+      };
+    } catch {
+      return null;
+    }
+  })();
+
   const hasContext = Boolean(
     contextQuery.data &&
       contextQuery.data.departmentId === listParams.departmentId &&
@@ -217,20 +243,76 @@ export function SuggestionsSheet({
                 ) : loading ? (
                   <p className="text-sm text-muted-foreground">Đang tạo gợi ý…</p>
                 ) : empty ? (
-                  <div className="flex min-h-[320px] flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 p-6 text-center">
-                    <p className="max-w-md text-sm font-medium">{mapSuggestReason(reason)}</p>
-                    <p className="mt-2 max-w-md text-xs text-muted-foreground">
-                      Auto-scheduling cần luật chi nhánh, nhân viên, ca làm và đăng ký ca trước khi chạy.
-                    </p>
-                    {setupTargetForReason(reason) ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-4"
-                        onClick={() => goToSetup(setupTargetForReason(reason)!)}
-                      >
-                        Kiểm tra cấu hình
-                      </Button>
+                  <div className="space-y-4">
+                    {isInfeasible ? (
+                      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-md border border-dashed border-amber-400 bg-amber-50/40 p-6 text-center dark:bg-amber-950/20">
+                        <AlertCircle className="mb-2 size-5 text-amber-600" aria-hidden />
+                        <p className="max-w-md text-sm font-medium">
+                          Solver không tìm được lịch hợp lệ. Ràng buộc hiện tại quá chặt (vd: ca chồng nhau, không đủ nhân viên phù hợp).
+                        </p>
+                        <p className="mt-2 max-w-md text-xs text-muted-foreground">
+                          Kiểm tra lại số lượng nhân viên, ca làm việc và đăng ký ca, sau đó thử lại.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 p-6 text-center">
+                        <p className="max-w-md text-sm font-medium">{mapSuggestReason(reason)}</p>
+                        <p className="mt-2 max-w-md text-xs text-muted-foreground">
+                          Auto-scheduling cần luật chi nhánh, nhân viên, ca làm và đăng ký ca trước khi chạy.
+                        </p>
+                        {setupTargetForReason(reason) ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="mt-4"
+                            onClick={() => goToSetup(setupTargetForReason(reason)!)}
+                          >
+                            Kiểm tra cấu hình
+                          </Button>
+                        ) : null}
+                      </div>
+                    )}
+                    {hasContext && parsedContext?.existingAssignments && parsedContext.existingAssignments.length > 0 ? (
+                      <div>
+                        <p className="mb-2 text-sm font-medium">Lịch hiện tại (từ snapshot gần nhất)</p>
+                        <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                          {parsedContext.existingAssignments.map((a) => (
+                            <li
+                              key={`${a.employeeId}-${a.shiftDefinitionId}-${a.date}`}
+                              className="flex min-h-16 items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-medium">{a.employeeName}</p>
+                                <p className="truncate text-muted-foreground">{a.shiftName}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {format(parseISO(a.date), "dd/MM/yyyy")}
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {hasContext && parsedContext?.suggestedAssignments && parsedContext.suggestedAssignments.length > 0 ? (
+                      <div>
+                        <p className="mb-2 text-sm font-medium">Ca gợi ý (từ snapshot gần nhất)</p>
+                        <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                          {parsedContext.suggestedAssignments.map((a) => (
+                            <li
+                              key={`${a.employeeId}-${a.shiftDefinitionId}-${a.date}`}
+                              className="flex min-h-16 items-start gap-2 rounded-md border bg-background p-3 text-sm"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-medium">{a.employeeName}</p>
+                                <p className="truncate text-muted-foreground">{a.shiftName}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {format(parseISO(a.date), "dd/MM/yyyy")}
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     ) : null}
                   </div>
                 ) : (
@@ -238,7 +320,12 @@ export function SuggestionsSheet({
                     {provider ? (
                       <div className="mb-4 flex flex-wrap items-center gap-2">
                         <Badge variant="secondary">
-                          Nguồn: {provider === "cp-sat" ? "CP-SAT" : "Heuristic"}
+                          Nguồn:{" "}
+                          {provider?.startsWith("cpsat")
+                            ? "CP-SAT"
+                            : provider === "bedrock"
+                              ? "Bedrock"
+                              : "Heuristic"}
                         </Badge>
                         {fallbackUsed ? <Badge variant="outline">Fallback</Badge> : null}
                         <Badge variant="outline">
