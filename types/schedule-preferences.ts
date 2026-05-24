@@ -38,7 +38,6 @@ export interface SchedulePreferenceBoardShift {
   shiftName: string;
   startTime: string;
   endTime: string;
-  maxStaffPerSlot: number;
 }
 
 export interface SchedulePreferenceBoardResponse {

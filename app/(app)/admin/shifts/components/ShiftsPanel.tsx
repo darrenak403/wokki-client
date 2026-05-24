@@ -64,7 +64,6 @@ const shiftSchema = z
     endTime: z.string().min(1, "Vui lòng nhập giờ kết thúc"),
     requiredRole: z.string().min(1),
     color: z.string().min(1),
-    maxStaffPerSlot: z.number().int().min(1, "Tối thiểu 1"),
     isActive: z.boolean(),
     departmentId: z.string().optional(),
   })
@@ -113,7 +112,6 @@ export function ShiftsPanel() {
       endTime: "16:00",
       requiredRole: ROLE_USER,
       color: "#3B82F6",
-      maxStaffPerSlot: 1,
       isActive: true,
       departmentId: "",
     },
@@ -131,7 +129,6 @@ export function ShiftsPanel() {
       endTime: "16:00",
       requiredRole: ROLE_USER,
       color: "#3B82F6",
-      maxStaffPerSlot: 1,
       isActive: true,
       departmentId: departmentId ?? "",
     });
@@ -146,7 +143,6 @@ export function ShiftsPanel() {
       endTime: toTimeInput(row.endTime),
       requiredRole: row.requiredRole,
       color: row.color,
-      maxStaffPerSlot: row.maxStaffPerSlot ?? 1,
       isActive: row.isActive,
       departmentId: row.departmentId ?? "",
     });
@@ -163,7 +159,6 @@ export function ShiftsPanel() {
           startTime: toApiTime(values.startTime),
           endTime: toApiTime(values.endTime),
           requiredRole: values.requiredRole,
-          maxStaffPerSlot: values.maxStaffPerSlot,
           color: values.color,
           isActive: values.isActive,
         },
@@ -176,7 +171,6 @@ export function ShiftsPanel() {
         startTime: toApiTime(values.startTime),
         endTime: toApiTime(values.endTime),
         requiredRole: values.requiredRole,
-        maxStaffPerSlot: values.maxStaffPerSlot,
         color: values.color,
       });
     }
@@ -222,7 +216,6 @@ export function ShiftsPanel() {
               <TableHead>Tên ca</TableHead>
               <TableHead>Giờ</TableHead>
               <TableHead>Vai trò</TableHead>
-              <TableHead>Max/NV</TableHead>
               <TableHead>Trạng thái</TableHead>
               <TableHead className="w-[140px]" />
             </TableRow>
@@ -254,7 +247,7 @@ export function ShiftsPanel() {
                     {toTimeInput(row.startTime)} – {toTimeInput(row.endTime)}
                   </TableCell>
                   <TableCell>{row.requiredRole}</TableCell>
-                  <TableCell>{row.maxStaffPerSlot ?? 1}</TableCell>
+
                   <TableCell>
                     {row.isActive ? (
                       <Badge variant="secondary">Hoạt động</Badge>
@@ -321,16 +314,6 @@ export function ShiftsPanel() {
                   <FieldError errors={[form.formState.errors.endTime]} />
                 </Field>
               </div>
-              <Field>
-                <FieldLabel htmlFor="shift-max-staff">Số NV tối đa / ca</FieldLabel>
-                <Input
-                  id="shift-max-staff"
-                  type="number"
-                  min={1}
-                  {...form.register("maxStaffPerSlot")}
-                />
-                <FieldError errors={[form.formState.errors.maxStaffPerSlot]} />
-              </Field>
               <Field>
                 <FieldLabel>Màu</FieldLabel>
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
