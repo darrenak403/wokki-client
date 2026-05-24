@@ -12,8 +12,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Business Rules
 
-- Always update agents/docs when business behavior changes. If a task adds, removes, or changes workflow, permissions, statuses, API business meaning, or user-facing business copy, update relevant docs/agent context in the same task without waiting for the user to ask.
-- If a rule affects both apps, update both `wokki-client/AGENTS.md` and `wokki-server/AGENTS.md`; also check backend docs such as `docs/brd.md`, `docs/business-rules.md`, `docs/process-flows.md`, and API/FE handoff docs.
+- Always update agents/docs when business behavior changes. If a task adds, removes, or changes workflow, permissions, statuses, API business meaning, or user-facing business copy, update relevant docs, `AGENTS.md`, `CLAUDE.md`, and agent context in the same task without waiting for the user to ask.
+- If a rule affects both apps, update both `wokki-client/AGENTS.md` and `wokki-server/AGENTS.md`, plus the matching `CLAUDE.md` files; also check backend docs such as `docs/brd.md`, `docs/business-rules.md`, `docs/process-flows.md`, and API/FE handoff docs.
 - UI copy must reflect business meaning accurately. Example: employee shift preferences are advisory; official work schedules are decided and published by Admin/Manager.
 - Shift preferences: users may edit while schedule is `Draft`; once `Published`, preferences are view-only. Official work schedule = published `ShiftAssignment`.
 - Auto-scheduling UX must follow the business hierarchy: choose chi nhánh → phòng ban → tuần. Branch `LocationSchedulingPolicy` is mandatory: a short form for five system rules (employee limits + preference board) plus optional custom branch rules Admin/Manager can add. Suggest UI should surface missing setup with clear actions instead of generic empty states.
@@ -31,11 +31,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Business features belong only in `(app)/`.
 
-| Zone | Route group | Examples |
-| --- | --- | --- |
+| Zone            | Route group      | Examples                                         |
+| --------------- | ---------------- | ------------------------------------------------ |
 | Guest marketing | `app/(landing)/` | `/`, `/pricing`, `/about`, `/help`, `/community` |
-| Auth | `app/(auth)/` | `/login`, `/register` |
-| Role app | `app/(app)/` | `/admin/*`, `/manager/*`, `/user/*` |
+| Auth            | `app/(auth)/`    | `/login`, `/register`                            |
+| Role app        | `app/(app)/`     | `/admin/*`, `/manager/*`, `/user/*`              |
 
 - Post-login home: Admin `/admin/dashboard`, Manager `/manager/dashboard`, User `/user/dashboard` (`lib/support/auth/app-routes.ts`).
 - New app feature routes go under `app/(app)/{admin|manager|user}/` and update `components/app/app-nav.ts`.
@@ -74,12 +74,12 @@ Business features belong only in `(app)/`.
 
 ## `lib/`
 
-| Layer | Path | Contents |
-| --- | --- | --- |
-| HTTP | `lib/api/` | `core`, `services/fetchXxx`; no `api/{domain}/` folders |
-| Support | `lib/support/{domain}/` | error maps, assertions, sessions, helpers |
-| Utils | `lib/utils/` | generic utilities only |
-| Hooks | `hooks/useXxx.ts` | TanStack Query hooks |
+| Layer   | Path                    | Contents                                                |
+| ------- | ----------------------- | ------------------------------------------------------- |
+| HTTP    | `lib/api/`              | `core`, `services/fetchXxx`; no `api/{domain}/` folders |
+| Support | `lib/support/{domain}/` | error maps, assertions, sessions, helpers               |
+| Utils   | `lib/utils/`            | generic utilities only                                  |
+| Hooks   | `hooks/useXxx.ts`       | TanStack Query hooks                                    |
 
 - Do not create root `lib/auth/` or `lib/foundation/`; use `lib/support/auth/`, `lib/support/foundation/`, etc.
 
