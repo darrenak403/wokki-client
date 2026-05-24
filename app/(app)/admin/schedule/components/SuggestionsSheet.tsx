@@ -239,34 +239,29 @@ export function SuggestionsSheet({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="top-0 left-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 ring-0 sm:max-w-none">
         <DialogHeader className="border-b px-5 py-4">
-          <DialogTitle>Gợi ý phân ca & insight</DialogTitle>
-          <DialogDescription>
-            Gợi ý chạy theo từng phòng ban/tuần. Snapshot insight được tạo tự động sau khi gợi ý thành công.
-          </DialogDescription>
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 space-y-0.5">
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="size-4 text-primary" aria-hidden />
+                Gợi ý phân ca & insight
+              </DialogTitle>
+              <DialogDescription>
+                Gợi ý chạy theo từng phòng ban/tuần. Snapshot insight được tạo tự động sau khi gợi ý thành công.
+              </DialogDescription>
+            </div>
+            <Button
+              type="button"
+              className="shrink-0"
+              disabled={loading}
+              onClick={() => void handleGenerate()}
+            >
+              {loading ? "Đang tạo gợi ý…" : "Tạo gợi ý"}
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px]">
           <section className="flex min-h-0 flex-col border-b lg:border-r lg:border-b-0">
-            <div className="grid gap-3 border-b px-5 py-4 sm:grid-cols-[1fr_auto]">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="size-4 text-primary" aria-hidden />
-                  <p className="text-sm font-medium">Bộ gợi ý phân ca</p>
-                </div>
-                <p className="max-w-3xl text-xs text-muted-foreground">
-                  Bedrock không tạo lịch. Kết quả bên dưới đến từ engine phân ca và chỉ được ghi khi
-                  bạn nhấn Áp dụng.
-                </p>
-              </div>
-              <Button
-                type="button"
-                className="w-full sm:w-auto"
-                disabled={loading}
-                onClick={() => void handleGenerate()}
-              >
-                {loading ? "Đang tạo gợi ý…" : "Tạo gợi ý"}
-              </Button>
-            </div>
 
             <ScrollArea className="min-h-0 flex-1">
               <div className="p-5">
