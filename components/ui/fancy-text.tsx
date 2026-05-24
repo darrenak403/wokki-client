@@ -42,7 +42,7 @@ const FancyText = React.forwardRef<HTMLSpanElement, FancyTextProps>(
           {children}
         </span>
 
-        <span className='absolute inset-0 flex overflow-hidden'>
+        <span className='absolute inset-0 flex'>
           {chars.map((char, i) => (
             <motion.span
               key={i}
