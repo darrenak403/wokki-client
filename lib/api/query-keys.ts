@@ -51,7 +51,6 @@ export const preferenceKeys = {
 
 export const schedulingConfigKeys = {
   all: ["schedulingConfig"] as const,
-  policy: (departmentId: string) => [...schedulingConfigKeys.all, "policy", departmentId] as const,
   jobPositions: (departmentId: string) =>
     [...schedulingConfigKeys.all, "jobPositions", departmentId] as const,
 };

@@ -3,7 +3,6 @@ import { mapAuthFailureMessage } from "@/lib/support/auth/map-auth-error";
 import type { ApiError, ApiResponse } from "@/types/api";
 
 const CONFIG_ERROR_MESSAGES: Record<string, string> = {
-  SCHEDULING_INVALID_WEEKLY_CAP: "Số ca tối đa/tuần phải từ 1 đến 168.",
   JOB_POSITION_INVALID_HEADCOUNT: "Headcount mục tiêu phải ≥ 1.",
   JOB_POSITION_NOT_FOUND: "Không tìm thấy vị trí.",
   SCHEDULE_DEPARTMENT_NOT_FOUND: "Không tìm thấy phòng ban.",

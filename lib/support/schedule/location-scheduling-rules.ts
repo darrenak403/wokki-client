@@ -1,45 +1,107 @@
 import type { LocationSchedulingRule, LocationSchedulingRuleValue } from "@/types/foundation";
 
-export const LOCATION_SCHEDULING_POLICY_SCHEMA = "location-scheduling-policy.v3";
+export const LOCATION_SCHEDULING_POLICY_SCHEMA = "location-scheduling-policy.v5";
 
-export const DEFAULT_RULE_KEYS = [
-  "max_shifts_per_week",
-  "max_shifts_per_day",
-  "require_role_match",
-  "require_submitted_preferences",
-  "unavailable_is_hard_block",
+/** Sidebar — minimal solver + workflow inputs (CP-SAT phase). */
+export const RULE_CATEGORY_NAV = [
+  { id: "preferenceRules", label: "Đăng ký ca" },
+  { id: "coverageRules", label: "Coverage" },
+  { id: "employeeEligibilityRules", label: "Vai trò" },
+  { id: "workHourLimits", label: "Mục tiêu tuần" },
+  { id: "restRules", label: "Nghỉ giữa ca" },
+  { id: "customRules", label: "Luật riêng" },
 ] as const;
 
-export const BRANCH_RULE_SECTIONS = [
-  {
-    id: "employeeLimits",
-    label: "Giới hạn ca cho nhân viên",
-    description:
-      "Quy tắc về số ca và vai trò khi hệ thống xếp lịch chính thức cho nhân viên thuộc chi nhánh này.",
-    keys: ["max_shifts_per_week", "max_shifts_per_day", "require_role_match"],
-  },
-  {
-    id: "preferenceRules",
-    label: "Bảng đăng ký ca",
-    description:
-      "Quy tắc dựa trên bảng đăng ký ca nhân viên đã gửi trước khi manager chạy gợi ý lịch tuần tiếp theo.",
-    keys: ["require_submitted_preferences", "unavailable_is_hard_block"],
-  },
-] as const;
+export type RuleCategoryId = (typeof RULE_CATEGORY_NAV)[number]["id"];
+
+export const CATEGORY_SECTION_HINTS: Partial<Record<RuleCategoryId, string>> = {
+  preferenceRules: "Preflight và chặn cứng trước khi solver chạy.",
+  coverageRules: "Đủ người tối thiểu theo ca; chi tiết từng ca lấy từ định nghĩa ca.",
+  employeeEligibilityRules: "Membership và nhân viên active luôn bật trong hệ thống.",
+  workHourLimits:
+    "Ca tối thiểu / tuần là mục tiêu mềm. Trần ca/tuần do hệ thống quy định (không cấu hình theo phòng ban).",
+  restRules: "Khoảng nghỉ tối thiểu giữa hai ca (solver phase 1: overlap + rest).",
+};
+
+const LEGACY_CATEGORY_ALIASES: Record<string, RuleCategoryId> = {
+  employeeLimits: "employeeEligibilityRules",
+};
+
+export function resolveRuleCategory(category: string): RuleCategoryId {
+  if (RULE_CATEGORY_NAV.some((item) => item.id === category)) {
+    return category as RuleCategoryId;
+  }
+  return LEGACY_CATEGORY_ALIASES[category] ?? "customRules";
+}
 
 export const CUSTOM_RULES_SECTION = {
-  id: "customRules",
-  label: "Luật riêng của chi nhánh",
-  description:
-    "Admin/Manager có thể thêm quy định nội bộ (ví dụ nhắc nhở vận hành, mức riêng theo mùa). Luật riêng được lưu tại chi nhánh; năm luật hệ thống ở trên mới được thuật toán gợi ý ca dùng trực tiếp.",
-} as const;
+  id: "customRules" as const,
+  label: "Luật riêng",
+  description: "Ghi chú nội bộ; solver hiện chưa đọc luật riêng tùy chỉnh.",
+};
 
-export function isDefaultRuleKey(key: string): boolean {
-  return (DEFAULT_RULE_KEYS as readonly string[]).includes(key);
+export function getCategoryLabel(categoryId: string): string {
+  return RULE_CATEGORY_NAV.find((item) => item.id === categoryId)?.label ?? categoryId;
+}
+
+export function groupRulesByCategory(
+  rules: LocationSchedulingRule[],
+): Map<string, LocationSchedulingRule[]> {
+  const map = new Map<string, LocationSchedulingRule[]>();
+  for (const item of RULE_CATEGORY_NAV) {
+    map.set(item.id, []);
+  }
+  const sorted = [...rules].sort((a, b) => a.sortOrder - b.sortOrder);
+  for (const rule of sorted) {
+    const category = resolveRuleCategory(rule.category);
+    map.get(category)!.push(rule);
+  }
+  return map;
+}
+
+export function getVisibleCategories(
+  rulesByCategory: Map<string, LocationSchedulingRule[]>,
+): RuleCategoryId[] {
+  return RULE_CATEGORY_NAV.filter((item) => (rulesByCategory.get(item.id)?.length ?? 0) > 0).map(
+    (item) => item.id,
+  );
+}
+
+export function filterRules(
+  rules: LocationSchedulingRule[],
+  query: string,
+): LocationSchedulingRule[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return rules;
+  return rules.filter((rule) => {
+    const haystack = [rule.inputLabel, rule.content, rule.key, getCategoryLabel(rule.category)]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  });
+}
+
+export function isRuleComplete(rule: LocationSchedulingRule): boolean {
+  if (!rule.isRequired) return true;
+  if (rule.valueType === "boolean") return true;
+  if (rule.valueType === "number") {
+    const n = Number(rule.value);
+    return rule.value !== null && Number.isFinite(n);
+  }
+  return String(rule.value ?? "").trim().length > 0;
+}
+
+export function countRequiredProgress(rules: LocationSchedulingRule[]): {
+  completed: number;
+  total: number;
+} {
+  const required = rules.filter((r) => r.isRequired);
+  const completed = required.filter(isRuleComplete).length;
+  return { completed, total: required.length };
 }
 
 export function isCustomRule(rule: LocationSchedulingRule): boolean {
-  return !rule.isDefault;
+  return !rule.isDefault || rule.category === "customRules";
 }
 
 export function getCustomRules(rules: LocationSchedulingRule[]): LocationSchedulingRule[] {
@@ -52,13 +114,25 @@ export function createCustomRule(existingCount: number): LocationSchedulingRule 
     category: "customRules",
     content: "",
     inputLabel: "",
-    valueType: "text",
-    value: "",
+    valueType: "number",
+    value: 0,
     enabled: true,
     isDefault: false,
     isRequired: false,
     sortOrder: 10_000 + existingCount,
   };
+}
+
+export function getValueUnit(rule: LocationSchedulingRule): string | null {
+  if (rule.valueType !== "number") return null;
+  const label = rule.inputLabel.toLowerCase();
+  const key = rule.key.toLowerCase();
+  if (key.includes("rest") || key.includes("minute") || label.includes("phút")) return "phút";
+  if (key.includes("hour") || label.includes("giờ")) return "giờ";
+  if (key.includes("day") || label.includes("ngày")) return "ngày";
+  if (key.includes("shift") || key.includes("_shifts") || label.includes("ca")) return "ca";
+  if (label.includes("người")) return "người";
+  return "";
 }
 
 export function normalizeRuleValue(
@@ -69,9 +143,7 @@ export function normalizeRuleValue(
     const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric : null;
   }
-
   if (valueType === "boolean") return Boolean(value);
-
   return value === null ? "" : String(value);
 }
 

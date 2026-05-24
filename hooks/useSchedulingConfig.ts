@@ -8,34 +8,9 @@ import { mapSchedulingConfigError } from "@/lib/support/scheduling-config/map-er
 import type {
   CreateJobPositionRequest,
   UpdateJobPositionRequest,
-  UpdateSchedulingPolicyRequest,
 } from "@/types/scheduling-config";
 
 const STALE_MS = 60 * 1000;
-
-export function useSchedulingPolicyQuery(departmentId: string | null) {
-  return useQuery({
-    queryKey: schedulingConfigKeys.policy(departmentId ?? ""),
-    queryFn: () => fetchSchedulingConfig.getPolicy(departmentId!),
-    enabled: Boolean(departmentId),
-    staleTime: STALE_MS,
-  });
-}
-
-export function useUpdateSchedulingPolicyMutation(departmentId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: UpdateSchedulingPolicyRequest) =>
-      fetchSchedulingConfig.updatePolicy(departmentId, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: schedulingConfigKeys.policy(departmentId),
-      });
-      toast.success("Đã cập nhật luật lịch.");
-    },
-    onError: (error) => toast.error(mapSchedulingConfigError(error)),
-  });
-}
 
 export function useJobPositionsQuery(departmentId: string | null) {
   return useQuery({

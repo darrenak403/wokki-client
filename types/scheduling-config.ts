@@ -1,12 +1,3 @@
-export interface SchedulingPolicyResponse {
-  departmentId: string;
-  maxShiftsPerEmployeePerWeek: number;
-}
-
-export interface UpdateSchedulingPolicyRequest {
-  maxShiftsPerEmployeePerWeek: number;
-}
-
 export interface JobPositionResponse {
   id: string;
   departmentId: string;

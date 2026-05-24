@@ -5,30 +5,10 @@ import type { ApiEnvelope } from "@/types/api";
 import type {
   CreateJobPositionRequest,
   JobPositionResponse,
-  SchedulingPolicyResponse,
   UpdateJobPositionRequest,
-  UpdateSchedulingPolicyRequest,
 } from "@/types/scheduling-config";
 
 export const fetchSchedulingConfig = {
-  getPolicy: async (departmentId: string): Promise<SchedulingPolicyResponse> => {
-    const response = await apiService.get<ApiEnvelope<SchedulingPolicyResponse>>(
-      `api/v1/departments/${departmentId}/scheduling-policy`,
-    );
-    return assertSchedulingConfigSuccess(normalizeApiResponse(response.data));
-  },
-
-  updatePolicy: async (
-    departmentId: string,
-    data: UpdateSchedulingPolicyRequest,
-  ): Promise<SchedulingPolicyResponse> => {
-    const response = await apiService.put<ApiEnvelope<SchedulingPolicyResponse>>(
-      `api/v1/departments/${departmentId}/scheduling-policy`,
-      data,
-    );
-    return assertSchedulingConfigSuccess(normalizeApiResponse(response.data));
-  },
-
   listJobPositions: async (departmentId: string): Promise<JobPositionResponse[]> => {
     const response = await apiService.get<ApiEnvelope<JobPositionResponse[]>>(
       `api/v1/departments/${departmentId}/job-positions`,

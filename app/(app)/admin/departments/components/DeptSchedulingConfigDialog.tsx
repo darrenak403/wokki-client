@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,16 +39,10 @@ import {
   useCreateJobPositionMutation,
   useDeleteJobPositionMutation,
   useJobPositionsQuery,
-  useSchedulingPolicyQuery,
   useUpdateJobPositionMutation,
-  useUpdateSchedulingPolicyMutation,
 } from "@/hooks/useSchedulingConfig";
 import type { DepartmentResponse } from "@/types/foundation";
 import type { JobPositionResponse } from "@/types/scheduling-config";
-
-const policySchema = z.object({
-  maxShiftsPerEmployeePerWeek: z.number().int().min(1, "Tối thiểu 1").max(168, "Tối đa 168"),
-});
 
 const jobSchema = z.object({
   name: z.string().min(1, "Vui lòng nhập tên"),
@@ -56,7 +50,6 @@ const jobSchema = z.object({
   targetHeadcount: z.number().int().min(1, "≥ 1"),
 });
 
-type PolicyFormValues = z.infer<typeof policySchema>;
 type JobFormValues = z.infer<typeof jobSchema>;
 
 type DeptSchedulingConfigDialogProps = {
@@ -73,21 +66,12 @@ export function DeptSchedulingConfigDialog({
   canWrite = true,
 }: DeptSchedulingConfigDialogProps) {
   const departmentId = department?.id ?? null;
-  const { data: policy, isLoading: policyLoading } = useSchedulingPolicyQuery(
-    open ? departmentId : null,
-  );
   const { data: positions = [], isLoading: positionsLoading } = useJobPositionsQuery(
     open ? departmentId : null,
   );
-  const updatePolicy = useUpdateSchedulingPolicyMutation(departmentId ?? "");
   const createPosition = useCreateJobPositionMutation(departmentId ?? "");
   const updatePosition = useUpdateJobPositionMutation(departmentId ?? "");
   const deletePosition = useDeleteJobPositionMutation(departmentId ?? "");
-
-  const policyForm = useForm<PolicyFormValues>({
-    resolver: zodResolver(policySchema),
-    defaultValues: { maxShiftsPerEmployeePerWeek: 20 },
-  });
 
   const [jobOpen, setJobOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobPositionResponse | null>(null);
@@ -95,17 +79,6 @@ export function DeptSchedulingConfigDialog({
   const jobForm = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
     defaultValues: { name: "", code: "", targetHeadcount: 1 },
-  });
-
-  useEffect(() => {
-    if (policy) {
-      policyForm.reset({ maxShiftsPerEmployeePerWeek: policy.maxShiftsPerEmployeePerWeek });
-    }
-  }, [policy, policyForm]);
-
-  const onPolicySubmit = policyForm.handleSubmit(async (values) => {
-    if (!departmentId || !canWrite) return;
-    await updatePolicy.mutateAsync(values);
   });
 
   const openCreateJob = () => {
@@ -138,10 +111,7 @@ export function DeptSchedulingConfigDialog({
   });
 
   const pending =
-    updatePolicy.isPending ||
-    createPosition.isPending ||
-    updatePosition.isPending ||
-    deletePosition.isPending;
+    createPosition.isPending || updatePosition.isPending || deletePosition.isPending;
 
   return (
     <>
@@ -150,120 +120,85 @@ export function DeptSchedulingConfigDialog({
           <DialogHeader>
             <DialogTitle>Cấu hình lịch — {department?.name ?? ""}</DialogTitle>
             <DialogDescription>
-              Phòng ban kế thừa luật chi nhánh; cấu hình ở đây chỉ là override riêng và vị trí mục tiêu.
+              Phòng ban kế thừa luật chi nhánh. Tại đây chỉ quản lý vị trí (job positions) và
+              headcount mục tiêu.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-8">
-            <section className="space-y-3">
-              <div className="space-y-1">
-                <h3 className="text-sm font-semibold">Override luật phòng ban</h3>
-                <p className="text-xs text-muted-foreground">
-                  Nếu không đổi, solver dùng rule catalog của chi nhánh làm điều kiện nền.
-                </p>
-              </div>
-              {policyLoading ? (
-                <p className="text-sm text-muted-foreground">Đang tải…</p>
-              ) : (
-                <form onSubmit={onPolicySubmit} className="flex flex-wrap items-end gap-3">
-                  <Field className="max-w-xs">
-                    <FieldLabel htmlFor="max-shifts-week">Số ca tối đa / NV / tuần</FieldLabel>
-                    <Input
-                      id="max-shifts-week"
-                      type="number"
-                      min={1}
-                      max={168}
-                      disabled={!canWrite}
-                      {...policyForm.register("maxShiftsPerEmployeePerWeek")}
-                    />
-                    <FieldError
-                      errors={[policyForm.formState.errors.maxShiftsPerEmployeePerWeek]}
-                    />
-                  </Field>
-                  {canWrite ? (
-                    <Button type="submit" disabled={updatePolicy.isPending}>
-                      {updatePolicy.isPending ? "Đang lưu…" : "Lưu luật"}
-                    </Button>
-                  ) : null}
-                </form>
-              )}
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold">Vị trí (job positions)</h3>
-                {canWrite ? (
-                  <Button type="button" size="sm" variant="outline" onClick={openCreateJob}>
-                    <PlusIcon className="size-4" />
-                    Thêm vị trí
-                  </Button>
-                ) : null}
-              </div>
-              <Table>
-                <TableHeader>
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Vị trí (job positions)</h3>
+              {canWrite ? (
+                <Button type="button" size="sm" variant="outline" onClick={openCreateJob}>
+                  <PlusIcon className="size-4" />
+                  Thêm vị trí
+                </Button>
+              ) : null}
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tên</TableHead>
+                  <TableHead>Mã</TableHead>
+                  <TableHead>Headcount</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  {canWrite ? <TableHead className="w-[120px]" /> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {positionsLoading ? (
                   <TableRow>
-                    <TableHead>Tên</TableHead>
-                    <TableHead>Mã</TableHead>
-                    <TableHead>Headcount</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    {canWrite ? <TableHead className="w-[120px]" /> : null}
+                    <TableCell colSpan={canWrite ? 5 : 4} className="text-muted-foreground">
+                      Đang tải…
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {positionsLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={canWrite ? 5 : 4} className="text-muted-foreground">
-                        Đang tải…
+                ) : positions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={canWrite ? 5 : 4} className="text-muted-foreground">
+                      Chưa có vị trí.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  positions.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-medium">{row.name}</TableCell>
+                      <TableCell>{row.code}</TableCell>
+                      <TableCell>{row.targetHeadcount}</TableCell>
+                      <TableCell>
+                        {row.isActive ? (
+                          <Badge variant="secondary">Active</Badge>
+                        ) : (
+                          <Badge variant="outline">Ngưng</Badge>
+                        )}
                       </TableCell>
-                    </TableRow>
-                  ) : positions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={canWrite ? 5 : 4} className="text-muted-foreground">
-                        Chưa có vị trí.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    positions.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell className="font-medium">{row.name}</TableCell>
-                        <TableCell>{row.code}</TableCell>
-                        <TableCell>{row.targetHeadcount}</TableCell>
-                        <TableCell>
+                      {canWrite ? (
+                        <TableCell className="space-x-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditJob(row)}
+                          >
+                            <PencilIcon className="size-4" />
+                          </Button>
                           {row.isActive ? (
-                            <Badge variant="secondary">Active</Badge>
-                          ) : (
-                            <Badge variant="outline">Ngưng</Badge>
-                          )}
-                        </TableCell>
-                        {canWrite ? (
-                          <TableCell className="space-x-1">
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => openEditJob(row)}
+                              onClick={() => setDeleteJobId(row.id)}
                             >
-                              <PencilIcon className="size-4" />
+                              <Trash2Icon className="size-4" />
                             </Button>
-                            {row.isActive ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setDeleteJobId(row.id)}
-                              >
-                                <Trash2Icon className="size-4" />
-                              </Button>
-                            ) : null}
-                          </TableCell>
-                        ) : null}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </section>
-          </div>
+                          ) : null}
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </section>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
