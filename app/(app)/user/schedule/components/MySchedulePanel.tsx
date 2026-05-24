@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   differenceInMinutes,
-  eachDayOfInterval,
   endOfWeek,
   format,
   isBefore,
   isSameDay,
   parseISO,
+  startOfDay,
   startOfWeek,
 } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -17,14 +17,6 @@ import { MyPreferencesTab } from "@/app/(app)/user/schedule/components/MyPrefere
 import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";
 import { cn } from "@/lib/utils";
@@ -66,30 +58,132 @@ function getUpcoming(assignments: ShiftAssignmentResponse[], now: Date) {
     .sort((a, b) => assignmentStart(a).getTime() - assignmentStart(b).getTime())[0];
 }
 
-function getAssignmentsForDate(assignments: ShiftAssignmentResponse[], date: Date) {
-  const dateKey = format(date, "yyyy-MM-dd");
-  return assignments
-    .filter((assignment) => assignment.date === dateKey)
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+function isOngoing(assignment: ShiftAssignmentResponse, now: Date): boolean {
+  return now >= assignmentStart(assignment) && now <= assignmentEnd(assignment);
+}
+
+interface DayGroup {
+  dateKey: string;
+  date: Date;
+  isPast: boolean;
+  isToday: boolean;
+  assignments: ShiftAssignmentResponse[];
+}
+
+function buildDayGroups(assignments: ShiftAssignmentResponse[], now: Date): DayGroup[] {
+  const map = new Map<string, ShiftAssignmentResponse[]>();
+  for (const a of assignments) {
+    const list = map.get(a.date) ?? [];
+    list.push(a);
+    map.set(a.date, list);
+  }
+
+  const todayStart = startOfDay(now);
+
+  const groups: DayGroup[] = Array.from(map.entries()).map(([dateKey, items]) => {
+    const date = parseISO(dateKey);
+    const isToday = isSameDay(date, now);
+    const isPast = !isToday && isBefore(date, todayStart);
+    return {
+      dateKey,
+      date,
+      isPast,
+      isToday,
+      assignments: items.sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    };
+  });
+
+  const upcoming = groups.filter((g) => !g.isPast).sort((a, b) => a.date.getTime() - b.date.getTime());
+  const past = groups.filter((g) => g.isPast).sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  return [...upcoming, ...past];
+}
+
+function DayCard({ group, now }: { group: DayGroup; now: Date }) {
+  const dayLabel = format(group.date, "EEEE", { locale: vi });
+  const dayShort = format(group.date, "dd/MM");
+
+  return (
+    <div className={cn("rounded-xl border bg-card shadow-sm", group.isPast && "opacity-60")}>
+      <div className="border-b px-4 py-3">
+        <span className={cn("font-semibold", group.isToday && "text-primary")}>
+          {dayLabel} {dayShort}
+        </span>
+        {group.isToday && (
+          <Badge className="ml-2 h-5 rounded-md px-2 text-[11px]">Hôm nay</Badge>
+        )}
+      </div>
+
+      <div className="divide-y">
+        {group.assignments.map((assignment) => {
+          const ongoing = isOngoing(assignment, now);
+          return (
+            <div key={assignment.id} className="flex items-center gap-3 px-4 py-3">
+              <div
+                className="self-stretch w-1 shrink-0 rounded-full"
+                style={{ backgroundColor: assignment.shiftColor ?? "#5068a9" }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-sm leading-tight">{assignment.shiftName}</p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <ClockIcon className="size-3.5" />
+                    {toTime(assignment.startTime)} - {toTime(assignment.endTime)}
+                  </span>
+                  {ongoing && (
+                    <Badge
+                      variant="secondary"
+                      className="h-5 rounded-md px-2 text-[11px] bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                    >
+                      Đang diễn ra
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {assignment.locationName && (
+                <span className="hidden sm:inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
+                  <MapPinIcon className="size-3.5" />
+                  {assignment.locationName}
+                </span>
+              )}
+
+              <Badge
+                variant="outline"
+                className="shrink-0 gap-1 rounded-md border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+              >
+                <ShieldCheckIcon className="size-3" />
+                Đã công bố
+              </Badge>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function MyPublishedScheduleView() {
   const { data: assignments = [], isLoading, isError, error, dataUpdatedAt } = useMyScheduleQuery();
-  const now = useMemo(() => new Date(), []);
-  const todayRowRef = useRef<HTMLTableRowElement>(null);
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    todayRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
   }, []);
 
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
-  const upcoming = getUpcoming(assignments, now);
-  const weeklyCount = assignments.filter((assignment) => {
-    const date = parseISO(assignment.date);
-    return date >= weekStart && date <= weekEnd;
-  }).length;
+  const { weeklyCount, upcoming, dayGroups } = useMemo(() => {
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    return {
+      weeklyCount: assignments.filter((a) => {
+        const d = parseISO(a.date);
+        return d >= weekStart && d <= weekEnd;
+      }).length,
+      upcoming: getUpcoming(assignments, now),
+      dayGroups: buildDayGroups(assignments, now),
+    };
+  }, [assignments, now]);
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Đang tải lịch…</p>;
@@ -124,9 +218,7 @@ function MyPublishedScheduleView() {
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-lg border bg-primary p-5 text-primary-foreground shadow-sm">
           <div className="flex items-start justify-between gap-4">
-            <p className="text-xs font-semibold uppercase text-primary-foreground/70">
-              Ca sắp tới
-            </p>
+            <p className="text-xs font-semibold uppercase text-primary-foreground/70">Ca sắp tới</p>
             <ZapIcon className="size-5 text-primary-foreground/70" />
           </div>
           {upcoming ? (
@@ -150,9 +242,7 @@ function MyPublishedScheduleView() {
         </div>
 
         <div className="rounded-lg border bg-card p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">
-            Tổng ca (28 ngày)
-          </p>
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Tổng ca (28 ngày)</p>
           <div className="mt-8 flex items-center gap-4">
             <span className="flex size-14 items-center justify-center rounded-lg bg-emerald-100 text-2xl font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
               {assignments.length}
@@ -183,111 +273,15 @@ function MyPublishedScheduleView() {
           <h2 className="text-lg font-semibold tracking-tight">Lịch làm việc chi tiết</h2>
         </div>
 
-        <div className="max-h-[520px] overflow-y-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ngày</TableHead>
-                <TableHead>Ca làm</TableHead>
-                <TableHead>Thời gian</TableHead>
-                <TableHead>Địa điểm</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead>Ghi chú</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {weekDays.flatMap((date) => {
-                const items = getAssignmentsForDate(assignments, date);
-                const today = isSameDay(date, now);
-                const isPast = !today && isBefore(date, now);
-                const dateLabel = (
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className={cn("font-medium", today && "text-primary")}>
-                        {format(date, "EEEE", { locale: vi })}
-                      </span>
-                      {today ? (
-                        <Badge className="h-5 rounded-md px-2 text-[11px]">Hôm nay</Badge>
-                      ) : null}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{format(date, "dd/MM")}</p>
-                  </div>
-                );
-
-                if (items.length === 0) {
-                  return [
-                    <TableRow key={date.toISOString()} className={cn(isPast && "opacity-50")}>
-                      <TableCell>{dateLabel}</TableCell>
-                      <TableCell className="font-medium italic text-muted-foreground">
-                        Ngày nghỉ
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">—</TableCell>
-                      <TableCell className="text-muted-foreground">—</TableCell>
-                      <TableCell className="text-muted-foreground">Không có ca</TableCell>
-                      <TableCell className="text-muted-foreground">—</TableCell>
-                    </TableRow>,
-                  ];
-                }
-
-                return items.map((assignment, index) => (
-                  <TableRow
-                    key={assignment.id}
-                    ref={today && index === 0 ? todayRowRef : undefined}
-                    className={cn(isPast && "opacity-50")}
-                  >
-                    <TableCell>{index === 0 ? dateLabel : null}</TableCell>
-                    <TableCell>
-                      <div
-                        className="border-l-4 pl-3 font-medium text-brand-navy dark:text-foreground"
-                        style={{ borderColor: assignment.shiftColor ?? "#5068a9" }}
-                      >
-                        {assignment.shiftName}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-1.5">
-                        <ClockIcon className="size-4 text-muted-foreground" />
-                        {toTime(assignment.startTime)} - {toTime(assignment.endTime)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {assignment.locationName ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <MapPinIcon className="size-4 text-muted-foreground" />
-                          {assignment.locationName}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className="gap-1 rounded-md border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      >
-                        <ShieldCheckIcon className="size-3" />
-                        Đã công bố
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {assignment.note ? (
-                        <Badge variant="outline" className="rounded-md">
-                          {assignment.note}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ));
-              })}
-            </TableBody>
-          </Table>
+        <div className="space-y-3">
+          {dayGroups.map((group) => (
+            <DayCard key={group.dateKey} group={group} now={now} />
+          ))}
         </div>
       </section>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5 text-xs text-muted-foreground">
-        <span> Dữ liệu được bảo mật bởi Wokki Security System</span>
+        <span>Dữ liệu được bảo mật bởi Wokki Security System</span>
         {dataUpdatedAt ? (
           <span>Cập nhật lần cuối: {format(new Date(dataUpdatedAt), "HH:mm dd/MM/yyyy")}</span>
         ) : null}
