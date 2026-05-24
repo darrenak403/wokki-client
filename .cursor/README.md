@@ -1,5 +1,18 @@
 # Using this `.cursor/` kit
 
+## Wokki project context
+
+| File | Purpose |
+|------|---------|
+| [../CLAUDE.md](../CLAUDE.md) | Claude Code entry — zones, hooks, API map |
+| [../AGENTS.md](../AGENTS.md) | Mandatory FE rules |
+| [contexts/wokki.md](./contexts/wokki.md) | Routes, panels, hooks ↔ fetch |
+| [rules/wokki-frontend.mdc](./rules/wokki-frontend.mdc) | Always-on frontend rule |
+
+Business source of truth: `../wokki-server/docs/`. Mirror under `.claude/` for Claude Code CLI.
+
+---
+
 This directory is the **Cursor project kit**: rules, skills, slash commands, agents, and optional hooks. In **cursor-skills** the tree already lives here; in another app it is the same tree at `<workspace>/.cursor/`.
 
 For a **step-by-step setup in Vietnamese**, see **[`README.md`](../README.md)** in the repo root.

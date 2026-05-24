@@ -8,6 +8,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Wokki Client — Agent Rules
 
+**Claude Code entry:** [CLAUDE.md](./CLAUDE.md) · **Product/code map:** [.cursor/contexts/wokki.md](./.cursor/contexts/wokki.md) · **Business docs:** `../wokki-server/docs/`
+
 ## Business Rules
 
 - Always update agents/docs when business behavior changes. If a task adds, removes, or changes workflow, permissions, statuses, API business meaning, or user-facing business copy, update relevant docs/agent context in the same task without waiting for the user to ask.

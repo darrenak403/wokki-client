@@ -1,5 +1,7 @@
 # Development Mode
 
+> **Wokki:** Product, routes, hooks map → [wokki.md](./wokki.md). Entry point: [CLAUDE.md](../../CLAUDE.md). Business rules: `../wokki-server/docs/business-rules.md`.
+
 Behavioral context for active coding sessions. Prioritize action over analysis.
 
 ## Principles
