@@ -10,10 +10,7 @@ export const metadata = buildPageMetadata({
 
 export default function RegisterPage() {
   return (
-    <AuthFormShell
-      title="Đăng ký"
-      description="Tạo tài khoản mới. Sau khi đăng ký, đăng nhập để bắt đầu sử dụng Wokki."
-    >
+    <AuthFormShell title="Đăng ký">
       <RegisterForm />
     </AuthFormShell>
   );

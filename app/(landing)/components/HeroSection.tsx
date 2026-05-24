@@ -1,16 +1,16 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import SafeImage from "@/components/ui/SafeImage";
 import { PointerHighlight } from "@/components/ui/pointer-highlight";
 import { useIsMobile } from "@/hooks/useMobile";
-import { useRegisterDialog } from "@/features/waitlist/hooks/useRegisterDialog";
 
 const badges = ["Nền tảng quản lí ca làm #1 Việt Nam"];
 
 export default function HeroSection() {
   const isMobile = useIsMobile();
-  const { open: openRegister } = useRegisterDialog();
+  const router = useRouter();
 
   return (
     <div className="relative flex min-h-screen w-full items-center overflow-hidden">
@@ -52,7 +52,8 @@ export default function HeroSection() {
             <InteractiveHoverButton
               variant="dark"
               className="text-base font-semibold"
-              onClick={openRegister}
+              type="button"
+              onClick={() => router.push("/register")}
             >
               Trải nghiệm ngay
             </InteractiveHoverButton>

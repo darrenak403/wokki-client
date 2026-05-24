@@ -1,19 +1,23 @@
-// App constants
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Waiting List";
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { getApiBaseUrl, publicEnv } from "@/lib/env/public";
+import { AUTH_TOKEN_COOKIE } from "@/lib/support/auth/session-cookies";
 
-// Cookie keys
-export const AUTH_TOKEN_KEY = "auth-token";
+/** @see publicEnv — values from NEXT_PUBLIC_* (.env.local / Docker build args). */
+export const APP_NAME = publicEnv.appName;
+export const APP_URL = publicEnv.appUrl;
+export const API_URL = publicEnv.apiUrl;
+/** Same as `getApiBaseUrl()` — includes trailing slash for HTTP clients. */
+export const API_BASE_URL = getApiBaseUrl();
 
-// Query keys
+/** Cookie name for JWT — must match `session-cookies.ts`. */
+export const AUTH_TOKEN_KEY = AUTH_TOKEN_COOKIE;
+
+// Legacy query keys (prefer `lib/api/query-keys.ts` for new code)
 export const QUERY_KEYS = {
   USER: "user",
   USERS: "users",
   REFERRAL_STATS: "referral-stats",
   PRODUCTS: "products",
   ORDERS: "orders",
-  REGISTER: "register",
   CHAT_CONVERSATIONS: "chat-conversations",
   CHAT_MESSAGES: "chat-messages",
   CHAT_USERS: "chat-users",
@@ -24,7 +28,6 @@ export const QUERY_KEYS = {
   STAFFING_DEMAND: "staffing-demand",
 } as const;
 
-// Routes
 export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",

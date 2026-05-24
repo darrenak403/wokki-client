@@ -4,6 +4,7 @@ import {
   HubConnectionState,
   LogLevel,
 } from "@microsoft/signalr";
+import { getApiBaseUrl } from "@/lib/env/public";
 import { store } from "@/lib/redux/store";
 
 let connection: HubConnection | null = null;
@@ -12,7 +13,7 @@ let startPromise: Promise<HubConnection | null> | null = null;
 let appHubUnavailable = false;
 
 function getBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8386/";
+  return getApiBaseUrl();
 }
 
 export function getHubUrl(): string {

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { publicEnv } from "@/lib/env/public";
 
 export type PublicSeoEntry = {
   slug: string;
@@ -9,8 +10,7 @@ export type PublicSeoEntry = {
 const MAX_PAGES = 20;
 
 async function fetchPage(page: number): Promise<PublicSeoEntry[]> {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) return [];
+  const base = publicEnv.apiUrl;
 
   try {
     const url = new URL("api/v1/public/seo-pages", base);
