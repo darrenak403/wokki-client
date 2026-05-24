@@ -31,6 +31,33 @@ export interface UpdateLocationRequest {
   isActive: boolean;
 }
 
+export interface LocationSchedulingPolicyResponse {
+  locationId: string;
+  schemaVersion: string;
+  rules: LocationSchedulingRule[];
+  updatedAt: string;
+}
+
+export type LocationSchedulingRuleValue = number | boolean | string | null;
+
+export interface LocationSchedulingRule {
+  key: string;
+  category: string;
+  content: string;
+  inputLabel: string;
+  valueType: "number" | "boolean" | "text";
+  value: LocationSchedulingRuleValue;
+  enabled: boolean;
+  isDefault: boolean;
+  isRequired: boolean;
+  sortOrder: number;
+}
+
+export interface UpsertLocationSchedulingPolicyRequest {
+  schemaVersion?: string;
+  rules: Array<Partial<LocationSchedulingRule> & Pick<LocationSchedulingRule, "category" | "content" | "inputLabel" | "valueType" | "enabled">>;
+}
+
 export interface DepartmentResponse {
   id: string;
   locationId: string;
@@ -86,6 +113,7 @@ export interface CreateEmployeeRequest {
   departmentId: string;
   role?: Extract<AppRole, "User" | "Manager">;
   password?: string | null;
+  departmentIds?: string[] | null;
 }
 
 export interface CreateEmployeeResponse {
@@ -102,6 +130,7 @@ export interface UpdateEmployeeRequest {
   position: string;
   hourlyRate: number;
   departmentId: string;
+  departmentIds?: string[] | null;
 }
 
 export interface ShiftDefinitionResponse {

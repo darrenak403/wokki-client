@@ -10,6 +10,8 @@ import type {
   CopyScheduleRequest,
   CreateAssignmentRequest,
   CreateScheduleRequest,
+  GenerateScheduleInsightContextRequest,
+  ScheduleInsightChatRequest,
   SuggestScheduleRequest,
   UpdateScheduleRequest,
 } from "@/types/schedule";
@@ -132,6 +134,35 @@ export function useApplySuggestionsMutation(scheduleId: string, listParams: Sche
       invalidateSchedule(queryClient, scheduleId, listParams ?? undefined);
       toast.success("Đã áp dụng gợi ý.");
     },
+    onError: (error) => toast.error(mapScheduleError(error)),
+  });
+}
+
+export function useScheduleInsightContextQuery(scheduleId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: scheduleKeys.insightContext(scheduleId ?? ""),
+    queryFn: () => fetchSchedules.getInsightContext(scheduleId!),
+    enabled: Boolean(scheduleId) && enabled,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useGenerateScheduleInsightContextMutation(scheduleId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: GenerateScheduleInsightContextRequest = {}) =>
+      fetchSchedules.generateInsightContext(scheduleId, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: scheduleKeys.insightContext(scheduleId) });
+      toast.success("Đã tạo snapshot insight cho lịch tuần.");
+    },
+    onError: (error) => toast.error(mapScheduleError(error)),
+  });
+}
+
+export function useScheduleInsightChatMutation(scheduleId: string) {
+  return useMutation({
+    mutationFn: (data: ScheduleInsightChatRequest) => fetchSchedules.chatInsight(scheduleId, data),
     onError: (error) => toast.error(mapScheduleError(error)),
   });
 }

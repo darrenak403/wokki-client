@@ -39,6 +39,8 @@ export const scheduleKeys = {
   detail: (id: string) => [...scheduleKeys.details(), id] as const,
   preferenceBoard: (scheduleId: string) =>
     [...scheduleKeys.all, "preferenceBoard", scheduleId] as const,
+  insightContext: (scheduleId: string) =>
+    [...scheduleKeys.all, "insightContext", scheduleId] as const,
 };
 
 export const preferenceKeys = {
@@ -62,6 +64,8 @@ export const bedrockKeys = {
 export const foundationKeys = {
   all: ["foundation"] as const,
   locations: () => [...foundationKeys.all, "locations"] as const,
+  locationPolicy: (locationId: string) =>
+    [...foundationKeys.all, "locationPolicy", locationId] as const,
   departments: (locationId?: string | null) =>
     [...foundationKeys.all, "departments", { locationId: locationId ?? null }] as const,
   employees: (params: object) => [...foundationKeys.all, "employees", params] as const,

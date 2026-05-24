@@ -150,13 +150,18 @@ export function DeptSchedulingConfigDialog({
           <DialogHeader>
             <DialogTitle>Cấu hình lịch — {department?.name ?? ""}</DialogTitle>
             <DialogDescription>
-              Luật số ca tối đa mỗi tuần và vị trí mục tiêu (headcount) trong phòng ban.
+              Phòng ban kế thừa luật chi nhánh; cấu hình ở đây chỉ là override riêng và vị trí mục tiêu.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-8">
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold">Luật phân ca</h3>
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold">Override luật phòng ban</h3>
+                <p className="text-xs text-muted-foreground">
+                  Nếu không đổi, solver dùng rule catalog của chi nhánh làm điều kiện nền.
+                </p>
+              </div>
               {policyLoading ? (
                 <p className="text-sm text-muted-foreground">Đang tải…</p>
               ) : (

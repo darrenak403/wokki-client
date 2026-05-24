@@ -10,6 +10,10 @@ import type {
   CreateAssignmentRequest,
   CreateScheduleRequest,
   ScheduleDetailResponse,
+  GenerateScheduleInsightContextRequest,
+  ScheduleInsightChatRequest,
+  ScheduleInsightChatResponse,
+  ScheduleInsightContextResponse,
   ScheduleListParams,
   ScheduleResponse,
   ShiftAssignmentResponse,
@@ -109,6 +113,35 @@ export const fetchSchedules = {
   ): Promise<ShiftAssignmentResponse[]> => {
     const response = await apiService.post<ApiEnvelope<ShiftAssignmentResponse[]>>(
       `api/v1/schedules/${scheduleId}/apply-suggestions`,
+      data,
+    );
+    return assertScheduleSuccess(normalizeApiResponse(response.data));
+  },
+
+  generateInsightContext: async (
+    scheduleId: string,
+    data: GenerateScheduleInsightContextRequest = {},
+  ): Promise<ScheduleInsightContextResponse> => {
+    const response = await apiService.post<ApiEnvelope<ScheduleInsightContextResponse>>(
+      `api/v1/schedules/${scheduleId}/insights/context`,
+      data,
+    );
+    return assertScheduleSuccess(normalizeApiResponse(response.data));
+  },
+
+  getInsightContext: async (scheduleId: string): Promise<ScheduleInsightContextResponse> => {
+    const response = await apiService.get<ApiEnvelope<ScheduleInsightContextResponse>>(
+      `api/v1/schedules/${scheduleId}/insights/context`,
+    );
+    return assertScheduleSuccess(normalizeApiResponse(response.data));
+  },
+
+  chatInsight: async (
+    scheduleId: string,
+    data: ScheduleInsightChatRequest,
+  ): Promise<ScheduleInsightChatResponse> => {
+    const response = await apiService.post<ApiEnvelope<ScheduleInsightChatResponse>>(
+      `api/v1/schedules/${scheduleId}/insights/chat`,
       data,
     );
     return assertScheduleSuccess(normalizeApiResponse(response.data));

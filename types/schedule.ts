@@ -52,7 +52,7 @@ export interface ScheduleSuggestion {
   score: number;
 }
 
-export type SuggestScheduleProvider = "heuristic" | "bedrock";
+export type SuggestScheduleProvider = "heuristic" | "cp-sat";
 
 export interface SuggestScheduleRequest {
   useAi?: boolean;
@@ -91,6 +91,49 @@ export interface ApplySuggestionItem {
 
 export interface ApplySuggestionsRequest {
   suggestions: ApplySuggestionItem[];
+}
+
+export interface ScheduleInsightSuggestionInput {
+  shiftDefinitionId: string;
+  employeeId: string;
+  date: string;
+  score: number;
+  explanations?: string[] | null;
+  warnings?: string[] | null;
+}
+
+export interface GenerateScheduleInsightContextRequest {
+  suggestions?: ScheduleInsightSuggestionInput[] | null;
+  provider?: string;
+  fallbackUsed?: boolean;
+  solveStatus?: string | null;
+  solveDurationMs?: number | null;
+  warnings?: string[] | null;
+}
+
+export interface ScheduleInsightContextResponse {
+  scheduleId: string;
+  locationId: string;
+  departmentId: string;
+  weekStartDate: string;
+  schemaVersion: string;
+  provider: string;
+  fallbackUsed: boolean;
+  generatedAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  jsonContent: string;
+}
+
+export interface ScheduleInsightChatRequest {
+  question: string;
+}
+
+export interface ScheduleInsightChatResponse {
+  scheduleId: string;
+  answer: string;
+  provider: string;
+  contextGeneratedAt: string;
 }
 
 export interface CopyScheduleRequest {
