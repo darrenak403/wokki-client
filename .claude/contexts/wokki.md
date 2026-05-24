@@ -39,7 +39,7 @@ Wave 1 Auth → Wave 2 Foundation (location, dept, employee, shift)
 |--------|------------------|-------|
 | Dashboard | `admin/dashboard` | |
 | Chi nhánh | `admin/locations` + `LocationPolicyDialog` | Branch scheduling policy v3 |
-| Phòng ban | `admin/departments` + `DeptSchedulingConfigDialog` | |
+| Phòng ban | `admin/departments` | Chi nhánh → phòng ban → nhân viên (không có vị trí con) |
 | Ca | `admin/shifts` | Shift definitions |
 | Nhân sự | `admin/employees` | Links User ↔ Employee |
 | Tài khoản | `admin/users` | Admin-only |
@@ -79,7 +79,6 @@ Manager routes mirror under `manager/*` (see `components/app/app-nav.ts`). User:
 | `useShifts` | `fetchShifts` |
 | `useSchedule` | `fetchSchedules` |
 | `useSchedulePreferences`, `usePreferenceBoard` | preferences |
-| `useSchedulingConfig` | branch/dept config |
 | `useMySchedule` | `fetchSelf` |
 | `useSwapRequests`, `useSwapInboxPendingCount` | swaps |
 | `useAttendance` | attendance |

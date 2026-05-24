@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CalendarCogIcon, PencilIcon, PlusIcon } from "lucide-react";
-import { DeptSchedulingConfigDialog } from "@/app/(app)/admin/departments/components/DeptSchedulingConfigDialog";
+import { PencilIcon, PlusIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +25,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/department-select";
 import { LocationSelect } from "@/components/shared/location-select";
 import {
   useCreateDepartmentMutation,
@@ -55,7 +53,6 @@ export function DepartmentsPanel({ canWrite = false }: DepartmentsPanelProps) {
   const updateMutation = useUpdateDepartmentMutation(locationId);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DepartmentResponse | null>(null);
-  const [configDept, setConfigDept] = useState<DepartmentResponse | null>(null);
 
   const form = useForm<DepartmentFormValues>({
     resolver: zodResolver(departmentSchema),
@@ -113,19 +110,19 @@ export function DepartmentsPanel({ canWrite = false }: DepartmentsPanelProps) {
             <TableRow>
               <TableHead>Tên phòng ban</TableHead>
               <TableHead>Trạng thái</TableHead>
-              <TableHead className="w-[200px]" />
+              {canWrite ? <TableHead className="w-[100px]" /> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-muted-foreground">
+                <TableCell colSpan={canWrite ? 3 : 2} className="text-muted-foreground">
                   Đang tải…
                 </TableCell>
               </TableRow>
             ) : departments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-muted-foreground">
+                <TableCell colSpan={canWrite ? 3 : 2} className="text-muted-foreground">
                   Chưa có phòng ban tại chi nhánh này.
                 </TableCell>
               </TableRow>
@@ -140,38 +137,20 @@ export function DepartmentsPanel({ canWrite = false }: DepartmentsPanelProps) {
                       <Badge variant="outline">Ngưng hoạt động</Badge>
                     )}
                   </TableCell>
-                  <TableCell className="space-x-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setConfigDept(row)}
-                    >
-                      <CalendarCogIcon className="size-4" />
-                      Cấu hình lịch
-                    </Button>
-                    {canWrite ? (
+                  {canWrite ? (
+                    <TableCell>
                       <Button type="button" variant="ghost" size="sm" onClick={() => openEdit(row)}>
                         <PencilIcon className="size-4" />
                         Sửa
                       </Button>
-                    ) : null}
-                  </TableCell>
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       )}
-
-      <DeptSchedulingConfigDialog
-        department={configDept}
-        open={Boolean(configDept)}
-        onOpenChange={(next) => {
-          if (!next) setConfigDept(null);
-        }}
-        canWrite={canWrite}
-      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

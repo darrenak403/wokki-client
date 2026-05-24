@@ -49,12 +49,6 @@ export const preferenceKeys = {
   mine: (scheduleId: string) => [...preferenceKeys.all, "mine", scheduleId] as const,
 };
 
-export const schedulingConfigKeys = {
-  all: ["schedulingConfig"] as const,
-  jobPositions: (departmentId: string) =>
-    [...schedulingConfigKeys.all, "jobPositions", departmentId] as const,
-};
-
 export const bedrockKeys = {
   all: ["bedrock"] as const,
   health: () => [...bedrockKeys.all, "health"] as const,

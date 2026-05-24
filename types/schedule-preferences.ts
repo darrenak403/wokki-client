@@ -29,7 +29,6 @@ export interface SchedulePreferenceBoardEmployee {
   employeeId: string;
   employeeName: string;
   position: string;
-  jobPositionId: string | null;
   status: SchedulePreferenceStatus | null;
   cells: SchedulePreferenceCell[];
 }
