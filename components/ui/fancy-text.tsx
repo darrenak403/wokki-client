@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
@@ -32,19 +32,12 @@ const FancyText = React.forwardRef<HTMLSpanElement, FancyTextProps>(
 
     const chars = children.split('');
     const [hideBase, setHideBase] = useState(false);
-    const [isSmall, setIsSmall] = useState(false);
-
-    useLayoutEffect(() => {
-      if (!finalRef.current) return;
-      const size = parseFloat(getComputedStyle(finalRef.current).fontSize);
-      setIsSmall(size < 28);
-    }, [finalRef]);
 
     return (
       <span ref={finalRef} className='relative inline-block'>
         <span
           className={cn(className)}
-          style={{ opacity: hideBase && isSmall ? 0 : 1 }}
+          style={{ opacity: hideBase ? 0 : 1 }}
         >
           {children}
         </span>
@@ -63,7 +56,7 @@ const FancyText = React.forwardRef<HTMLSpanElement, FancyTextProps>(
               }}
               onAnimationComplete={() => {
                 if (i === chars.length - 1) {
-                  if (isSmall) setHideBase(true);
+                  setHideBase(true);
                   onComplete?.();
                 }
               }}
