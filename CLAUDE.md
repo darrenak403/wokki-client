@@ -1,112 +1,89 @@
 # Wokki Client — Claude Code
 
-Frontend **Wokki Shift Ops MVP**: Next.js App Router, TanStack Query, Redux auth, Vietnamese UX, consumes `wokki-server` at `/api/v1`.
+> Claude loads this file automatically. Project kit lives in **`.claude/`**.
 
-**Coding rules (mandatory):** [AGENTS.md](./AGENTS.md) · Cursor: [.cursor/rules/wokki-frontend.mdc](./.cursor/rules/wokki-frontend.mdc) · Claude: [.claude/rules/wokki-frontend.md](./.claude/rules/wokki-frontend.md)
+@.claude/contexts/wokki-bootstrap.md
 
-**Product & codebase map:** [.cursor/contexts/wokki.md](./.cursor/contexts/wokki.md) (mirror: [.claude/contexts/wokki.md](./.claude/contexts/wokki.md))
-
-**Business source of truth (backend docs):** `../wokki-server/docs/` — especially [brd.md](../wokki-server/docs/brd.md), [business-rules.md](../wokki-server/docs/business-rules.md), [vi/fe-integration-guide.md](../wokki-server/docs/vi/fe-integration-guide.md).
+@AGENTS.md
 
 ---
 
-## Before you change behavior
+## Claude project map
 
-| # | Read | Why |
-|---|------|-----|
-| 1 | [AGENTS.md](./AGENTS.md) | FE structure, locale, zones |
-| 2 | `../wokki-server/docs/business-rules.md` | Locked `BR-xxx` |
-| 3 | `../wokki-server/docs/vi/fe-integration-guide.md` | Auth, waves, `/auth/me` vs `/self/*` |
-| 4 | [.cursor/contexts/wokki.md](./.cursor/contexts/wokki.md) | Routes, hooks, API map |
+| Path | Purpose |
+|------|---------|
+| [.claude/README.md](./.claude/README.md) | Index of `.claude/` |
+| [.claude/contexts/wokki.md](./.claude/contexts/wokki.md) | **Full** routes, hooks, UX rules |
+| [.claude/rules/wokki-frontend.md](./.claude/rules/wokki-frontend.md) | Rules on `app/`, `lib/`, `hooks/` |
+| [.claude/rules/wokki-business.md](./.claude/rules/wokki-business.md) | `BR-xxx` + doc sync |
+| [.claude/skills/wokki/SKILL.md](./.claude/skills/wokki/SKILL.md) | Skill: load Wokki context |
+| [.claude/commands/ck/wokki.md](./.claude/commands/ck/wokki.md) | Slash: `/ck:wokki` |
 
-When business behavior changes, update `AGENTS.md`, `wokki-server` locked docs, and this repo’s `contexts/wokki.md` in the same task.
+**Cursor mirror:** `.cursor/rules/wokki-frontend.mdc`
+
+**Backend (business truth):** `../wokki-server/docs/` · [../wokki-server/CLAUDE.md](../wokki-server/CLAUDE.md)
 
 ---
 
-## Non-negotiable UX / business
+## Documentation
 
-- **Locale:** User-facing copy **Vietnamese**; keep established English UI terms (`Dashboard`, `Export CSV`, `Admin`, `Manager`, `Light`/`Dark`).
-- **Schedule preferences:** Editable while schedule is **Draft**; **view-only** when **Published**. Copy must say preferences are advisory; official schedule = published assignments.
-- **Auto-scheduling UI:** Chi nhánh → phòng ban → tuần; branch `LocationSchedulingPolicy` mandatory before suggest; surface missing setup with actions.
-- **Bedrock:** Optional advisory chat only — never present as the engine that creates/applies/publishes shifts; scheduling works when Bedrock is down.
-- **Roles:** `Admin` / `Manager` / `User` — routes under `app/(app)/{admin|manager|user}/`; RBAC via `proxy.ts` + `lib/support/auth/`.
+| # | Read |
+|---|------|
+| 1 | [AGENTS.md](./AGENTS.md) — FE structure, locale, zones |
+| 2 | `../wokki-server/docs/business-rules.md` — **`BR-xxx`** |
+| 3 | `../wokki-server/docs/vi/fe-integration-guide.md` — waves, auth, SignalR |
+| 4 | [.claude/contexts/wokki.md](./.claude/contexts/wokki.md) |
+
+---
+
+## Business / UX essentials
+
+- **Vietnamese** user copy; English for established terms (`Dashboard`, `Admin`, `Manager`, `Export CSV`)
+- **Preferences:** edit in **Draft**, view-only when **Published**; advisory vs published assignments
+- **Auto-schedule UI:** chi nhánh → phòng ban → tuần; branch policy before suggest
+- **Bedrock:** hỗ trợ / giải thích only — scheduling without Bedrock must work
+- **`/auth/me`** ≠ **`/self/*`** · User must not use manager schedule write APIs
 
 ---
 
 ## App zones
 
-| Zone | Path | Examples |
-|------|------|----------|
-| Marketing | `app/(landing)/` | `/`, `/pricing`, `/help` |
-| Auth | `app/(auth)/` | `/login`, `/register` |
-| App | `app/(app)/` | `/admin/*`, `/manager/*`, `/user/*` |
+| Zone | Path |
+|------|------|
+| Marketing | `app/(landing)/` |
+| Auth | `app/(auth)/` |
+| App | `app/(app)/admin|manager|user/` |
 
-Post-login home: `lib/support/auth/app-routes.ts` → `/admin/dashboard`, `/manager/dashboard`, `/user/dashboard`.
-
-Nav source: `components/app/app-nav.ts` — update when adding app routes.
+Nav: `components/app/app-nav.ts` · Post-login: `lib/support/auth/app-routes.ts`
 
 ---
 
-## Data flow (standard pattern)
+## Data flow
 
 ```text
-page.tsx (thin) → *Panel.tsx (app/(app)/.../components/)
-  → hooks/useXxx.ts
-  → lib/api/services/fetchXxx.ts
-  → lib/support/{domain}/map-errors.ts + assert-success.ts
-  → types/{domain}.ts
+page.tsx → *Panel.tsx → hooks/useXxx.ts → lib/api/services/fetchXxx.ts
+  → lib/support/{domain}/map-errors.ts → types/
 ```
 
-- **No** `lib/api/{domain}/` subfolders — all fetchers in `lib/api/services/`.
-- **No** hooks under `lib/` — flat `hooks/useXxx.ts` only.
-- Envelope: check `success`, then `data`; errors via `message.code`.
+| Fetch | API |
+|-------|-----|
+| `fetchAuth`, `fetchUsers`, `fetchEmployees` | auth, users, employees |
+| `fetchLocations`, `fetchDepartments`, `fetchShifts` | foundation |
+| `fetchSchedules`, `fetchSchedulePreferences`, `fetchSchedulingConfig` | scheduling |
+| `fetchSelf`, `fetchSwapRequests`, `fetchAttendance`, `fetchPayroll` | employee / ops |
+| `fetchChat`, `fetchBedrock` | chat, insight |
+
+Dev: http://localhost:6789 · API: http://localhost:8386 (`lib/api/get-api-base-url.ts`)
 
 ---
 
-## API services ↔ backend
+## Screens (by role)
 
-| `lib/api/services/` | Backend area |
-|---------------------|--------------|
-| `fetchAuth.ts` | `/api/v1/auth` |
-| `fetchUsers.ts` | `/api/v1/users` |
-| `fetchEmployees.ts` | `/api/v1/employees` |
-| `fetchLocations.ts` | `/api/v1/locations` (+ policy) |
-| `fetchDepartments.ts` | `/api/v1/departments` |
-| `fetchShifts.ts` | `/api/v1/shifts` |
-| `fetchSchedules.ts` | `/api/v1/schedules` |
-| `fetchSchedulePreferences.ts` | preferences on schedule |
-| `fetchSchedulingConfig.ts` | dept/branch scheduling config |
-| `fetchSelf.ts` | `/api/v1/self` |
-| `fetchSwapRequests.ts` | `/api/v1/swap-requests` |
-| `fetchAttendance.ts` | `/api/v1/attendance` |
-| `fetchPayroll.ts` | `/api/v1/payroll` |
-| `fetchChat.ts` | `/api/v1/channels` + SignalR |
-| `fetchBedrock.ts` | `/api/v1/bedrock`, schedule insights |
-| `fetchHealth.ts` | `/health` |
+Admin/Manager: dashboard, locations, departments, shifts, employees, users (admin), schedule, swap, attendance, payroll, chat.
 
-Base URL: `lib/api/get-api-base-url.ts` — default `http://localhost:8386`.
+User: dashboard, schedule (view), swap, attendance, chat.
 
----
-
-## Feature screens (implemented)
-
-| Feature | Admin | Manager | User |
-|---------|-------|---------|------|
-| Dashboard | `/admin/dashboard` | `/manager/dashboard` | `/user/dashboard` |
-| Chi nhánh / PB / Ca / NS | ✓ | mostly read/write | — |
-| Lịch ca | `/admin/schedule` | `/manager/schedule` | `/user/schedule` (view) |
-| Đổi ca | `/admin/swap` | `/manager/swap` | `/user/swap` |
-| Chấm công | `/admin/attendance` | `/manager/attendance` | `/user/attendance` |
-| Lương | `/admin/payroll` | `/manager/payroll` | — |
-| Chat | `/admin/chat` | `/manager/chat` | `/user/chat` |
-
-Panels: colocated under `app/(app)/admin/{feature}/components/`; Manager/User often reuse with `canWrite={false}`.
-
----
-
-## `lib/support/` domains
-
-See [lib/support/README.md](./lib/support/README.md): `auth/`, `foundation/`, `schedule/`, `schedule-preference/`, `scheduling-config/`, `employee/`, `payroll/`, `chat/`, `seo/`.
+Panels: `app/(app)/admin/{feature}/components/{Feature}Panel.tsx`
 
 ---
 
@@ -114,30 +91,29 @@ See [lib/support/README.md](./lib/support/README.md): `auth/`, `foundation/`, `s
 
 ```bash
 cp .env.example .env.local   # once
-npm run dev                  # :6789
+npm run dev
 npm run type-check           # before done
-npm run build                # larger changes
+npm run build                # structural changes
 ```
 
----
-
-## Next.js note
-
-This repo may use a **newer Next.js** than training data — read `node_modules/next/dist/docs/` for deprecations before changing routing or APIs.
+**Next.js:** read `node_modules/next/dist/docs/` — version may differ from training data.
 
 ---
 
-## Agent toolkit
+## Claude workflows
 
-Same **cursor-skills** tree in `.cursor/` and `.claude/` as backend repo. Use `contexts/wokki.md` for product work; `skills/code-review/` before claiming complete.
-
-**FE handoff command:** `/ck:docs-fe` (`.claude/commands/ck/docs-fe.md`) — documents changed API contracts for FE.
+| Command / skill | Use |
+|-----------------|-----|
+| `/ck:wokki` | Load FE + `BR-xxx` context |
+| `/ck:docs-fe` | Handoff doc for API changes |
+| `/ck:cook` · `/ck:plan` · `/ck:fix` | Implement / plan / debug |
+| Skill `wokki` | Routes, hooks, common mistakes |
 
 ---
 
 ## Definition of done
 
-1. Correct app zone and nav updated if new route  
+1. Correct zone + nav if new route  
 2. Vietnamese copy (unless established English term)  
-3. `npm run type-check` (and `npm run build` for structural changes)  
-4. Business docs + `contexts/wokki.md` updated if behavior changed  
+3. `npm run type-check` (and `npm run build` if structural)  
+4. Backend docs + `.claude/contexts/wokki.md` if behavior changed  

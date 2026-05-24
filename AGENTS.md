@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Wokki Client — Agent Rules
 
-**Claude Code entry:** [CLAUDE.md](./CLAUDE.md) · **Product/code map:** [.cursor/contexts/wokki.md](./.cursor/contexts/wokki.md) · **Business docs:** `../wokki-server/docs/`
+**Claude Code:** [CLAUDE.md](./CLAUDE.md) · [.claude/README.md](./.claude/README.md) · `/ck:wokki` · **Map:** [.claude/contexts/wokki.md](./.claude/contexts/wokki.md) · **BE docs:** `../wokki-server/docs/`
 
 ## Business Rules
 

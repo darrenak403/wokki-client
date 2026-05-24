@@ -136,3 +136,15 @@ Add `map-errors.ts` + `assert-success.ts` per new domain under `lib/support/{dom
 3. `fetchXxx` + `useXxx` + `types` + `lib/support`  
 4. Vietnamese strings; English only for established terms  
 5. Update `../wokki-server/docs` if API contract or `BR-xxx` changes  
+
+---
+
+## Claude quick commands
+
+| Command | Purpose |
+|---------|---------|
+| `/ck:wokki` | Load BR-xxx + route/hook map |
+| `/ck:docs-fe` | API handoff after BE changes |
+| Skill `wokki` | `.claude/skills/wokki/SKILL.md` |
+
+**Auto-loaded:** `CLAUDE.md` + `wokki-bootstrap.md` on session start.
