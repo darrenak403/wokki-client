@@ -58,6 +58,7 @@ export function LoginForm() {
             type="email"
             autoComplete="email"
             placeholder="name@company.com"
+            className="h-11"
             {...form.register("email")}
           />
           <FieldError errors={[form.formState.errors.email]} />
@@ -69,6 +70,7 @@ export function LoginForm() {
             id="password"
             type="password"
             autoComplete="current-password"
+            className="h-11"
             {...form.register("password")}
           />
           <FieldError errors={[form.formState.errors.password]} />
@@ -81,7 +83,7 @@ export function LoginForm() {
         </Alert>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="h-11 w-full text-base font-semibold" disabled={isLoading}>
         {isLoading ? "Đang đăng nhập…" : "Đăng nhập"}
       </Button>
 
@@ -89,7 +91,7 @@ export function LoginForm() {
         Chưa có tài khoản?{" "}
         <Link
           href="/register"
-          className="font-medium text-foreground underline-offset-4 hover:underline"
+          className="font-semibold text-brand-blue underline-offset-4 hover:underline"
         >
           Đăng ký
         </Link>

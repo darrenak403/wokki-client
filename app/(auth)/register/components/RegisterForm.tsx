@@ -77,6 +77,7 @@ export function RegisterForm() {
             type="email"
             autoComplete="email"
             placeholder="name@company.com"
+            className="h-11"
             {...form.register("email")}
           />
           <FieldError errors={[form.formState.errors.email]} />
@@ -88,6 +89,7 @@ export function RegisterForm() {
             id="register-password"
             type="password"
             autoComplete="new-password"
+            className="h-11"
             {...form.register("password")}
           />
           <FieldError errors={[form.formState.errors.password]} />
@@ -99,6 +101,7 @@ export function RegisterForm() {
             id="register-confirm"
             type="password"
             autoComplete="new-password"
+            className="h-11"
             {...form.register("confirmPassword")}
           />
           <FieldError errors={[form.formState.errors.confirmPassword]} />
@@ -111,7 +114,7 @@ export function RegisterForm() {
         </Alert>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" className="h-11 w-full text-base font-semibold" disabled={isSubmitting}>
         {isSubmitting ? "Đang xử lý…" : "Đăng ký"}
       </Button>
 
@@ -119,7 +122,7 @@ export function RegisterForm() {
         Đã có tài khoản?{" "}
         <Link
           href="/login"
-          className="font-medium text-foreground underline-offset-4 hover:underline"
+          className="font-semibold text-brand-blue underline-offset-4 hover:underline"
         >
           Đăng nhập
         </Link>
