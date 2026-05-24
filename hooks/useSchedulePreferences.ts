@@ -7,7 +7,7 @@ import { fetchSchedulePreferences } from "@/lib/api/services/fetchSchedulePrefer
 import { mapSchedulePreferenceError } from "@/lib/support/schedule-preference/map-errors";
 import type { SaveSchedulePreferencesRequest } from "@/types/schedule-preferences";
 
-const STALE_MS = 60 * 1000;
+const STALE_MS = 0;
 
 export function useEmployeePreferenceScheduleQuery(weekStartDate: string | null) {
   return useQuery({
@@ -32,11 +32,14 @@ export function useSaveSchedulePreferencesMutation(scheduleId: string) {
   return useMutation({
     mutationFn: (data: SaveSchedulePreferencesRequest) =>
       fetchSchedulePreferences.saveMine(scheduleId, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: preferenceKeys.mine(scheduleId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.mine(scheduleId) });
       toast.success("Đã lưu nháp đăng ký ca.");
     },
-    onError: (error) => toast.error(mapSchedulePreferenceError(error)),
+    onError: async (error) => {
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.mine(scheduleId) });
+      toast.error(mapSchedulePreferenceError(error));
+    },
   });
 }
 
@@ -44,13 +47,16 @@ export function useSubmitSchedulePreferencesMutation(scheduleId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => fetchSchedulePreferences.submitMine(scheduleId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: preferenceKeys.mine(scheduleId) });
-      void queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.mine(scheduleId) });
+      await queryClient.invalidateQueries({
         queryKey: scheduleKeys.preferenceBoard(scheduleId),
       });
       toast.success("Đã gửi đăng ký ca.");
     },
-    onError: (error) => toast.error(mapSchedulePreferenceError(error)),
+    onError: async (error) => {
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.mine(scheduleId) });
+      toast.error(mapSchedulePreferenceError(error));
+    },
   });
 }

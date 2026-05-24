@@ -14,6 +14,8 @@ const PREFERENCE_ERROR_MESSAGES: Record<string, string> = {
   SCHEDULE_NOT_FOUND: "Không tìm thấy lịch tuần.",
   ME_NO_EMPLOYEE: "Tài khoản chưa liên kết hồ sơ nhân viên.",
   INTERNAL_ERROR: "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
+  SCHEDULE_PREFERENCE_STALE:
+    "Dữ liệu đăng ký đã thay đổi (vd. sau sao chép tuần). Đang tải lại — vui lòng lưu lại.",
 };
 
 const GENERIC_ERROR = "Đã xảy ra lỗi. Vui lòng thử lại.";

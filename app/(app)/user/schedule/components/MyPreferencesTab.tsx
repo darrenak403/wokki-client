@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { addWeeksISO, toMondayISO, weekDayDates } from "@/lib/support/schedule/week";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
@@ -39,6 +39,13 @@ function lineKey(shiftDefinitionId: string, date: string) {
   return `${shiftDefinitionId}:${date}`;
 }
 
+type PreferencesLocalPatch = {
+  revision: string;
+  lines: SchedulePreferenceLine[];
+  dirty: boolean;
+  editingSubmitted: boolean;
+};
+
 export function MyPreferencesTab() {
   const [weekStartDate, setWeekStartDate] = useState(() => addWeeksISO(toMondayISO(new Date()), 1));
 
@@ -51,19 +58,17 @@ export function MyPreferencesTab() {
   const saveMutation = useSaveSchedulePreferencesMutation(scheduleId ?? "");
   const submitMutation = useSubmitSchedulePreferencesMutation(scheduleId ?? "");
 
-  const [lines, setLines] = useState<SchedulePreferenceLine[]>([]);
-  const [dirty, setDirty] = useState(false);
-  const [editingSubmitted, setEditingSubmitted] = useState(false);
+  const [patch, setPatch] = useState<PreferencesLocalPatch | null>(null);
 
-  useEffect(() => {
-    if (prefs) {
-      // Local editable copy is needed before the employee saves the draft.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLines(prefs.lines);
-      setDirty(false);
-      setEditingSubmitted(false);
-    }
-  }, [prefs]);
+  const prefsSynced = Boolean(prefs && scheduleId && prefs.scheduleId === scheduleId);
+  const revision = scheduleId
+    ? `${scheduleId}:${prefs?.submissionId ?? "none"}:${prefs?.status ?? ""}`
+    : "";
+
+  const serverLines = prefsSynced && prefs ? prefs.lines : [];
+  const lines = patch?.revision === revision ? patch.lines : serverLines;
+  const dirty = patch?.revision === revision ? patch.dirty : false;
+  const editingSubmitted = patch?.revision === revision ? patch.editingSubmitted : false;
 
   const weekDays = useMemo(() => weekDayDates(weekStartDate), [weekStartDate]);
   const shifts = preferenceSchedule?.shifts ?? [];
@@ -142,36 +147,49 @@ export function MyPreferencesTab() {
       const key = lineKey(shiftDefinitionId, date);
       const current = lineMap.get(key) ?? null;
       const next = cyclePreferenceType(current);
-      setLines((prev) => {
-        const filtered = prev.filter(
+      setPatch((prev) => {
+        const baseLines = prev?.revision === revision ? prev.lines : serverLines;
+        const filtered = baseLines.filter(
           (l) => !(l.shiftDefinitionId === shiftDefinitionId && l.date === date),
         );
         if (next) {
           filtered.push({ shiftDefinitionId, date, preferenceType: next });
         }
-        return filtered;
+        return {
+          revision,
+          lines: filtered,
+          dirty: true,
+          editingSubmitted: prev?.revision === revision ? prev.editingSubmitted : false,
+        };
       });
-      setDirty(true);
     },
-    [lineMap, readOnly],
+    [lineMap, readOnly, revision, serverLines],
   );
+
+  const buildSavePayload = useCallback((): SchedulePreferenceLine[] => {
+    const shiftIds = new Set(shifts.map((s) => s.shiftDefinitionId));
+    const daySet = new Set(weekDays);
+    return lines.filter(
+      (line) => shiftIds.has(line.shiftDefinitionId) && daySet.has(line.date),
+    );
+  }, [lines, shifts, weekDays]);
 
   const handleSave = async () => {
     if (!scheduleId) return;
-    await saveMutation.mutateAsync({ lines });
-    setDirty(false);
+    await saveMutation.mutateAsync({ lines: buildSavePayload() });
+    setPatch(null);
   };
 
   const handleSubmit = async () => {
     if (!scheduleId) return;
-    // PUT resets Submitted → Draft on server; required before POST submit.
+    const payload = buildSavePayload();
     const mustSaveBeforeSubmit = dirty || submitted || editingSubmitted;
     if (mustSaveBeforeSubmit) {
-      await saveMutation.mutateAsync({ lines });
-      setDirty(false);
+      await saveMutation.mutateAsync({ lines: payload });
+      setPatch(null);
     }
     await submitMutation.mutateAsync();
-    setEditingSubmitted(false);
+    setPatch(null);
   };
 
   const scheduleErrorCode =
@@ -183,7 +201,7 @@ export function MyPreferencesTab() {
     return <NoEmployeeLinked />;
   }
 
-  if (scheduleLoading || prefsLoading) {
+  if (scheduleLoading || prefsLoading || (scheduleId && !prefsSynced)) {
     return (
       <div className="space-y-6">
         {weekControls}
@@ -263,7 +281,17 @@ export function MyPreferencesTab() {
 
       {scheduleIsPublished ? null : submitted && !editingSubmitted ? (
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setEditingSubmitted(true)}>
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPatch({
+                revision,
+                lines: serverLines,
+                dirty: false,
+                editingSubmitted: true,
+              })
+            }
+          >
             Chỉnh sửa đăng ký
           </Button>
         </div>
@@ -280,11 +308,7 @@ export function MyPreferencesTab() {
             <Button
               variant="ghost"
               disabled={saveMutation.isPending || submitMutation.isPending}
-              onClick={() => {
-                setLines(prefs?.lines ?? []);
-                setDirty(false);
-                setEditingSubmitted(false);
-              }}
+              onClick={() => setPatch(null)}
             >
               Huỷ sửa
             </Button>
