@@ -166,7 +166,7 @@ export function AttendancePanel() {
             </div>
             <div className="text-right">
               <p className="text-xs font-semibold uppercase text-muted-foreground">
-                {openRecord ? "Đang làm" : workedDisplay ? "Đã làm ca" : "Giờ làm ca"}
+                {openRecord ? "Đang làm" : workedDisplay ? "Tổng giờ làm việc" : "Giờ làm ca"}
               </p>
               <p className="mt-1 text-4xl font-semibold tabular-nums">
                 {workedDisplay ?? <span className="text-muted-foreground/40">--:--</span>}
