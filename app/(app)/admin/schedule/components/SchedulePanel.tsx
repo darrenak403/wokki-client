@@ -129,8 +129,8 @@ export function SchedulePanel() {
   };
 
   return (
-    <div className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm md:p-6 dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="flex flex-col gap-4 border-b border-neutral-100 pb-5 dark:border-neutral-800 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end gap-4 border-b pb-4 justify-between">
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-1.5 min-w-[160px]">
             <Label className="text-xs text-muted-foreground">Chi nhánh</Label>
@@ -192,11 +192,11 @@ export function SchedulePanel() {
       </div>
 
       {!locationId || !departmentId ? (
-        <p className="pt-5 text-sm text-muted-foreground">Chọn chi nhánh và phòng ban để xem lịch.</p>
+        <p className="text-sm text-muted-foreground">Chọn chi nhánh và phòng ban để xem lịch.</p>
       ) : listLoading || (scheduleId && detailLoading) ? (
-        <p className="pt-5 text-sm text-muted-foreground">Đang tải lịch…</p>
+        <p className="text-sm text-muted-foreground">Đang tải lịch…</p>
       ) : !scheduleId ? (
-        <div className="rounded-xl border border-dashed border-neutral-200 p-8 text-center pt-5 mt-5">
+        <div className="rounded-xl border border-dashed border-neutral-200 p-8 text-center">
           <p className="mb-4 text-sm text-muted-foreground">
             Chưa có lịch cho phòng ban và tuần này.
           </p>
@@ -210,7 +210,7 @@ export function SchedulePanel() {
         </div>
       ) : schedule && locationId ? (
         <>
-          <div className="flex flex-wrap gap-2 pt-5 pb-4">
+          <div className="flex flex-wrap gap-2">
             {preferenceBoardSchedule ? (
               <Button className={primaryActionClass} onClick={() => setBoardOpen(true)}>
                 Bảng đăng ký ca
