@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div
           className={cn(
-            "transition-[padding] duration-300 lg:pl-72",
+            "transition-[padding] duration-300 lg:pl-60",
             collapsed && "lg:pl-20",
             isAdminRoute && rightOpen && "lg:pr-72"
           )}
