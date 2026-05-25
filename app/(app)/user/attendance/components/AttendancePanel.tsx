@@ -202,6 +202,12 @@ export function AttendancePanel() {
           ) : null}
 
           <div className="mt-20 flex flex-col gap-3">
+            {pendingOTRequest ? (
+              <OTClockOutButton
+                overtimeRequestId={pendingOTRequest.id}
+                startedAt={pendingOTRequest.startedAt}
+              />
+            ) : null}
             <div className="flex flex-col gap-3 sm:flex-row">
               {openRecord ? (
                 <Button
@@ -236,12 +242,6 @@ export function AttendancePanel() {
                 </Button>
               ) : null}
             </div>
-            {pendingOTRequest ? (
-              <OTClockOutButton
-                overtimeRequestId={pendingOTRequest.id}
-                startedAt={pendingOTRequest.startedAt}
-              />
-            ) : null}
           </div>
           {canRequestOT ? (
             <div className="mt-6">

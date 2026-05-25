@@ -33,19 +33,20 @@ export function OTClockOutButton({ overtimeRequestId, startedAt }: OTClockOutBut
   }, [startedAt]);
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/40">
       <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
         <TimerIcon className="size-4 shrink-0 animate-pulse" />
-        <span>Đang tăng ca · {formatElapsed(elapsed)}</span>
+        <span className="font-medium">Đang tăng ca</span>
+        <span className="text-amber-600/70 dark:text-amber-500/70">· {formatElapsed(elapsed)}</span>
       </div>
       <Button
-        size="lg"
+        size="sm"
         variant="outline"
-        className="h-12 flex-1 text-base border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/40"
+        className="h-8 shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/60"
         disabled={mutation.isPending}
         onClick={() => void mutation.mutateAsync(overtimeRequestId)}
       >
-        {mutation.isPending ? "Đang kết thúc…" : "Kết thúc tăng ca"}
+        {mutation.isPending ? "Đang kết thúc…" : "Kết thúc"}
       </Button>
     </div>
   );
