@@ -57,6 +57,7 @@ export function AttendancePanel() {
   const myOTRequests = myOTPage?.items ?? [];
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
   const [now, setNow] = useState(() => new Date());
+  const [showOTForm, setShowOTForm] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
@@ -111,8 +112,10 @@ export function AttendancePanel() {
   const pendingOTRequest = myOTRequests.find(
     (r) => r.shiftAssignmentId === currentShift?.id && r.status === OVERTIME_STATUS.Pending,
   );
+  const hasAttendanceForShift =
+    !!openRecord || history.some((r) => r.assignmentId === currentShift?.id);
   const canRequestOT =
-    isShiftEnded(currentShift, now) && !!openRecord && !activeOTRequest && !!currentShift;
+    isShiftEnded(currentShift, now) && hasAttendanceForShift && !activeOTRequest && !!currentShift;
   const todayStatus = selectedShiftEnded
     ? "Đã quá giờ clock in"
     : getTodayShiftStatus(openRecord, currentShift);
@@ -196,48 +199,66 @@ export function AttendancePanel() {
             </div>
           ) : null}
 
-          <div className="mt-20 flex flex-col gap-3 sm:flex-row">
-            {openRecord && pendingOTRequest ? (
+          <div className="mt-20 flex flex-col gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              {openRecord ? (
+                <Button
+                  size="lg"
+                  variant="destructive"
+                  className="h-12 flex-1 text-base"
+                  disabled={!canClockOut || actionPending}
+                  onClick={() => void clockOutMutation.mutateAsync()}
+                >
+                  <LogOutIcon className="size-5" />
+                  {clockOutMutation.isPending ? "Đang clock out…" : "Clock out"}
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="h-12 flex-1 text-base"
+                  disabled={
+                    !canClockIn ||
+                    selectedShiftEnded ||
+                    actionPending ||
+                    (needsShiftPick && !selectedAssignmentId)
+                  }
+                  onClick={() => void handleClockIn()}
+                >
+                  <LogInIcon className="size-5" />
+                  {clockInMutation.isPending ? "Đang clock in…" : "Clock in"}
+                </Button>
+              )}
+              {!openRecord ? (
+                <Button type="button" size="lg" variant="outline" className="h-12 sm:w-24" disabled>
+                  <TimerIcon className="size-5" />
+                </Button>
+              ) : null}
+            </div>
+            {pendingOTRequest ? (
               <OTClockOutButton
                 overtimeRequestId={pendingOTRequest.id}
                 startedAt={pendingOTRequest.startedAt}
               />
-            ) : openRecord ? (
-              <Button
-                size="lg"
-                variant="destructive"
-                className="h-12 flex-1 text-base"
-                disabled={!canClockOut || actionPending}
-                onClick={() => void clockOutMutation.mutateAsync()}
-              >
-                <LogOutIcon className="size-5" />
-                {clockOutMutation.isPending ? "Đang clock out…" : "Clock out"}
-              </Button>
-            ) : (
-              <Button
-                size="lg"
-                className="h-12 flex-1 text-base"
-                disabled={
-                  !canClockIn ||
-                  selectedShiftEnded ||
-                  actionPending ||
-                  (needsShiftPick && !selectedAssignmentId)
-                }
-                onClick={() => void handleClockIn()}
-              >
-                <LogInIcon className="size-5" />
-                {clockInMutation.isPending ? "Đang clock in…" : "Clock in"}
-              </Button>
-            )}
-            {!openRecord || !pendingOTRequest ? (
-              <Button type="button" size="lg" variant="outline" className="h-12 sm:w-24" disabled>
-                <TimerIcon className="size-5" />
-              </Button>
             ) : null}
           </div>
           {canRequestOT ? (
             <div className="mt-6">
-              <OTRequestForm shiftAssignmentId={currentShift!.id} />
+              {showOTForm ? (
+                <OTRequestForm
+                  shiftAssignmentId={currentShift!.id}
+                  onSuccess={() => setShowOTForm(false)}
+                />
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full"
+                  onClick={() => setShowOTForm(true)}
+                >
+                  <TimerIcon className="size-4" />
+                  Yêu cầu tăng ca
+                </Button>
+              )}
             </div>
           ) : null}
         </div>
