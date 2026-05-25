@@ -21,6 +21,7 @@ const ADMIN_NAV: AppNavItem[] = [
   { href: "/admin/swap", label: "Đổi ca", description: "Duyệt hoặc từ chối yêu cầu đổi ca đang chờ.", module: "wave5", showSwapPendingBadge: true },
   { href: "/admin/attendance", label: "Chấm công", description: "Xem và điều chỉnh chấm công nhân viên.", module: "wave5" },
   { href: "/admin/payroll", label: "Lương", description: "Tổng lương theo phòng ban và kỳ, hỗ trợ xuất CSV.", module: "wave5" },
+  { href: "/admin/overtime", label: "Tăng ca", description: "Duyệt yêu cầu tăng ca.", module: "overtime" },
   { href: "/admin/chat", label: "Tin nhắn", description: "Chat nội bộ, tạo kênh, gửi tin và duyệt tin.", module: "wave6" },
 ];
 
@@ -34,6 +35,7 @@ const MANAGER_NAV: AppNavItem[] = [
   { href: "/manager/swap", label: "Đổi ca", description: "Duyệt hoặc từ chối yêu cầu đổi ca đang chờ.", module: "wave5", showSwapPendingBadge: true },
   { href: "/manager/attendance", label: "Chấm công", description: "Xem và điều chỉnh chấm công nhân viên.", module: "wave5" },
   { href: "/manager/payroll", label: "Lương", description: "Tổng lương theo phòng ban và kỳ.", module: "wave5" },
+  { href: "/manager/overtime", label: "Tăng ca", description: "Duyệt yêu cầu tăng ca.", module: "overtime" },
   { href: "/manager/chat", label: "Tin nhắn", description: "Chat nội bộ, tạo kênh và nhắn với team.", module: "wave6" },
 ];
 

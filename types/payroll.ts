@@ -13,6 +13,8 @@ export interface PayrollLineResponse {
   totalWorkedMinutes: number;
   hourlyRate: number;
   grossPay: number;
+  approvedOvertimeMinutes: number;
+  overtimePay: number;
 }
 
 export interface PayrollSummaryResponse {
@@ -34,6 +36,9 @@ export interface PayrollAttendanceItem {
 }
 
 export interface PayrollEmployeeDetailResponse extends PayrollLineResponse {
+  payPeriodId: string;
+  startDate: string;
+  endDate: string;
   attendanceItems: PayrollAttendanceItem[];
 }
 

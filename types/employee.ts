@@ -65,6 +65,7 @@ export interface AttendanceResponse {
   clockOut: string | null;
   workedMinutes: number;
   status: AttendanceStatus;
+  autoClosed?: boolean;
   adjustedBy: string | null;
   adjustmentNote: string | null;
   createdAt: string;

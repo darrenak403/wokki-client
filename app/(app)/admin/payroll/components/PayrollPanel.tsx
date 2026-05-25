@@ -130,6 +130,8 @@ export function PayrollPanel({ canExportCsv }: PayrollPanelProps) {
                   <TableHead>Phút</TableHead>
                   <TableHead>Lương/giờ</TableHead>
                   <TableHead>Lương gross</TableHead>
+                  <TableHead>OT (phút)</TableHead>
+                  <TableHead>Phụ cấp OT</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -141,6 +143,12 @@ export function PayrollPanel({ canExportCsv }: PayrollPanelProps) {
                     <TableCell>{line.totalWorkedMinutes}</TableCell>
                     <TableCell>{line.hourlyRate}</TableCell>
                     <TableCell>{line.grossPay}</TableCell>
+                    <TableCell>{line.approvedOvertimeMinutes > 0 ? line.approvedOvertimeMinutes : "—"}</TableCell>
+                    <TableCell>
+                      {line.overtimePay > 0
+                        ? line.overtimePay.toLocaleString("vi-VN")
+                        : "—"}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

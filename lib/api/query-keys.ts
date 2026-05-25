@@ -1,3 +1,9 @@
+export const overtimeKeys = {
+  all: ["overtime"] as const,
+  my: (params?: object) => [...overtimeKeys.all, "my", params] as const,
+  pending: (params?: object) => [...overtimeKeys.all, "pending", params] as const,
+};
+
 export const swapInboxKeys = {
   all: ["swapInbox"] as const,
   lists: () => [...swapInboxKeys.all, "list"] as const,

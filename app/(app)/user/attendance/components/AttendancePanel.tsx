@@ -12,6 +12,8 @@ import {
   TimerIcon,
   UsersIcon,
 } from "lucide-react";
+import { OTClockOutButton } from "@/app/(app)/user/attendance/components/OTClockOutButton";
+import { OTRequestForm } from "@/app/(app)/user/attendance/components/OTRequestForm";
 import { NoEmployeeLinked } from "@/app/(app)/user/components/NoEmployeeLinked";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,10 +31,12 @@ import {
   useClockOutMutation,
   useOpenAttendanceRecord,
 } from "@/hooks/useAttendance";
+import { useMyOTRequestsQuery } from "@/hooks/useOvertimeRequests";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { cn } from "@/lib/utils";
 import type { ApiError } from "@/types/api";
 import { ATTENDANCE_STATUS, type AttendanceResponse } from "@/types/employee";
+import { OVERTIME_STATUS } from "@/types/overtime";
 import type { ShiftAssignmentResponse } from "@/types/schedule";
 
 function toTime(value?: string | null): string {
@@ -98,6 +102,8 @@ export function AttendancePanel() {
   const clockInMutation = useClockInMutation();
   const clockOutMutation = useClockOutMutation();
   const openRecord = useOpenAttendanceRecord();
+  const { data: myOTPage } = useMyOTRequestsQuery();
+  const myOTRequests = myOTPage?.items ?? [];
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
   const [now, setNow] = useState(() => new Date());
 
@@ -145,6 +151,17 @@ export function AttendancePanel() {
   const needsShiftPick = todayShifts.length > 1;
   const actionPending = clockInMutation.isPending || clockOutMutation.isPending;
   const selectedShiftEnded = !openRecord && isShiftEnded(currentShift, now);
+
+  const activeOTRequest = myOTRequests.find(
+    (r) =>
+      r.shiftAssignmentId === currentShift?.id &&
+      (r.status === OVERTIME_STATUS.Pending || r.status === OVERTIME_STATUS.PendingApproval),
+  );
+  const pendingOTRequest = myOTRequests.find(
+    (r) => r.shiftAssignmentId === currentShift?.id && r.status === OVERTIME_STATUS.Pending,
+  );
+  const canRequestOT =
+    selectedShiftEnded && !openRecord && !activeOTRequest && !!currentShift;
   const todayStatus = selectedShiftEnded
     ? "Đã quá giờ clock in"
     : getTodayShiftStatus(openRecord, currentShift);
@@ -229,7 +246,12 @@ export function AttendancePanel() {
           ) : null}
 
           <div className="mt-20 flex flex-col gap-3 sm:flex-row">
-            {openRecord ? (
+            {openRecord && pendingOTRequest ? (
+              <OTClockOutButton
+                overtimeRequestId={pendingOTRequest.id}
+                startedAt={pendingOTRequest.startedAt}
+              />
+            ) : openRecord ? (
               <Button
                 size="lg"
                 variant="destructive"
@@ -256,10 +278,17 @@ export function AttendancePanel() {
                 {clockInMutation.isPending ? "Đang clock in…" : "Clock in"}
               </Button>
             )}
-            <Button type="button" size="lg" variant="outline" className="h-12 sm:w-24" disabled>
-              <TimerIcon className="size-5" />
-            </Button>
+            {!openRecord || !pendingOTRequest ? (
+              <Button type="button" size="lg" variant="outline" className="h-12 sm:w-24" disabled>
+                <TimerIcon className="size-5" />
+              </Button>
+            ) : null}
           </div>
+          {canRequestOT ? (
+            <div className="mt-6">
+              <OTRequestForm shiftAssignmentId={currentShift!.id} />
+            </div>
+          ) : null}
         </div>
 
         <aside className="rounded-lg border bg-muted/40 p-5">
@@ -349,6 +378,9 @@ export function AttendancePanel() {
               <TableBody>
                 {history.map((row) => {
                   const status = getClockInStatus(row);
+                  const otRequest = myOTRequests.find(
+                    (r) => r.shiftAssignmentId === row.assignmentId,
+                  );
                   return (
                     <TableRow key={row.id}>
                       <TableCell className="whitespace-nowrap">
@@ -384,9 +416,40 @@ export function AttendancePanel() {
                       </TableCell>
                       <TableCell>{row.clockOut ? formatMinutes(row.workedMinutes) : "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={cn("border", status.className)}>
-                          {status.label}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          <Badge variant="outline" className={cn("border", status.className)}>
+                            {status.label}
+                          </Badge>
+                          {row.autoClosed ? (
+                            <Badge
+                              variant="outline"
+                              className="border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400"
+                            >
+                              Tự động đóng
+                            </Badge>
+                          ) : null}
+                          {otRequest ? (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "border",
+                                otRequest.status === OVERTIME_STATUS.Pending &&
+                                  "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400",
+                                otRequest.status === OVERTIME_STATUS.PendingApproval &&
+                                  "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-400",
+                                otRequest.status === OVERTIME_STATUS.Approved &&
+                                  "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400",
+                                otRequest.status === OVERTIME_STATUS.Rejected &&
+                                  "border-destructive/30 bg-destructive/10 text-destructive",
+                              )}
+                            >
+                              {otRequest.status === OVERTIME_STATUS.Pending && "OT đang mở"}
+                              {otRequest.status === OVERTIME_STATUS.PendingApproval && "OT chờ duyệt"}
+                              {otRequest.status === OVERTIME_STATUS.Approved && "OT đã duyệt"}
+                              {otRequest.status === OVERTIME_STATUS.Rejected && "OT bị từ chối"}
+                            </Badge>
+                          ) : null}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
