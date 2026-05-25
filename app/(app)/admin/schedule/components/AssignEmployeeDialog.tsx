@@ -102,7 +102,7 @@ export function AssignEmployeeDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Huỷ
           </Button>
-          <Button disabled={!employeeId || createMutation.isPending} onClick={() => void handleSubmit()}>
+          <Button data-save disabled={!employeeId || createMutation.isPending} onClick={() => void handleSubmit()}>
             {createMutation.isPending ? "Đang lưu…" : "Phân ca"}
           </Button>
         </DialogFooter>

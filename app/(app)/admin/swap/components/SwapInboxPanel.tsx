@@ -214,6 +214,7 @@ export function SwapInboxPanel() {
               Hủy
             </Button>
             <Button
+              data-save
               disabled={approveMutation.isPending || rejectMutation.isPending}
               onClick={() => void handleConfirm()}
             >

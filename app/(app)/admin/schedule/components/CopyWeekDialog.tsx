@@ -78,7 +78,7 @@ export function CopyWeekDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Huỷ
           </Button>
-          <Button disabled={copyMutation.isPending} onClick={() => void handleCopy()}>
+          <Button data-save disabled={copyMutation.isPending} onClick={() => void handleCopy()}>
             {copyMutation.isPending ? "Đang sao chép…" : "Sao chép"}
           </Button>
         </DialogFooter>

@@ -306,6 +306,7 @@ export function LocationPolicyDialog({
           </Button>
           {canWrite ? (
             <Button
+              data-save
               type="button"
               disabled={updatePolicy.isPending || isLoading}
               onClick={() => void saveRules()}

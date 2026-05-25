@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   BadgeDollarSignIcon,
@@ -79,6 +79,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   const swapPendingCount = useSwapInboxPendingCount();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key !== "s") return;
+      e.preventDefault();
+      const dialog = document.querySelector<HTMLElement>('[data-slot="dialog-content"]');
+      if (!dialog) return;
+      const form = dialog.querySelector("form");
+      if (form) { form.requestSubmit(); return; }
+      dialog.querySelector<HTMLElement>("[data-save]")?.click();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   const homeHref = navItems[0]?.href ?? "/";
   const activeItem =
