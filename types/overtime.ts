@@ -44,4 +44,14 @@ export interface OvertimeListParams {
   shiftAssignmentId?: string;
   page?: number;
   pageSize?: number;
+  month?: number;
+  year?: number;
+}
+
+export interface OvertimeAdminListParams {
+  departmentId?: string;
+  month: number;
+  year: number;
+  page?: number;
+  pageSize?: number;
 }

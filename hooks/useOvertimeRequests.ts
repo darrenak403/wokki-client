@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { employeeKeys, overtimeKeys } from "@/lib/api/query-keys";
 import { fetchOvertimeRequests } from "@/lib/api/services/fetchOvertimeRequests";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";
-import type { OvertimeActionRequest, OvertimeListParams } from "@/types/overtime";
+import type { OvertimeActionRequest, OvertimeAdminListParams, OvertimeListParams } from "@/types/overtime";
 
 export function useSubmitOTRequestMutation() {
   const queryClient = useQueryClient();
@@ -46,6 +46,14 @@ export function usePendingOTRequestsQuery(params?: OvertimeListParams) {
     queryFn: () => fetchOvertimeRequests.listPending(params),
     enabled: !!params,
     staleTime: 30 * 1000,
+  });
+}
+
+export function useAdminOTListQuery(params?: OvertimeAdminListParams) {
+  return useQuery({
+    queryKey: overtimeKeys.adminList(params),
+    queryFn: () => fetchOvertimeRequests.listAll(params!),
+    enabled: !!params,
   });
 }
 

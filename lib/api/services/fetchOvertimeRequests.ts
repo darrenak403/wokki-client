@@ -8,6 +8,7 @@ import type {
   SubmitOvertimeRequestDto,
   OvertimeActionRequest,
   OvertimeListParams,
+  OvertimeAdminListParams,
 } from "@/types/overtime";
 
 export const fetchOvertimeRequests = {
@@ -71,6 +72,21 @@ export const fetchOvertimeRequests = {
     const response = await apiService.post<ApiEnvelope<OvertimeRequestResponse>>(
       `api/v1/overtime-requests/${id}/reject`,
       data ?? {},
+    );
+    return assertEmployeeSuccess(normalizeApiResponse(response.data));
+  },
+
+  listAll: async (params: OvertimeAdminListParams): Promise<PagedResponse<OvertimeRequestResponse>> => {
+    const q: Record<string, string | number> = {
+      month: params.month,
+      year: params.year,
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 50,
+    };
+    if (params.departmentId) q.departmentId = params.departmentId;
+    const response = await apiService.get<ApiEnvelope<PagedResponse<OvertimeRequestResponse>>>(
+      "api/v1/overtime-requests",
+      q,
     );
     return assertEmployeeSuccess(normalizeApiResponse(response.data));
   },

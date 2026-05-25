@@ -2,6 +2,7 @@ export const overtimeKeys = {
   all: ["overtime"] as const,
   my: (params?: object) => [...overtimeKeys.all, "my", params] as const,
   pending: (params?: object) => [...overtimeKeys.all, "pending", params] as const,
+  adminList: (params?: object) => [...overtimeKeys.all, "admin-list", params] as const,
 };
 
 export const swapInboxKeys = {
