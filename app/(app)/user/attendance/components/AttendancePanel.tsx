@@ -171,7 +171,7 @@ export function AttendancePanel() {
               <p className="mt-1 text-4xl font-semibold tabular-nums">
                 {workedDisplay ?? <span className="text-muted-foreground/40">--:--</span>}
               </p>
-              <Badge
+              {/* <Badge
                 variant="outline"
                 className={cn(
                   "mt-2 border",
@@ -181,7 +181,7 @@ export function AttendancePanel() {
                 )}
               >
                 {todayStatus}
-              </Badge>
+              </Badge> */}
             </div>
           </div>
 
