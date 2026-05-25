@@ -46,7 +46,7 @@ export const fetchOvertimeRequests = {
   listPending: async (
     params?: OvertimeListParams,
   ): Promise<PagedResponse<OvertimeRequestResponse>> => {
-    const q: Record<string, string | number> = {};
+    const q: Record<string, string | number> = { page: 1, pageSize: 50 };
     if (params?.status != null) q.status = params.status;
     if (params?.departmentId) q.departmentId = params.departmentId;
     if (params?.shiftAssignmentId) q.shiftAssignmentId = params.shiftAssignmentId;
