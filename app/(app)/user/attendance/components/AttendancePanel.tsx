@@ -114,9 +114,8 @@ export function AttendancePanel() {
       r.shiftAssignmentId === currentShift?.id &&
       (r.status === OVERTIME_STATUS.Pending || r.status === OVERTIME_STATUS.PendingApproval)
   );
-  const pendingOTRequest = myOTRequests.find(
-    (r) => r.shiftAssignmentId === currentShift?.id && r.status === OVERTIME_STATUS.Pending
-  );
+  // Find any open OT regardless of which shift/day it belongs to (cross-day OT stays visible)
+  const anyOpenOTRequest = myOTRequests.find((r) => r.status === OVERTIME_STATUS.Pending);
   const hasAttendanceForShift =
     !!openRecord || history.some((r) => r.assignmentId === currentShift?.id);
   const canRequestOT =
@@ -135,6 +134,12 @@ export function AttendancePanel() {
 
   return (
     <div className="space-y-8">
+      {anyOpenOTRequest ? (
+        <OTClockOutButton
+          overtimeRequestId={anyOpenOTRequest.id}
+          startedAt={anyOpenOTRequest.startedAt}
+        />
+      ) : null}
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="relative overflow-hidden rounded-lg border bg-card p-6 shadow-sm">
           <div
@@ -216,12 +221,6 @@ export function AttendancePanel() {
           ) : null}
 
           <div className="mt-20 flex flex-col gap-3">
-            {pendingOTRequest ? (
-              <OTClockOutButton
-                overtimeRequestId={pendingOTRequest.id}
-                startedAt={pendingOTRequest.startedAt}
-              />
-            ) : null}
             <div className="flex flex-col gap-3 sm:flex-row">
               {openRecord ? (
                 <Button
