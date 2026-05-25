@@ -161,7 +161,7 @@ export function AttendancePanel() {
     (r) => r.shiftAssignmentId === currentShift?.id && r.status === OVERTIME_STATUS.Pending,
   );
   const canRequestOT =
-    selectedShiftEnded && !openRecord && !activeOTRequest && !!currentShift;
+    isShiftEnded(currentShift, now) && !!openRecord && !activeOTRequest && !!currentShift;
   const todayStatus = selectedShiftEnded
     ? "Đã quá giờ clock in"
     : getTodayShiftStatus(openRecord, currentShift);
