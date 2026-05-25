@@ -36,8 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DepartmentSelect } from "@/components/shared/department-select";
-import { LocationSelect } from "@/components/shared/location-select";
-import { Label } from "@/components/ui/label";
+
 import {
   useCreateShiftMutation,
   useDeactivateShiftMutation,
@@ -87,7 +86,7 @@ const SHIFT_COLOR_OPTIONS = [
 ] as const;
 
 export function ShiftsPanel() {
-  const { session, setLocationId, setDepartmentId } = useFoundationSession();
+  const { session } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const departmentId = session.selectedDepartmentId;
 
@@ -184,21 +183,6 @@ export function ShiftsPanel() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-4">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground font-normal">Chi nhánh</Label>
-            <LocationSelect value={locationId} onChange={setLocationId} required />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground font-normal">Phòng ban</Label>
-            <DepartmentSelect
-              locationId={locationId}
-              value={departmentId}
-              onChange={setDepartmentId}
-              allowEmpty
-            />
-          </div>
-        </div>
         <Button type="button" onClick={openCreate} disabled={!locationId}>
           <PlusIcon className="size-4" />
           Thêm ca

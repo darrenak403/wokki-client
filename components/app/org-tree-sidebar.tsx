@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { BuildingIcon, ChevronDownIcon, ChevronRightIcon, PanelRightCloseIcon } from "lucide-react";
+import { BuildingIcon, ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { useDepartmentsQuery } from "@/hooks/useDepartments";
 import { useLocationsQuery } from "@/hooks/useLocations";
 import { writeFoundationSession } from "@/lib/support/foundation/session-context";
 import { cn } from "@/lib/utils";
 
-type Props = {
-  onClose: () => void;
-};
 
 function DeptRows({
   locationId,
@@ -55,7 +52,7 @@ function DeptRows({
   );
 }
 
-export function OrgTreeSidebar({ onClose }: Props) {
+export function OrgTreeSidebar() {
   const { data: locations = [], isLoading } = useLocationsQuery();
   const { session } = useFoundationSession();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -83,21 +80,11 @@ export function OrgTreeSidebar({ onClose }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
-        <div className="flex items-center gap-2">
-          <BuildingIcon className="size-4 text-[#4C88C6]" />
-          <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-            Tổ chức
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Đóng cây tổ chức"
-          className="rounded-lg p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
-        >
-          <PanelRightCloseIcon className="size-4" />
-        </button>
+      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-neutral-200 px-4 dark:border-neutral-800">
+        <BuildingIcon className="size-4 text-[#4C88C6]" />
+        <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+          Tổ chức
+        </span>
       </div>
 
       <div className="flex-1 space-y-0.5 overflow-y-auto p-3">

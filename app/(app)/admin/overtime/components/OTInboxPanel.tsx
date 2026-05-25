@@ -18,8 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/department-select";
-import { LocationSelect } from "@/components/shared/location-select";
 import { Label } from "@/components/ui/label";
 import {
   useApproveOTMutation,
@@ -41,10 +39,8 @@ function truncate(text: string, max: number): string {
 }
 
 export function OTInboxPanel({ departmentId: propDepartmentId }: OTInboxPanelProps) {
-  const { session, setLocationId, setDepartmentId } = useFoundationSession();
-  const locationId = session.selectedLocationId;
-  const sessionDeptId = session.selectedDepartmentId;
-  const effectiveDepartmentId = propDepartmentId ?? sessionDeptId;
+  const { session } = useFoundationSession();
+  const effectiveDepartmentId = propDepartmentId ?? session.selectedDepartmentId;
 
   const [actionKind, setActionKind] = useState<ActionKind>(null);
   const [activeRequest, setActiveRequest] = useState<OvertimeRequestResponse | null>(null);
@@ -85,24 +81,6 @@ export function OTInboxPanel({ departmentId: propDepartmentId }: OTInboxPanelPro
 
   return (
     <div className="space-y-4">
-      {!propDepartmentId ? (
-        <div className="flex flex-wrap items-end gap-4 border-b pb-4">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground font-normal">Chi nhánh</Label>
-            <LocationSelect value={locationId} onChange={setLocationId} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground font-normal">Phòng ban</Label>
-            <DepartmentSelect
-              locationId={locationId}
-              value={sessionDeptId}
-              onChange={setDepartmentId}
-              allowEmpty={false}
-            />
-          </div>
-        </div>
-      ) : null}
-
       {!effectiveDepartmentId ? (
         <p className="text-sm text-muted-foreground">Chọn phòng ban để xem yêu cầu tăng ca.</p>
       ) : listError ? (

@@ -25,8 +25,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LocationSelect } from "@/components/shared/location-select";
-import { Label } from "@/components/ui/label";
 import {
   useCreateDepartmentMutation,
   useDepartmentsQuery,
@@ -47,7 +45,7 @@ type DepartmentsPanelProps = {
 };
 
 export function DepartmentsPanel({ canWrite = false }: DepartmentsPanelProps) {
-  const { session, setLocationId } = useFoundationSession();
+  const { session } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const { data: departments = [], isLoading, isError } = useDepartmentsQuery(locationId);
   const createMutation = useCreateDepartmentMutation(locationId);
@@ -88,10 +86,6 @@ export function DepartmentsPanel({ canWrite = false }: DepartmentsPanelProps) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-4">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground font-normal">Chi nhánh</Label>
-          <LocationSelect value={locationId} onChange={setLocationId} />
-        </div>
         {canWrite ? (
           <Button type="button" onClick={openCreate} disabled={!locationId}>
             <PlusIcon className="size-4" />

@@ -22,8 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/department-select";
-import { LocationSelect } from "@/components/shared/location-select";
 import { Label } from "@/components/ui/label";
 import {
   useOverrideApproveSwapMutation,
@@ -39,8 +37,7 @@ import { SWAP_STATUS, type SwapRequestResponse } from "@/types/employee";
 type ActionKind = "approve" | "reject" | null;
 
 export function SwapInboxPanel() {
-  const { session, setLocationId, setDepartmentId } = useFoundationSession();
-  const locationId = session.selectedLocationId;
+  const { session } = useFoundationSession();
   const departmentId = session.selectedDepartmentId;
   const [weekStartDate, setWeekStartDate] = useState(() => toMondayISO(new Date()));
   const [actionKind, setActionKind] = useState<ActionKind>(null);
@@ -102,19 +99,6 @@ export function SwapInboxPanel() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-4 border-b pb-4">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground font-normal">Chi nhánh</Label>
-          <LocationSelect value={locationId} onChange={setLocationId} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground font-normal">Phòng ban</Label>
-          <DepartmentSelect
-            locationId={locationId}
-            value={departmentId}
-            onChange={setDepartmentId}
-            allowEmpty={false}
-          />
-        </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground font-normal">Tuần (Thứ Hai)</Label>
           <div className="flex items-center gap-1">

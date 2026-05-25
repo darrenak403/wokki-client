@@ -24,8 +24,6 @@ import { CopyWeekDialog } from "@/app/(app)/admin/schedule/components/CopyWeekDi
 import { PreferenceBoardDialog } from "@/app/(app)/admin/schedule/components/PreferenceBoardDialog";
 import { ScheduleGrid } from "@/app/(app)/admin/schedule/components/ScheduleGrid";
 import { SuggestionsSheet } from "@/app/(app)/admin/schedule/components/SuggestionsSheet";
-import { DepartmentSelect } from "@/components/shared/department-select";
-import { LocationSelect } from "@/components/shared/location-select";
 import { Label } from "@/components/ui/label";
 import { scheduleKeys } from "@/lib/api/query-keys";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
@@ -53,7 +51,7 @@ const primaryActionClass =
 
 export function SchedulePanel() {
   const queryClient = useQueryClient();
-  const { session, setLocationId, setDepartmentId } = useFoundationSession();
+  const { session } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const departmentId = session.selectedDepartmentId;
   const [weekStartDate, setWeekStartDate] = useState(() => toMondayISO(new Date()));
@@ -132,19 +130,6 @@ export function SchedulePanel() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-4 border-b pb-4 justify-between">
         <div className="flex flex-wrap items-end gap-4">
-          <div className="space-y-1.5 min-w-[160px]">
-            <Label className="text-xs text-muted-foreground">Chi nhánh</Label>
-            <LocationSelect value={locationId} onChange={setLocationId} />
-          </div>
-          <div className="space-y-1.5 min-w-[160px]">
-            <Label className="text-xs text-muted-foreground">Phòng ban</Label>
-            <DepartmentSelect
-              locationId={locationId}
-              value={departmentId}
-              onChange={setDepartmentId}
-              allowEmpty={false}
-            />
-          </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Tuần</Label>
             <div className="flex h-9 items-center rounded-lg border border-input bg-background shadow-xs">

@@ -44,7 +44,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DepartmentSelect } from "@/components/shared/department-select";
-import { LocationSelect } from "@/components/shared/location-select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -82,7 +81,7 @@ type EmployeesPanelProps = {
 };
 
 export function EmployeesPanel({ canWrite = false }: EmployeesPanelProps) {
-  const { session, setLocationId, setDepartmentId } = useFoundationSession();
+  const { session } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const filterDepartmentId = session.selectedDepartmentId;
 
@@ -178,19 +177,6 @@ export function EmployeesPanel({ canWrite = false }: EmployeesPanelProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-4">
         <div className="flex flex-wrap items-end gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground font-normal">Chi nhánh</Label>
-            <LocationSelect value={locationId} onChange={setLocationId} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground font-normal">Phòng ban</Label>
-            <DepartmentSelect
-              locationId={locationId}
-              value={filterDepartmentId}
-              onChange={setDepartmentId}
-              allowEmpty
-            />
-          </div>
           <div className="flex items-center gap-2">
             <Checkbox
               id="include-terminated"

@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { MenuIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, PanelRightCloseIcon, PanelRightOpenIcon } from "lucide-react";
+import { ChevronLeftIcon, MenuIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getAppNavForRole } from "@/components/app/app-nav";
 import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
@@ -24,7 +24,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const swapPendingCount = useSwapInboxPendingCount();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
   const isAdminRoute = pathname.startsWith("/admin");
 
   useEffect(() => {
@@ -52,6 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-white text-neutral-950 dark:bg-neutral-950 dark:text-white">
+        {/* Left sidebar */}
         <aside
           className={cn(
             "fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-neutral-200 bg-white/90 backdrop-blur-xl transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex lg:flex-col dark:border-neutral-800 dark:bg-neutral-900/90",
@@ -71,13 +71,35 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
         </aside>
 
-        {isAdminRoute && rightOpen && (
+        {/* Left sidebar handle tab */}
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+          className={cn(
+            "fixed top-1/2 z-50 hidden h-10 w-4 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-neutral-200 bg-white/90 text-neutral-400 shadow-sm backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:text-neutral-700 lg:flex dark:border-neutral-800 dark:bg-neutral-900/90 dark:hover:text-neutral-200",
+            collapsed ? "left-20" : "left-60"
+          )}
+        >
+          <ChevronLeftIcon
+            className={cn("size-3 transition-transform duration-500", collapsed && "rotate-180")}
+          />
+        </button>
+
+        {/* Right org tree sidebar — always visible on admin routes */}
+        {isAdminRoute && (
           <aside className="fixed inset-y-0 right-0 z-40 hidden w-72 overflow-hidden border-l border-neutral-200 bg-white/90 backdrop-blur-xl lg:flex lg:flex-col dark:border-neutral-800 dark:bg-neutral-900/90">
-            <OrgTreeSidebar onClose={() => setRightOpen(false)} />
+            <OrgTreeSidebar />
           </aside>
         )}
 
-        <div className={cn("transition-[padding] duration-300 lg:pl-72", collapsed && "lg:pl-20", isAdminRoute && rightOpen && "lg:pr-72")}>
+        <div
+          className={cn(
+            "transition-[padding] duration-300 lg:pl-72",
+            collapsed && "lg:pl-20",
+            isAdminRoute && "lg:pr-72"
+          )}
+        >
           <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-4 border-b border-neutral-200 bg-white/85 px-4 backdrop-blur-xl md:px-6 lg:px-8 dark:border-neutral-800 dark:bg-neutral-900/85">
             <div className="flex min-w-0 items-center gap-3">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -106,17 +128,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </SheetContent>
               </Sheet>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-lg"
-                onClick={() => setCollapsed((value) => !value)}
-                className="hidden rounded-2xl bg-white shadow-lg shadow-neutral-900/10 lg:inline-flex dark:bg-neutral-900"
-              >
-                {collapsed ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
-                <span className="sr-only">{collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}</span>
-              </Button>
-
               <div className="flex min-w-0 items-center gap-3">
                 <div className="hidden size-10 items-center justify-center rounded-2xl bg-[#EEF6FB] text-[#1D4D8F] ring-1 ring-[#BCE8F5] sm:flex dark:bg-[#0B1E3D] dark:text-[#BCE8F5] dark:ring-[#4C88C6]/40">
                   {renderNavIcon(activeItem, "size-5")}
@@ -133,18 +144,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex shrink-0 items-center gap-3">
-              {isAdminRoute && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-lg"
-                  onClick={() => setRightOpen((v) => !v)}
-                  className="hidden rounded-2xl bg-white shadow-lg shadow-neutral-900/10 lg:inline-flex dark:bg-neutral-900"
-                  aria-label={rightOpen ? "Đóng cây tổ chức" : "Mở cây tổ chức"}
-                >
-                  {rightOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
-                </Button>
-              )}
               <ThemeToggle compact />
               <div className="hidden items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 md:flex dark:border-neutral-800 dark:bg-neutral-950">
                 <Avatar
@@ -168,4 +167,3 @@ export function AppShell({ children }: { children: ReactNode }) {
     </TooltipProvider>
   );
 }
-
