@@ -125,14 +125,12 @@ export function AttendancePanel() {
     ? "Đã quá giờ clock in"
     : getTodayShiftStatus(openRecord, currentShift);
 
-  const shiftRecord = currentShift
-    ? history.find((r) => r.assignmentId === currentShift.id)
-    : null;
+  const shiftRecord = currentShift ? history.find((r) => r.assignmentId === currentShift.id) : null;
   const workedMinutes = openRecord
     ? differenceInMinutes(now, parseISO(openRecord.clockIn))
     : shiftRecord?.clockOut
-    ? shiftRecord.workedMinutes
-    : null;
+      ? shiftRecord.workedMinutes
+      : null;
   const workedDisplay = workedMinutes !== null ? formatDurationShort(workedMinutes) : null;
 
   return (
@@ -167,7 +165,10 @@ export function AttendancePanel() {
               )}
             </div>
             <div className="text-right">
-              <p className="text-4xl font-semibold tabular-nums">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">
+                {openRecord ? "Đang làm" : workedDisplay ? "Đã làm ca" : "Giờ làm ca"}
+              </p>
+              <p className="mt-1 text-4xl font-semibold tabular-nums">
                 {workedDisplay ?? <span className="text-muted-foreground/40">--:--</span>}
               </p>
               <Badge
