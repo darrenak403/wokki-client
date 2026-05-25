@@ -1,4 +1,4 @@
-import { EmployeesPanel } from "@/app/(app)/admin/employees/components/EmployeesPanel";
+import { EmployeesHubPanel } from "@/app/(app)/admin/employees/components/EmployeesHubPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -8,5 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function AdminEmployeesPage() {
-  return <EmployeesPanel canWrite />;
+  return <EmployeesHubPanel />;
 }
