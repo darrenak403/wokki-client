@@ -8,7 +8,6 @@ import { useLocationsQuery } from "@/hooks/useLocations";
 import { writeFoundationSession } from "@/lib/support/foundation/session-context";
 import { cn } from "@/lib/utils";
 
-
 function DeptRows({
   locationId,
   selectedDeptId,
@@ -21,12 +20,12 @@ function DeptRows({
   const { data: departments = [], isLoading } = useDepartmentsQuery(locationId);
 
   if (isLoading) {
-    return <div className="pl-9 py-1.5 text-xs text-neutral-400">Đang tải…</div>;
+    return <div className="py-1.5 pl-3 text-xs text-neutral-400">Đang tải…</div>;
   }
 
   if (!departments.length) {
     return (
-      <div className="pl-9 py-1.5 text-xs italic text-neutral-400">Chưa có phòng ban</div>
+      <div className="py-1.5 pl-3 text-xs italic text-neutral-400">Chưa có phòng ban</div>
     );
   }
 
@@ -37,8 +36,9 @@ function DeptRows({
           key={dept.id}
           type="button"
           onClick={() => onSelect(dept.id)}
+          aria-pressed={selectedDeptId === dept.id}
           className={cn(
-            "w-full rounded-lg py-1.5 pl-9 pr-3 text-left text-sm transition-all",
+            "w-full rounded-lg py-1.5 pl-3 pr-3 text-left text-sm transition-all",
             selectedDeptId === dept.id
               ? "bg-[#EEF6FB] font-semibold text-[#102854] ring-1 ring-[#BCE8F5] dark:bg-[#0B1E3D] dark:text-[#BCE8F5] dark:ring-[#4C88C6]/40"
               : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
@@ -112,20 +112,21 @@ export function OrgTreeSidebar() {
                 <button
                   type="button"
                   onClick={() => selectLocation(loc.id)}
+                  aria-pressed={isLocActive}
                   className={cn(
-                    "flex-1 rounded-lg px-2 py-1.5 text-left text-sm font-medium transition-all",
+                    "flex-1 rounded-lg px-2 py-1.5 text-left text-sm font-semibold transition-all",
                     isLocActive
-                      ? "bg-[#EEF6FB] text-[#102854] ring-1 ring-[#BCE8F5] dark:bg-[#0B1E3D] dark:text-[#BCE8F5] dark:ring-[#4C88C6]/40"
+                      ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-white"
                       : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
                   )}
                 >
                   {loc.name}
-                  {!loc.isActive && <span className="ml-1 text-xs opacity-50">(ngưng)</span>}
+                  {!loc.isActive && <span className="ml-1 text-xs font-normal opacity-50">(ngưng)</span>}
                 </button>
               </div>
 
               {isExpanded && (
-                <div className="mb-1 mt-0.5 space-y-0.5">
+                <div className="mb-1 ml-4 mt-0.5 space-y-0.5 border-l border-neutral-200 pl-2 dark:border-neutral-700">
                   <DeptRows
                     locationId={loc.id}
                     selectedDeptId={isLocActive ? session.selectedDepartmentId : null}
