@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
@@ -490,9 +491,9 @@ function CustomRuleRow({
       {canWrite ? (
         <div className="grid gap-3 rounded-lg border border-dashed bg-muted/20 p-4 sm:grid-cols-2">
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor={`${rule.key}-title`}>
+            <Label className="text-xs text-muted-foreground" htmlFor={`${rule.key}-title`}>
               Tên luật
-            </label>
+            </Label>
             <Input
               id={`${rule.key}-title`}
               value={rule.inputLabel}
@@ -501,9 +502,9 @@ function CustomRuleRow({
             />
           </div>
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor={`${rule.key}-content`}>
+            <Label className="text-xs text-muted-foreground" htmlFor={`${rule.key}-content`}>
               Giải thích
-            </label>
+            </Label>
             <Textarea
               id={`${rule.key}-content`}
               value={rule.content}
@@ -513,9 +514,9 @@ function CustomRuleRow({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor={`${rule.key}-type`}>
+            <Label className="text-xs text-muted-foreground" htmlFor={`${rule.key}-type`}>
               Kiểu giá trị
-            </label>
+            </Label>
             <Select
               value={rule.valueType}
               onValueChange={(valueType) =>

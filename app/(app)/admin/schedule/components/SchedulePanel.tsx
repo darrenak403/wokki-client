@@ -26,6 +26,7 @@ import { ScheduleGrid } from "@/app/(app)/admin/schedule/components/ScheduleGrid
 import { SuggestionsSheet } from "@/app/(app)/admin/schedule/components/SuggestionsSheet";
 import { DepartmentSelect } from "@/components/shared/department-select";
 import { LocationSelect } from "@/components/shared/location-select";
+import { Label } from "@/components/ui/label";
 import { scheduleKeys } from "@/lib/api/query-keys";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import {
@@ -132,11 +133,11 @@ export function SchedulePanel() {
       <div className="flex flex-col gap-4 border-b border-neutral-100 pb-5 dark:border-neutral-800 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-1.5 min-w-[160px]">
-            <span className="text-xs font-medium text-muted-foreground">Chi nhánh</span>
+            <Label className="text-xs text-muted-foreground">Chi nhánh</Label>
             <LocationSelect value={locationId} onChange={setLocationId} />
           </div>
           <div className="space-y-1.5 min-w-[160px]">
-            <span className="text-xs font-medium text-muted-foreground">Phòng ban</span>
+            <Label className="text-xs text-muted-foreground">Phòng ban</Label>
             <DepartmentSelect
               locationId={locationId}
               value={departmentId}
@@ -145,7 +146,7 @@ export function SchedulePanel() {
             />
           </div>
           <div className="space-y-1.5">
-            <span className="text-xs font-medium text-muted-foreground">Tuần</span>
+            <Label className="text-xs text-muted-foreground">Tuần</Label>
             <div className="flex h-9 items-center rounded-lg border border-input bg-background shadow-xs">
               <Button
                 type="button"

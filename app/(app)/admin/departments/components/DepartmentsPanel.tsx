@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { LocationSelect } from "@/components/shared/location-select";
+import { Label } from "@/components/ui/label";
 import {
   useCreateDepartmentMutation,
   useDepartmentsQuery,
@@ -86,18 +87,17 @@ export function DepartmentsPanel({ canWrite = false }: DepartmentsPanelProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-end gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+        <div className="flex items-center gap-2">
+          <Label>Chi nhánh</Label>
+          <LocationSelect value={locationId} onChange={setLocationId} />
+        </div>
         {canWrite ? (
           <Button type="button" onClick={openCreate} disabled={!locationId}>
             <PlusIcon className="size-4" />
             Thêm phòng ban
           </Button>
         ) : null}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium">Chi nhánh</span>
-        <LocationSelect value={locationId} onChange={setLocationId} />
       </div>
 
       {!locationId ? (

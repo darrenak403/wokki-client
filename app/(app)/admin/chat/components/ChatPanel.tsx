@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
   appendChatMessageToCache,
@@ -308,8 +309,8 @@ export function ChatPanel({ canCreateChannel, canModerateDelete }: ChatPanelProp
               </div>
 
               <div className="border-t p-3 flex gap-2">
-                <textarea
-                  className="flex-1 min-h-[2.5rem] max-h-32 rounded-lg border border-input bg-transparent px-3 py-2 text-sm resize-y"
+                <Textarea
+                  className="flex-1 min-h-[2.5rem] max-h-32 resize-y"
                   placeholder="Nhập tin nhắn…"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}

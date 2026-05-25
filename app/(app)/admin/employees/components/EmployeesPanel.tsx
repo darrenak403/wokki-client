@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CopyIcon, PencilIcon, PlusIcon, UserXIcon } from "lucide-react";
@@ -29,6 +29,13 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -38,6 +45,8 @@ import {
 } from "@/components/ui/table";
 import { DepartmentSelect } from "@/components/shared/department-select";
 import { LocationSelect } from "@/components/shared/location-select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   useCreateEmployeeMutation,
   useEmployeesQuery,
@@ -167,40 +176,41 @@ export function EmployeesPanel({ canWrite = false }: EmployeesPanelProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-end gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label>Chi nhánh</Label>
+            <LocationSelect value={locationId} onChange={setLocationId} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label>Phòng ban</Label>
+            <DepartmentSelect
+              locationId={locationId}
+              value={filterDepartmentId}
+              onChange={setDepartmentId}
+              allowEmpty
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="include-terminated"
+              checked={includeTerminated}
+              onCheckedChange={(checked) => {
+                setIncludeTerminated(Boolean(checked));
+                setPage(1);
+              }}
+            />
+            <Label htmlFor="include-terminated" className="text-sm font-normal cursor-pointer">
+              Hiện đã chấm dứt
+            </Label>
+          </div>
+        </div>
         {canWrite ? (
           <Button type="button" onClick={openCreate} disabled={!locationId}>
             <PlusIcon className="size-4" />
             Thêm nhân viên
           </Button>
         ) : null}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Chi nhánh</span>
-          <LocationSelect value={locationId} onChange={setLocationId} />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Phòng ban</span>
-          <DepartmentSelect
-            locationId={locationId}
-            value={filterDepartmentId}
-            onChange={setDepartmentId}
-            allowEmpty
-          />
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={includeTerminated}
-            onChange={(e) => {
-              setIncludeTerminated(e.target.checked);
-              setPage(1);
-            }}
-          />
-          Hiện đã chấm dứt
-        </label>
       </div>
 
       {isError ? (
@@ -390,13 +400,24 @@ export function EmployeesPanel({ canWrite = false }: EmployeesPanelProps) {
                 </Field>
                 <Field>
                   <FieldLabel>Vai trò</FieldLabel>
-                  <select
-                    className="h-8 w-full rounded-lg border border-input px-2 text-sm"
-                    {...createForm.register("role")}
-                  >
-                    <option value={ROLE_USER}>Người đi làm (User)</option>
-                    <option value={ROLE_MANAGER}>Trưởng ca (Manager)</option>
-                  </select>
+                  <Controller
+                    control={createForm.control}
+                    name="role"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => { if (v !== null) field.onChange(v); }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ROLE_USER}>Người đi làm (User)</SelectItem>
+                          <SelectItem value={ROLE_MANAGER}>Trưởng ca (Manager)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </Field>
               </FieldGroup>
               <DialogFooter>

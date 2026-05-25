@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { DepartmentSelect } from "@/components/shared/department-select";
 import { LocationSelect } from "@/components/shared/location-select";
+import { Label } from "@/components/ui/label";
 import { useAdjustAttendanceMutation, useTeamAttendanceQuery } from "@/hooks/useAttendance";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
@@ -117,13 +118,13 @@ export function TeamAttendancePanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-wrap items-end gap-4 border-b pb-4">
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Chi nhánh</span>
+          <Label className="text-xs text-muted-foreground font-normal">Chi nhánh</Label>
           <LocationSelect value={locationId} onChange={setLocationId} />
         </div>
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Phòng ban</span>
+          <Label className="text-xs text-muted-foreground font-normal">Phòng ban</Label>
           <DepartmentSelect
             locationId={locationId}
             value={departmentId}
@@ -132,7 +133,7 @@ export function TeamAttendancePanel() {
           />
         </div>
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Tuần</span>
+          <Label className="text-xs text-muted-foreground font-normal">Tuần</Label>
           <div className="flex items-center gap-1">
             <Button
               type="button"

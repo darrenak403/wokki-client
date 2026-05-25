@@ -95,9 +95,16 @@ Business features belong only in `(app)/`.
 - Tailwind v4 tokens live in `app/globals.css` (`@theme`).
 - Brand colors: `--brand-navy`, `--brand-medium`, `--brand-blue`, `--brand-light`, `--brand-mist`, `--brand-surface`, `--brand-deep`.
 - Prefer white/light surfaces, neutral dark text, and brand blue as the main accent.
-- Use `components/ui/` primitives first: `Button`, `Card`, `Badge`, `Input`, `Select`, `Dialog`, `AlertDialog`, `Table`, `Tabs`, `ScrollArea`, `Tooltip`, etc.
+- **Always use `components/ui/` primitives — never raw HTML equivalents:**
+  - `<Label>` not `<label>` or `<span>` for form labels
+  - `<Input>` not `<input type="text/email/number/password">`
+  - `<Textarea>` not `<textarea>`
+  - `<Checkbox>` not `<input type="checkbox">`
+  - `<Select>` / `<SelectTrigger>` / `<SelectContent>` / `<SelectItem>` not `<select>` / `<option>`
+  - `<Switch>` not `<input type="checkbox">` for toggle behavior
+  - `<Button>` not `<button>`
 - Tailwind composes layout/spacing/responsive/state/token colors. Avoid long raw HTML when a shadcn/local component fits.
-- Forms use familiar primitives: `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Button`; include loading/error/disabled states.
+- Forms use: `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Button`; include loading/error/disabled states.
 - No CDN UI, inline scripts, external CSS frameworks, or raw design-tool HTML.
 
 ## Before Finishing UI Work

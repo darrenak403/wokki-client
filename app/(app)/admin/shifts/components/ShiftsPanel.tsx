@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/table";
 import { DepartmentSelect } from "@/components/shared/department-select";
 import { LocationSelect } from "@/components/shared/location-select";
+import { Label } from "@/components/ui/label";
 import {
   useCreateShiftMutation,
   useDeactivateShiftMutation,
@@ -182,27 +183,26 @@ export function ShiftsPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-end gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label>Chi nhánh</Label>
+            <LocationSelect value={locationId} onChange={setLocationId} required />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label>Phòng ban</Label>
+            <DepartmentSelect
+              locationId={locationId}
+              value={departmentId}
+              onChange={setDepartmentId}
+              allowEmpty
+            />
+          </div>
+        </div>
         <Button type="button" onClick={openCreate} disabled={!locationId}>
           <PlusIcon className="size-4" />
           Thêm ca
         </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Chi nhánh</span>
-          <LocationSelect value={locationId} onChange={setLocationId} required />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Phòng ban</span>
-          <DepartmentSelect
-            locationId={locationId}
-            value={departmentId}
-            onChange={setDepartmentId}
-            allowEmpty
-          />
-        </div>
       </div>
 
       {!locationId ? (

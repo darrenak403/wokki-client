@@ -11,6 +11,13 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCreateAssignmentMutation } from "@/hooks/useSchedule";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { format } from "date-fns";
@@ -69,20 +76,22 @@ export function AssignEmployeeDialog({
         <FieldGroup>
           <Field>
             <FieldLabel>Nhân viên</FieldLabel>
-            <select
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+            <Select
               value={employeeId}
+              onValueChange={(v) => setEmployeeId(v ?? "")}
               disabled={isLoading || createMutation.isPending}
-              onChange={(e) => setEmployeeId(e.target.value)}
-              aria-label="Chọn nhân viên"
             >
-              <option value="">{isLoading ? "Đang tải…" : "Chọn nhân viên"}</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.firstName} {emp.lastName} — {emp.position}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={isLoading ? "Đang tải…" : "Chọn nhân viên"} />
+              </SelectTrigger>
+              <SelectContent>
+                {employees.map((emp) => (
+                  <SelectItem key={emp.id} value={emp.id}>
+                    {emp.firstName} {emp.lastName} — {emp.position}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field>
             <FieldLabel>Ghi chú (tuỳ chọn)</FieldLabel>
