@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, role, logout, isLoading } = useAuth();
   const navItems = role ? getAppNavForRole(role) : [];
   const swapPendingCount = useSwapInboxPendingCount();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(true);
   const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/manager");
