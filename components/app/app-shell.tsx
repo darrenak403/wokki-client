@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronLeftIcon, MenuIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, MenuIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getAppNavForRole } from "@/components/app/app-nav";
 import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { renderNavIcon, getInitials } from "./app-shell-utils";
 import { ShellSidebarContent } from "./app-shell-sidebar";
 import { OrgTreeSidebar } from "./org-tree-sidebar";
+import { FoundationBreadcrumb } from "@/components/shared/foundation-breadcrumb";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -24,6 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const swapPendingCount = useSwapInboxPendingCount();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(true);
   const isAdminRoute = pathname.startsWith("/admin");
 
   useEffect(() => {
@@ -86,18 +88,35 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
         </button>
 
-        {/* Right org tree sidebar — always visible on admin routes */}
-        {isAdminRoute && (
+        {/* Right org tree sidebar — toggle on admin routes */}
+        {isAdminRoute && rightOpen && (
           <aside className="fixed inset-y-0 right-0 z-40 hidden w-72 overflow-hidden border-l border-neutral-200 bg-white/90 backdrop-blur-xl lg:flex lg:flex-col dark:border-neutral-800 dark:bg-neutral-900/90">
             <OrgTreeSidebar />
           </aside>
+        )}
+
+        {/* Right sidebar handle tab */}
+        {isAdminRoute && (
+          <button
+            type="button"
+            onClick={() => setRightOpen((v) => !v)}
+            aria-label={rightOpen ? "Đóng cây tổ chức" : "Mở cây tổ chức"}
+            className={cn(
+              "fixed top-1/2 z-50 hidden h-10 w-4 -translate-y-1/2 items-center justify-center rounded-l-lg border border-r-0 border-neutral-200 bg-white/90 text-neutral-400 shadow-sm backdrop-blur-xl transition-all duration-300 hover:text-neutral-700 lg:flex dark:border-neutral-800 dark:bg-neutral-900/90 dark:hover:text-neutral-200",
+              rightOpen ? "right-72" : "right-0"
+            )}
+          >
+            <ChevronRightIcon
+              className={cn("size-3 transition-transform duration-300", rightOpen && "rotate-180")}
+            />
+          </button>
         )}
 
         <div
           className={cn(
             "transition-[padding] duration-300 lg:pl-72",
             collapsed && "lg:pl-20",
-            isAdminRoute && "lg:pr-72"
+            isAdminRoute && rightOpen && "lg:pr-72"
           )}
         >
           <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-4 border-b border-neutral-200 bg-white/85 px-4 backdrop-blur-xl md:px-6 lg:px-8 dark:border-neutral-800 dark:bg-neutral-900/85">
@@ -160,7 +179,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
 
           <main className="min-h-[calc(100vh-5rem)] p-4 md:p-6 lg:p-8">
-            <div className="mx-auto max-w-7xl">{children}</div>
+            <div className="mx-auto max-w-7xl">
+              {isAdminRoute && (
+                <div className="mb-4">
+                  <FoundationBreadcrumb />
+                </div>
+              )}
+              {children}
+            </div>
           </main>
         </div>
       </div>
