@@ -26,7 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(true);
-  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/manager");
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
