@@ -87,9 +87,9 @@ export function DepartmentsPanel({ canWrite = false }: DepartmentsPanelProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
-        <div className="flex items-center gap-2">
-          <Label>Chi nhánh</Label>
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-4">
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground font-normal">Chi nhánh</Label>
           <LocationSelect value={locationId} onChange={setLocationId} />
         </div>
         {canWrite ? (

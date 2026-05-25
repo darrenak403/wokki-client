@@ -176,14 +176,14 @@ export function EmployeesPanel({ canWrite = false }: EmployeesPanelProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label>Chi nhánh</Label>
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-normal">Chi nhánh</Label>
             <LocationSelect value={locationId} onChange={setLocationId} />
           </div>
-          <div className="flex items-center gap-2">
-            <Label>Phòng ban</Label>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground font-normal">Phòng ban</Label>
             <DepartmentSelect
               locationId={locationId}
               value={filterDepartmentId}
