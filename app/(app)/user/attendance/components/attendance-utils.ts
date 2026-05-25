@@ -14,6 +14,12 @@ export function formatMinutes(minutes: number): string {
   return `${hours} giờ ${mins} phút`;
 }
 
+export function formatDurationShort(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
+
 export function getClockInStatus(row: AttendanceResponse) {
   if (row.status === ATTENDANCE_STATUS.Adjusted) {
     return {

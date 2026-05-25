@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { format, isToday, parseISO } from "date-fns";
+import { differenceInMinutes, format, isToday, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
   CalendarDaysIcon,
@@ -42,6 +42,7 @@ import type { ShiftAssignmentResponse } from "@/types/schedule";
 import {
   toTime,
   formatMinutes,
+  formatDurationShort,
   getClockInStatus,
   getTodayShiftStatus,
   isShiftEnded,
@@ -124,6 +125,16 @@ export function AttendancePanel() {
     ? "Đã quá giờ clock in"
     : getTodayShiftStatus(openRecord, currentShift);
 
+  const shiftRecord = currentShift
+    ? history.find((r) => r.assignmentId === currentShift.id)
+    : null;
+  const workedMinutes = openRecord
+    ? differenceInMinutes(now, parseISO(openRecord.clockIn))
+    : shiftRecord?.clockOut
+    ? shiftRecord.workedMinutes
+    : null;
+  const workedDisplay = workedMinutes !== null ? formatDurationShort(workedMinutes) : null;
+
   return (
     <div className="space-y-8">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -156,7 +167,9 @@ export function AttendancePanel() {
               )}
             </div>
             <div className="text-right">
-              <p className="text-4xl font-semibold tabular-nums">{format(now, "HH:mm")}</p>
+              <p className="text-4xl font-semibold tabular-nums">
+                {workedDisplay ?? <span className="text-muted-foreground/40">--:--</span>}
+              </p>
               <Badge
                 variant="outline"
                 className={cn(
