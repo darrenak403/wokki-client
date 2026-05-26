@@ -180,6 +180,7 @@ export interface UserResponse {
 export interface UserListParams {
   page?: number;
   pageSize?: number;
+  withoutEmployee?: boolean;
 }
 
 export interface CreateUserRequest {

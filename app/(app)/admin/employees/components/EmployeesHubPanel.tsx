@@ -15,7 +15,7 @@ export function EmployeesHubPanel() {
         <EmployeesPanel canWrite />
       </TabsContent>
       <TabsContent value="accounts">
-        <UsersPanel />
+        <UsersPanel withoutEmployee />
       </TabsContent>
     </Tabs>
   );

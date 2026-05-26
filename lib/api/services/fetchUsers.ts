@@ -11,12 +11,14 @@ import type {
 
 export const fetchUsers = {
   list: async (params: UserListParams = {}): Promise<PagedResponse<UserResponse>> => {
+    const queryParams: Record<string, unknown> = {
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 10,
+    };
+    if (params.withoutEmployee === true) queryParams.withoutEmployee = true;
     const response = await apiService.get<ApiEnvelope<PagedResponse<UserResponse>>>(
       "api/v1/users",
-      {
-        page: params.page ?? 1,
-        pageSize: params.pageSize ?? 10,
-      },
+      queryParams,
     );
     return assertFoundationSuccess(normalizeApiResponse(response.data));
   },

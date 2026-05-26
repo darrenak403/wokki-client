@@ -41,9 +41,13 @@ const userSchema = z.object({
   role: z.enum(["Admin", "Manager", "User"] as [AppRole, AppRole, AppRole]),
 });
 
-export function UsersPanel() {
+interface UsersPanelProps {
+  withoutEmployee?: boolean;
+}
+
+export function UsersPanel({ withoutEmployee }: UsersPanelProps) {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isError } = useUsersQuery({ page, pageSize: 10 });
+  const { data, isLoading, isError } = useUsersQuery({ page, pageSize: 10, withoutEmployee });
   const createMutation = useCreateUserMutation();
   const [open, setOpen] = useState(false);
 

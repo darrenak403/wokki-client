@@ -39,6 +39,8 @@ export function MembershipGate({ children }: { children: ReactNode }) {
 
   const isNoEmployee = isError && isApiError(error) && error.httpStatus === 404;
   const isActive = membership?.status === "Active";
+  // 404 = no Employee profile yet — send to /pending to show "contact manager" message
+  const shouldRedirectToNoEmployee = shouldCheck && isFetched && isNoEmployee;
   // 200+null means no membership record yet — send to /join to pick a location
   const shouldRedirectToJoin = shouldCheck && isFetched && !isNoEmployee && membership === null;
   // Non-active membership record (Pending/Rejected/Left) — send to /pending
@@ -57,6 +59,10 @@ export function MembershipGate({ children }: { children: ReactNode }) {
   }, [isPendingPath, role, router]);
 
   useEffect(() => {
+    if (shouldRedirectToNoEmployee) router.replace("/pending");
+  }, [shouldRedirectToNoEmployee, router]);
+
+  useEffect(() => {
     if (shouldRedirectToJoin) router.replace("/join");
   }, [shouldRedirectToJoin, router]);
 
@@ -71,7 +77,7 @@ export function MembershipGate({ children }: { children: ReactNode }) {
   if (shouldCheck && !isFetched) return null;
 
   // Redirecting
-  if (shouldRedirectToJoin || shouldRedirectToPending) return null;
+  if (shouldRedirectToNoEmployee || shouldRedirectToJoin || shouldRedirectToPending) return null;
 
   return <>{children}</>;
 }
