@@ -11,7 +11,7 @@ const EMPLOYEE_ERROR_MESSAGES: Record<string, string> = {
   SWAP_NOT_FOUND: "Không tìm thấy yêu cầu đổi ca.",
   SWAP_ASSIGNMENT_NOT_FOUND: "Không tìm thấy phân ca.",
   ATTENDANCE_NO_ASSIGNMENT: "Hôm nay bạn không có ca để chấm công.",
-  ATTENDANCE_ASSIGNMENT_WINDOW_PASSED: "Ca này đã kết thúc, không thể clock in nữa.",
+  ATTENDANCE_ASSIGNMENT_WINDOW_PASSED: "Ca này đã kết thúc, không thể Vào ca nữa.",
   SWAP_NOT_OWNER: "Bạn không phải người liên quan yêu cầu này.",
   SWAP_FORBIDDEN: "Không được phép thực hiện thao tác này.",
   SWAP_CUTOFF_EXCEEDED: "Đã quá hạn đổi ca tuần sau.",
@@ -50,7 +50,7 @@ export function mapEmployeeFailureMessage(message?: unknown, messageCode?: strin
 }
 
 export function mapEmployeeResponseFailure(
-  response: Pick<ApiResponse<unknown>, "message">,
+  response: Pick<ApiResponse<unknown>, "message">
 ): string {
   return mapEmployeeFailureMessage(response.message, response.message.code);
 }
@@ -71,8 +71,7 @@ export function mapEmployeeError(error: unknown): string {
   const body = apiError.data as Record<string, unknown> | undefined;
   const fromBody = extractApiMessage(body?.message);
   const code =
-    apiError.messageCode ??
-    (typeof fromBody.code === "string" ? fromBody.code : undefined);
+    apiError.messageCode ?? (typeof fromBody.code === "string" ? fromBody.code : undefined);
   const mapped = mapCode(code);
   if (mapped) return mapped;
 

@@ -202,7 +202,7 @@ export function TeamAttendancePanel() {
           </DialogHeader>
           <FieldGroup>
             <Field>
-              <FieldLabel>Clock in</FieldLabel>
+              <FieldLabel>Vào ca</FieldLabel>
               <Input
                 type="datetime-local"
                 value={clockIn}
@@ -210,7 +210,7 @@ export function TeamAttendancePanel() {
               />
             </Field>
             <Field>
-              <FieldLabel>Clock out</FieldLabel>
+              <FieldLabel>Tan ca</FieldLabel>
               <Input
                 type="datetime-local"
                 value={clockOut}
