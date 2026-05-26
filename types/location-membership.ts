@@ -1,4 +1,4 @@
-export type LocationMembershipStatus = "Active" | "Pending" | "Rejected";
+export type LocationMembershipStatus = "Active" | "Pending" | "Rejected" | "Left" | "Transferred";
 
 export interface LocationMembershipResponse {
   id: string;

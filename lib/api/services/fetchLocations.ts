@@ -16,6 +16,11 @@ export const fetchLocations = {
     return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 
+  listActive: async (): Promise<LocationResponse[]> => {
+    const response = await apiService.get<ApiEnvelope<LocationResponse[]>>("api/v1/locations/available");
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
+  },
+
   create: async (data: CreateLocationRequest): Promise<LocationResponse> => {
     const response = await apiService.post<ApiEnvelope<LocationResponse>>(
       "api/v1/locations",

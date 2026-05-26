@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { membershipKeys } from "@/lib/api/query-keys";
 import { fetchLocationMembership } from "@/lib/api/services/fetchLocationMembership";
 
@@ -13,5 +13,15 @@ export function useMyLocationMembership({ enabled = true }: { enabled?: boolean 
     staleTime: STALE_MS,
     retry: false,
     enabled,
+  });
+}
+
+export function useRequestLocationMembership() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (locationId: string) => fetchLocationMembership.request(locationId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: membershipKeys.my() });
+    },
   });
 }

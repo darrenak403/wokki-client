@@ -30,7 +30,8 @@ export function MembershipGate({ children }: { children: ReactNode }) {
   const role = useAppSelector(selectUserRole);
 
   const isPendingPath = pathname === "/pending";
-  const shouldCheck = isAuthenticated && role === ROLE_USER && !isPendingPath;
+  const isJoinPath = pathname === "/join";
+  const shouldCheck = isAuthenticated && role === ROLE_USER && !isPendingPath && !isJoinPath;
 
   const { data: membership, isFetched, isError, error } = useMyLocationMembership({
     enabled: shouldCheck,
@@ -38,8 +39,10 @@ export function MembershipGate({ children }: { children: ReactNode }) {
 
   const isNoEmployee = isError && isApiError(error) && error.httpStatus === 404;
   const isActive = membership?.status === "Active";
-  // Only redirect once the query has actually returned a result (isFetched guards premature fire)
-  const shouldRedirect = shouldCheck && isFetched && !isNoEmployee && !isActive;
+  // 200+null means no membership record yet — send to /join to pick a location
+  const shouldRedirectToJoin = shouldCheck && isFetched && !isNoEmployee && membership === null;
+  // Non-active membership record (Pending/Rejected/Left) — send to /pending
+  const shouldRedirectToPending = shouldCheck && isFetched && !isNoEmployee && !isActive && membership !== null;
 
   // Redirect unauthenticated users to login once hydration is settled
   useEffect(() => {
@@ -54,8 +57,12 @@ export function MembershipGate({ children }: { children: ReactNode }) {
   }, [isPendingPath, role, router]);
 
   useEffect(() => {
-    if (shouldRedirect) router.replace("/pending");
-  }, [shouldRedirect, router]);
+    if (shouldRedirectToJoin) router.replace("/join");
+  }, [shouldRedirectToJoin, router]);
+
+  useEffect(() => {
+    if (shouldRedirectToPending) router.replace("/pending");
+  }, [shouldRedirectToPending, router]);
 
   // Suppress render during auth hydration or while unauthenticated
   if (!isAuthenticated) return null;
@@ -63,8 +70,8 @@ export function MembershipGate({ children }: { children: ReactNode }) {
   // Wait for membership check result
   if (shouldCheck && !isFetched) return null;
 
-  // Redirecting to /pending
-  if (shouldRedirect) return null;
+  // Redirecting
+  if (shouldRedirectToJoin || shouldRedirectToPending) return null;
 
   return <>{children}</>;
 }

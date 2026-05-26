@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ClockIcon, RefreshCwIcon, XCircleIcon } from "lucide-react";
+import { ClockIcon, LogOutIcon, RefreshCwIcon, XCircleIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyLocationMembership } from "@/hooks/useLocationMembership";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ export default function PendingPage() {
   }, [membership?.status, router]);
 
   const isRejected = membership?.status === "Rejected";
+  const isTerminal = membership?.status === "Left" || membership?.status === "Transferred";
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -28,13 +29,17 @@ export default function PendingPage() {
         <div className="flex justify-center">
           <div
             className={
-              isRejected
+              isRejected || isTerminal
                 ? "flex size-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30"
                 : "flex size-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30"
             }
           >
-            {isRejected ? (
-              <XCircleIcon className="size-8 text-red-600 dark:text-red-400" />
+            {isRejected || isTerminal ? (
+              isTerminal ? (
+                <LogOutIcon className="size-8 text-red-600 dark:text-red-400" />
+              ) : (
+                <XCircleIcon className="size-8 text-red-600 dark:text-red-400" />
+              )
             ) : (
               <ClockIcon className="size-8 text-amber-600 dark:text-amber-400" />
             )}
@@ -43,12 +48,18 @@ export default function PendingPage() {
 
         <div className="space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">
-            {isRejected ? "Yêu cầu bị từ chối" : "Chờ xác nhận tham gia"}
+            {isTerminal
+              ? "Tài khoản đã rời chi nhánh"
+              : isRejected
+                ? "Yêu cầu bị từ chối"
+                : "Chờ xác nhận tham gia"}
           </h1>
           <p className="text-muted-foreground">
-            {isRejected
-              ? "Yêu cầu tham gia chi nhánh của bạn đã bị từ chối. Vui lòng liên hệ quản lý để biết thêm chi tiết."
-              : "Yêu cầu của bạn đang chờ được duyệt. Vui lòng chờ quản lý xác nhận."}
+            {isTerminal
+              ? "Bạn không còn là thành viên của chi nhánh này. Vui lòng gửi yêu cầu tham gia chi nhánh mới."
+              : isRejected
+                ? "Yêu cầu tham gia chi nhánh của bạn đã bị từ chối. Vui lòng liên hệ quản lý để biết thêm chi tiết."
+                : "Yêu cầu của bạn đang chờ được duyệt. Vui lòng chờ quản lý xác nhận."}
           </p>
         </div>
 
@@ -66,7 +77,11 @@ export default function PendingPage() {
         )}
 
         <div className="flex justify-center gap-3">
-          {!isRejected && (
+          {isRejected || isTerminal ? (
+            <Button variant="outline" onClick={() => router.push("/join")}>
+              Thử lại
+            </Button>
+          ) : (
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCwIcon className={isFetching ? "animate-spin" : ""} />
               Làm mới

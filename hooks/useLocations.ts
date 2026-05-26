@@ -21,6 +21,14 @@ export function useLocationsQuery() {
   });
 }
 
+export function useActiveLocationsQuery() {
+  return useQuery({
+    queryKey: [...foundationKeys.locations(), "available"] as const,
+    queryFn: () => fetchLocations.listActive(),
+    staleTime: STALE_MS,
+  });
+}
+
 export function useCreateLocationMutation() {
   const queryClient = useQueryClient();
   return useMutation({
