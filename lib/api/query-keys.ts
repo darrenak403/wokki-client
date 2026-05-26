@@ -61,6 +61,11 @@ export const bedrockKeys = {
   health: () => [...bedrockKeys.all, "health"] as const,
 };
 
+export const membershipKeys = {
+  all: ["membership"] as const,
+  my: () => [...membershipKeys.all, "my"] as const,
+};
+
 export const foundationKeys = {
   all: ["foundation"] as const,
   locations: () => [...foundationKeys.all, "locations"] as const,
