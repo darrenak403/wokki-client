@@ -15,6 +15,7 @@ export type BuildOrgGraphInput = {
   expandedLocations: Set<string>;
   expandedDepartments: Set<string>;
   showManagers: boolean;
+  lockLocationExpansion?: boolean;
 };
 
 export type BuildOrgGraphResult = {
@@ -40,7 +41,7 @@ export function buildOrgGraph(input: BuildOrgGraphInput): BuildOrgGraphResult {
         subtitle: loc.address,
         locationId: loc.id,
         isActive: loc.isActive,
-        canExpand: true,
+        canExpand: !input.lockLocationExpansion,
         isExpanded,
       },
     });

@@ -4,8 +4,12 @@ import { useEffect, type ReactNode } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { selectOrganizationId } from "@/lib/redux/slices/authSlice";
-import { writeFoundationSession } from "@/lib/support/foundation/session-context";
+import {
+  readFoundationSession,
+  writeFoundationSession,
+} from "@/lib/support/foundation/session-context";
 import { getPostLoginPath } from "@/lib/support/auth/post-login-route";
+import { setBranchIdCookie } from "@/lib/support/routing/branch-cookie";
 import {
   buildOrgScopedPath,
   isUuidSegment,
@@ -42,8 +46,12 @@ export function TenantScopeGuard({ children, requireBranch = false }: TenantScop
 
   useEffect(() => {
     if (!requireBranch || !locationId || !isUuidSegment(locationId)) return;
+    const current = readFoundationSession();
+    setBranchIdCookie(locationId);
     writeFoundationSession({
       selectedLocationId: locationId,
+      selectedDepartmentId:
+        current.selectedLocationId === locationId ? current.selectedDepartmentId : null,
     });
   }, [requireBranch, locationId]);
 

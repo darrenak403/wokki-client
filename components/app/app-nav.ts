@@ -8,6 +8,8 @@ import {
 
 export type AppNavItem = {
   href: string;
+  /** Stable React key — legacy path feature suffix (e.g. `dashboard`, `chat`). */
+  navKey: string;
   label: string;
   description?: string;
   /** Wave / module — ghi chú cho agent, không hiển thị UI */
@@ -16,7 +18,9 @@ export type AppNavItem = {
   showSwapPendingBadge?: boolean;
 };
 
-const ADMIN_NAV: AppNavItem[] = [
+type AppNavItemDef = Omit<AppNavItem, "navKey">;
+
+const ADMIN_NAV: AppNavItemDef[] = [
   {
     href: "/admin/dashboard",
     label: "Tổng quan",
@@ -80,7 +84,7 @@ const ADMIN_NAV: AppNavItem[] = [
   },
 ];
 
-const MANAGER_NAV: AppNavItem[] = [
+const MANAGER_NAV: AppNavItemDef[] = [
   {
     href: "/manager/dashboard",
     label: "Tổng quan",
@@ -144,7 +148,7 @@ const MANAGER_NAV: AppNavItem[] = [
   },
 ];
 
-const USER_NAV: AppNavItem[] = [
+const USER_NAV: AppNavItemDef[] = [
   {
     href: "/user/dashboard",
     label: "Dashboard",
@@ -178,16 +182,24 @@ const USER_NAV: AppNavItem[] = [
 ];
 
 export function getAppNavForRole(role: AppRole): AppNavItem[] {
+  let items: AppNavItemDef[];
   switch (role) {
     case ROLE_ADMIN:
-      return ADMIN_NAV;
+      items = ADMIN_NAV;
+      break;
     case ROLE_MANAGER:
-      return MANAGER_NAV;
+      items = MANAGER_NAV;
+      break;
     case ROLE_USER:
-      return USER_NAV;
     default:
-      return USER_NAV;
+      items = USER_NAV;
+      break;
   }
+
+  return items.map((item) => ({
+    ...item,
+    navKey: featureSuffix(item.href, role),
+  }));
 }
 
 function featureSuffix(legacyHref: string, role: AppRole): string {
@@ -200,8 +212,7 @@ function featureSuffix(legacyHref: string, role: AppRole): string {
 }
 
 const ORG_ONLY_SUFFIX: Partial<Record<AppRole, Set<string>>> = {
-  [ROLE_ADMIN]: new Set(["workspace", "onboarding"]),
-  [ROLE_MANAGER]: new Set(["workspace"]),
+  [ROLE_ADMIN]: new Set(["onboarding"]),
 };
 
 /** Nav links with /{orgId}/{locationId}/… or /{orgId}/… for org-only routes. */
@@ -213,7 +224,7 @@ export function buildTenantNav(
   const orgOnly = ORG_ONLY_SUFFIX[role] ?? new Set<string>();
 
   return getAppNavForRole(role).map((item) => {
-    const suffix = featureSuffix(item.href, role);
+    const suffix = item.navKey;
     if (orgOnly.has(suffix)) {
       return { ...item, href: buildOrgScopedPath(orgId, role, suffix) };
     }

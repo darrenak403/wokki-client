@@ -35,10 +35,12 @@ Wave 1 Auth → Wave 2 Foundation (location, dept, employee, shift)
 
 ### App (`app/(app)/`)
 
+Tenant app routes are branch-scoped for business actions: `/{orgId}/{locationId}/{role}/...`. `/{orgId}/{role}/workspace` is a redirect/branch-selection fallback, not an all-branch workspace.
+
 | Module | Admin panel path | Notes |
 |--------|------------------|-------|
-| Dashboard | `admin/dashboard` | |
-| Chi nhánh | `admin/locations` + `LocationPolicyDialog` | Branch scheduling policy v3 |
+| Dashboard | `[orgId]/[locationId]/admin/dashboard` | |
+| Tổ chức | `[orgId]/[locationId]/admin/workspace` + `LocationDetailDrawer` | Selected branch only; separate explicit org view needed for all branches |
 | Phòng ban | `admin/departments` | Chi nhánh → phòng ban → nhân viên (không có vị trí con) |
 | Ca | `admin/shifts` | Shift definitions |
 | Nhân sự | `admin/employees` | Links User ↔ Employee |

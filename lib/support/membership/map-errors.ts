@@ -23,6 +23,8 @@ const MEMBERSHIP_ERROR_MESSAGES: Record<string, string> = {
   WS_TRANSFER_FORBIDDEN: "Bạn không có quyền điều chuyển nhân viên này.",
   WS_ALREADY_AT_LOCATION: "Nhân viên đã thuộc chi nhánh này.",
   WS_ALREADY_IN_DEPT: "Nhân viên đã ở phòng ban này.",
+  WS_EMPLOYEE_WRONG_LOCATION:
+    "Nhân viên chưa thuộc chi nhánh của phòng ban này. Hãy điều chuyển chi nhánh trước.",
   EMPLOYEE_NOT_FOUND: "Không tìm thấy nhân viên.",
   EMPLOYEE_ALREADY_TERMINATED: "Nhân viên đã được chấm dứt hợp đồng.",
   EMPLOYEE_DEPARTMENT_NOT_FOUND: "Phòng ban không hợp lệ.",

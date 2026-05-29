@@ -36,6 +36,8 @@ export type WorkspacePanelProps = {
   canAssignManagers?: boolean;
   canTransferEmployees?: boolean;
   isManagerScope?: boolean;
+  /** Branch workspace: render only the `locationId` from the tenant URL. */
+  scopeToCurrentLocation?: boolean;
 };
 
 export function WorkspacePanel({
@@ -47,11 +49,26 @@ export function WorkspacePanel({
   canAssignManagers = false,
   canTransferEmployees = false,
   isManagerScope = false,
+  scopeToCurrentLocation = false,
 }: WorkspacePanelProps) {
   const queryClient = useQueryClient();
-  const { orgId } = useTenantParams();
+  const { orgId, locationId } = useTenantParams();
   const locationsQuery = useWorkspaceLocations(isManagerScope);
-  const locations = locationsQuery.data ?? [];
+  const allLocations = useMemo(() => locationsQuery.data ?? [], [locationsQuery.data]);
+  const scopedLocation =
+    scopeToCurrentLocation && locationId
+      ? (allLocations.find((location) => location.id === locationId) ?? null)
+      : null;
+  const locationNotFound =
+    scopeToCurrentLocation &&
+    !locationsQuery.isLoading &&
+    !locationsQuery.isError &&
+    Boolean(locationId) &&
+    scopedLocation === null;
+  const locations = useMemo(() => {
+    if (!scopeToCurrentLocation) return allLocations;
+    return scopedLocation ? [scopedLocation] : [];
+  }, [allLocations, scopeToCurrentLocation, scopedLocation]);
 
   const [expandedLocations, setExpandedLocations] = useState<Set<string>>(new Set());
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
@@ -67,7 +84,14 @@ export function WorkspacePanel({
   } | null>(null);
   const [transferEmployee, setTransferEmployee] = useState<EmployeeResponse | null>(null);
 
-  const expandedLocationIds = useMemo(() => [...expandedLocations], [expandedLocations]);
+  const activeExpandedLocations = useMemo(() => {
+    if (!scopeToCurrentLocation || !scopedLocation) return expandedLocations;
+    return new Set([scopedLocation.id]);
+  }, [expandedLocations, scopeToCurrentLocation, scopedLocation]);
+  const expandedLocationIds = useMemo(
+    () => [...activeExpandedLocations],
+    [activeExpandedLocations],
+  );
   const expandedDepartmentIds = useMemo(() => [...expandedDepartments], [expandedDepartments]);
 
   const departmentQueries = useQueries({
@@ -147,18 +171,20 @@ export function WorkspacePanel({
         managersByLocation,
         departmentsByLocation,
         employeesByDepartment,
-        expandedLocations,
+        expandedLocations: activeExpandedLocations,
         expandedDepartments,
         showManagers: canAssignManagers,
+        lockLocationExpansion: scopeToCurrentLocation,
       }),
     [
       locations,
       managersByLocation,
       departmentsByLocation,
       employeesByDepartment,
-      expandedLocations,
+      activeExpandedLocations,
       expandedDepartments,
       canAssignManagers,
+      scopeToCurrentLocation,
     ],
   );
 
@@ -213,26 +239,30 @@ export function WorkspacePanel({
     [departmentsByLocation, employeesByDepartment, invalidateGraph, transferDepartmentMutation],
   );
 
-  const handleToggleExpand = useCallback((node: OrgFlowNode) => {
-    const { kind, locationId, departmentId } = node.data;
-    if (kind === "location" && locationId) {
-      setExpandedLocations((prev) => {
-        const next = new Set(prev);
-        if (next.has(locationId)) next.delete(locationId);
-        else next.add(locationId);
-        return next;
-      });
-      return;
-    }
-    if (kind === "department" && departmentId) {
-      setExpandedDepartments((prev) => {
-        const next = new Set(prev);
-        if (next.has(departmentId)) next.delete(departmentId);
-        else next.add(departmentId);
-        return next;
-      });
-    }
-  }, []);
+  const handleToggleExpand = useCallback(
+    (node: OrgFlowNode) => {
+      const { kind, locationId, departmentId } = node.data;
+      if (kind === "location" && locationId) {
+        if (scopeToCurrentLocation) return;
+        setExpandedLocations((prev) => {
+          const next = new Set(prev);
+          if (next.has(locationId)) next.delete(locationId);
+          else next.add(locationId);
+          return next;
+        });
+        return;
+      }
+      if (kind === "department" && departmentId) {
+        setExpandedDepartments((prev) => {
+          const next = new Set(prev);
+          if (next.has(departmentId)) next.delete(departmentId);
+          else next.add(departmentId);
+          return next;
+        });
+      }
+    },
+    [scopeToCurrentLocation],
+  );
 
   const handleNodeSelect = useCallback(
     (node: OrgFlowNode) => {
@@ -271,38 +301,41 @@ export function WorkspacePanel({
     [locations, departmentsByLocation, employeesByDepartment, canTransferEmployees],
   );
 
+  const createDepartmentLocation =
+    scopeToCurrentLocation && scopedLocation
+      ? scopedLocation
+      : (locations.find((location) => location.id === expandedLocationIds[0]) ?? null);
+
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col">
       <div className="flex shrink-0 items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3 md:px-6 dark:border-neutral-800">
         <p className="min-w-0 text-sm text-muted-foreground">{description}</p>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-        {canWriteLocations ? (
-          <Button
-            type="button"
-            onClick={() => setLocationDrawer({ location: null, isCreate: true })}
-          >
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Thêm chi nhánh
-          </Button>
-        ) : null}
-        {canWriteDepartments && expandedLocations.size > 0 ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              const locId = [...expandedLocations][0];
-              const loc = locations.find((l) => l.id === locId) ?? null;
-              setDepartmentDrawer({
-                department: null,
-                location: loc,
-                isCreate: true,
-              });
-            }}
-          >
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Thêm phòng ban
-          </Button>
-        ) : null}
+          {canWriteLocations && !scopeToCurrentLocation ? (
+            <Button
+              type="button"
+              onClick={() => setLocationDrawer({ location: null, isCreate: true })}
+            >
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Thêm chi nhánh
+            </Button>
+          ) : null}
+          {canWriteDepartments && createDepartmentLocation ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setDepartmentDrawer({
+                  department: null,
+                  location: createDepartmentLocation,
+                  isCreate: true,
+                });
+              }}
+            >
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Thêm phòng ban
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -311,6 +344,15 @@ export function WorkspacePanel({
           <p className="p-4 text-sm text-muted-foreground">Đang tải sơ đồ tổ chức…</p>
         ) : locationsQuery.isError ? (
           <p className="p-4 text-sm text-destructive">Không tải được danh sách chi nhánh.</p>
+        ) : locationNotFound ? (
+          <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
+            <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              Không tìm thấy chi nhánh.
+            </p>
+            <p className="max-w-md text-sm text-muted-foreground">
+              Chi nhánh này không tồn tại hoặc tài khoản hiện tại chưa có quyền truy cập.
+            </p>
+          </div>
         ) : locations.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
             <p className="text-sm text-muted-foreground">

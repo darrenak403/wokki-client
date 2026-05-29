@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -74,36 +75,39 @@ export function BranchSwitcher({ collapsed = false }: BranchSwitcherProps) {
         ) : null}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>Chi nhánh</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {locations.length === 0 ? (
-          <DropdownMenuItem disabled>Chưa có chi nhánh</DropdownMenuItem>
-        ) : (
-          locations.map((loc) => (
-            <DropdownMenuItem
-              key={loc.id}
-              onClick={() => switchBranch(loc.id)}
-              className={loc.id === effectiveLocationId ? "bg-accent" : undefined}
-            >
-              {loc.name}
-              {!loc.isActive ? " (ngưng)" : ""}
-            </DropdownMenuItem>
-          ))
-        )}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Chi nhánh</DropdownMenuLabel>
+          {locations.length === 0 ? (
+            <DropdownMenuItem disabled>Chưa có chi nhánh</DropdownMenuItem>
+          ) : (
+            locations.map((loc) => (
+              <DropdownMenuItem
+                key={loc.id}
+                onClick={() => switchBranch(loc.id)}
+                className={loc.id === effectiveLocationId ? "bg-accent" : undefined}
+              >
+                {loc.name}
+                {!loc.isActive ? " (ngưng)" : ""}
+              </DropdownMenuItem>
+            ))
+          )}
+        </DropdownMenuGroup>
         {canCreate ? (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              render={
-                <Link
-                  href={orgPath("onboarding", ROLE_ADMIN)}
-                  className="flex w-full items-center gap-2"
-                />
-              }
-            >
-              <PlusIcon className="size-4" />
-              Tạo chi nhánh
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href={orgPath("onboarding", ROLE_ADMIN)}
+                    className="flex w-full items-center gap-2"
+                  />
+                }
+              >
+                <PlusIcon className="size-4" />
+                Tạo chi nhánh
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
           </>
         ) : null}
       </DropdownMenuContent>

@@ -40,6 +40,16 @@ export function useTenantNavigation() {
         return;
       }
 
+      if (current?.kind === "org") {
+        const feature = current.featurePath || "workspace";
+        if (feature === "workspace" || feature.startsWith("workspace/")) {
+          router.push(buildBranchScopedPath(orgId, nextLocationId, current.role, "workspace"));
+          return;
+        }
+        router.push(buildOrgScopedPath(orgId, current.role, feature));
+        return;
+      }
+
       router.push(buildBranchScopedPath(orgId, nextLocationId, activeRole, "dashboard"));
     },
     [orgId, pathname, role, router]

@@ -1,5 +1,6 @@
-import { WorkspacePanel } from "@/app/(app)/[orgId]/admin/workspace/components/workspace-panel";
+import { WorkspaceBranchRedirect } from "@/app/(app)/[orgId]/admin/workspace/components/WorkspaceBranchRedirect";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
+import { ROLE_MANAGER } from "@/lib/types/roles";
 
 export const metadata = buildPageMetadata({
   title: "Tổ chức — Manager",
@@ -8,16 +9,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function ManagerWorkspacePage() {
-  return (
-    <WorkspacePanel
-      description="Sơ đồ chi nhánh trong phạm vi quản lý — chuyển nhân viên giữa chi nhánh/phòng ban."
-      canWriteLocations={false}
-      canWriteDepartments={false}
-      canEditLocations
-      canEditDepartments
-      canAssignManagers={false}
-      canTransferEmployees
-      isManagerScope
-    />
-  );
+  return <WorkspaceBranchRedirect role={ROLE_MANAGER} />;
 }

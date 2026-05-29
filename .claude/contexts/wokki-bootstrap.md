@@ -9,6 +9,7 @@
 - Copy: Vietnamese; keep `Dashboard`, `Admin`, `Manager`, `Export CSV` in English
 - Preferences editable in **Draft** only; **Published** = view-only; preferences are advisory
 - `/auth/me` ≠ `/self/*` · User must not call manager `/schedules/*` write APIs
+- Workspace/sidebar actions are selected-branch scoped: `/{orgId}/{locationId}/{role}/...`; org workspace only redirects/selects branch
 - Auto-schedule UI: chi nhánh → phòng ban → tuần; branch policy required before suggest
 - Bedrock = explanation only; scheduling works without it
 

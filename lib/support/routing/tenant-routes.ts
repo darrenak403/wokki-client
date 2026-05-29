@@ -8,7 +8,21 @@ import { ROLE_ADMIN, ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
 export const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const ROLE_SEGMENTS = new Set<string>([ROLE_ADMIN, ROLE_MANAGER, ROLE_USER]);
+/** URL path segment (lowercase) — khác JWT claim `Admin` | `Manager` | `User`. */
+export function roleToUrlSegment(role: AppRole): string {
+  return APP_AREA_PREFIX[role].replace(/^\//, "");
+}
+
+export function roleFromUrlSegment(segment: string): AppRole | null {
+  const key = segment.trim().toLowerCase();
+  if (key === "admin") return ROLE_ADMIN;
+  if (key === "manager") return ROLE_MANAGER;
+  if (key === "user") return ROLE_USER;
+  if (segment === ROLE_ADMIN || segment === ROLE_MANAGER || segment === ROLE_USER) {
+    return segment;
+  }
+  return null;
+}
 
 export type ParsedTenantPath =
   | {
@@ -48,22 +62,21 @@ export function parseTenantPath(pathname: string): ParsedTenantPath | null {
   const [a, b, c] = segments;
 
   // /{orgId}/admin/onboarding
-  if (isUuidSegment(a) && ROLE_SEGMENTS.has(b)) {
-    const role = b as AppRole;
-    const featurePath = segments.slice(2).join("/");
-    return { kind: "org", orgId: a, role, featurePath };
+  if (isUuidSegment(a)) {
+    const role = roleFromUrlSegment(b);
+    if (role) {
+      const featurePath = segments.slice(2).join("/");
+      return { kind: "org", orgId: a, role, featurePath };
+    }
   }
 
   // /{orgId}/{locationId}/admin/schedule
-  if (
-    isUuidSegment(a) &&
-    isUuidSegment(b) &&
-    segments.length >= 4 &&
-    ROLE_SEGMENTS.has(segments[2]!)
-  ) {
-    const role = segments[2] as AppRole;
-    const featurePath = segments.slice(3).join("/");
-    return { kind: "branch", orgId: a, locationId: b, role, featurePath };
+  if (isUuidSegment(a) && isUuidSegment(b) && segments.length >= 4) {
+    const role = roleFromUrlSegment(segments[2]!);
+    if (role) {
+      const featurePath = segments.slice(3).join("/");
+      return { kind: "branch", orgId: a, locationId: b, role, featurePath };
+    }
   }
 
   return null;
@@ -75,7 +88,8 @@ export function buildOrgScopedPath(
   featurePath: string
 ): string {
   const suffix = featurePath.replace(/^\//, "");
-  return suffix ? `/${orgId}/${role}/${suffix}` : `/${orgId}/${role}`;
+  const roleSeg = roleToUrlSegment(role);
+  return suffix ? `/${orgId}/${roleSeg}/${suffix}` : `/${orgId}/${roleSeg}`;
 }
 
 export function buildBranchScopedPath(

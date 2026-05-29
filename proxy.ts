@@ -17,6 +17,7 @@ import {
 import { BRANCH_ID_COOKIE } from "@/lib/support/routing/branch-cookie";
 import {
   isLegacyRolePath,
+  isUuidSegment,
   legacyPathToBranchScoped,
 } from "@/lib/support/routing/tenant-routes";
 import { isAppRole, ROLE_PLATFORM_OPERATOR, ROLE_USER } from "@/lib/types/roles";
@@ -37,6 +38,22 @@ export function proxy(request: NextRequest) {
     return pathname === r || pathname.startsWith(`${r}/`);
   });
   const isAuthRoute = AUTH_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+
+  const tenantSegments = pathname.split("/").filter(Boolean);
+  if (
+    tenantSegments.length >= 2 &&
+    isUuidSegment(tenantSegments[0]!) &&
+    (tenantSegments[1] === "Admin" ||
+      tenantSegments[1] === "Manager" ||
+      tenantSegments[1] === "User")
+  ) {
+    const normalized = [
+      tenantSegments[0],
+      tenantSegments[1].toLowerCase(),
+      ...tenantSegments.slice(2),
+    ].join("/");
+    return NextResponse.redirect(new URL(`/${normalized}`, request.url));
+  }
 
   if (pathname === "/join" || pathname.startsWith("/join/") || pathname === "/pending") {
     return NextResponse.redirect(new URL(getSessionHomePath(sessionRole), request.url));

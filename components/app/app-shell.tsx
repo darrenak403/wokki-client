@@ -7,7 +7,6 @@ import { ChevronLeftIcon, MenuIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveOrganizationDisplayName } from "@/lib/support/auth/org-name-storage";
 import { getAppNavForRole, buildTenantNav } from "@/components/app/app-nav";
-import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { useTenantParams } from "@/hooks/useTenantParams";
 import { TenantAddressBar } from "@/components/app/tenant-address-bar";
 import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
@@ -25,23 +24,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, role, organizationName, logout, isLoading } = useAuth();
   const { orgId, locationId, parsed } = useTenantParams();
-  const { session } = useFoundationSession();
-  const effectiveLocationId = locationId ?? session.selectedLocationId ?? null;
   const navItems =
-    role && orgId
-      ? buildTenantNav(role, orgId, effectiveLocationId)
-      : role
-        ? getAppNavForRole(role)
-        : [];
+    role && orgId ? buildTenantNav(role, orgId, locationId) : role ? getAppNavForRole(role) : [];
   const orgDisplayName = resolveOrganizationDisplayName(organizationName);
   const swapPendingCount = useSwapInboxPendingCount();
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isAdminRoute =
-    pathname.includes("/admin/") || pathname.startsWith("/admin");
-  const isWorkspaceRoute =
-    parsed?.kind === "org" &&
-    (parsed.featurePath === "workspace" || parsed.featurePath.startsWith("workspace/"));
+  const isAdminRoute = pathname.includes("/admin/") || pathname.startsWith("/admin");
+  const isWorkspaceRoute = Boolean(
+    parsed?.featurePath === "workspace" || parsed?.featurePath.startsWith("workspace/")
+  );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -61,7 +53,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   const homeHref = navItems[0]?.href ?? "/";
+  const activeFeature = parsed?.featurePath.split("/")[0];
   const activeItem =
+    navItems.find((item) => item.navKey === activeFeature) ??
     navItems.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`)) ??
     navItems[0];
 
@@ -89,8 +83,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         {/* Left sidebar handle tab */}
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => setCollapsed((v) => !v)}
           aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
           className={cn(
@@ -101,14 +97,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <ChevronLeftIcon
             className={cn("size-3 transition-transform duration-500", collapsed && "rotate-180")}
           />
-        </button>
+        </Button>
 
-        <div
-          className={cn(
-            "transition-[padding] duration-300 lg:pl-60",
-            collapsed && "lg:pl-20",
-          )}
-        >
+        <div className={cn("transition-[padding] duration-300 lg:pl-60", collapsed && "lg:pl-20")}>
           <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-4 border-b border-neutral-200 bg-white/85 px-4 backdrop-blur-xl md:px-6 lg:px-8 dark:border-neutral-800 dark:bg-neutral-900/85">
             <div className="flex min-w-0 items-center gap-3">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -173,12 +164,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <main
             className={cn(
               "min-h-[calc(100vh-5rem)]",
-              isWorkspaceRoute ? "flex flex-col p-0" : "p-4 md:p-6 lg:p-8",
+              isWorkspaceRoute ? "flex flex-col p-0" : "p-4 md:p-6 lg:p-8"
             )}
           >
             <div
               className={cn(
-                isWorkspaceRoute ? "flex min-h-0 flex-1 flex-col w-full" : "mx-auto w-full max-w-7xl",
+                isWorkspaceRoute
+                  ? "flex min-h-0 flex-1 flex-col w-full"
+                  : "mx-auto w-full max-w-7xl"
               )}
             >
               {isAdminRoute && !isWorkspaceRoute && !locationId ? (

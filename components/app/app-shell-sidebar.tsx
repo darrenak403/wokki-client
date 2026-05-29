@@ -58,7 +58,7 @@ export function ShellSidebarContent({
 
           return (
             <SidebarNavLink
-              key={item.href}
+              key={item.navKey}
               badge={badge}
               collapsed={collapsed}
               href={item.href}
