@@ -8,6 +8,7 @@ import type {
   LoginResponse,
   MeResponse,
   RefreshTokenRequest,
+  RegisterRequest,
   RegisterResponse,
   ResetPasswordRequest,
 } from "@/types/auth";
@@ -39,9 +40,12 @@ export const fetchAuth = {
     await apiService.post<ApiEnvelope<Record<string, never>>>("api/v1/auth/logout", {});
   },
 
-  /** Self-register — BE luôn tạo role `User`, không trả JWT. */
-  register: async (data: LoginRequest): Promise<RegisterResponse> => {
-    const response = await apiService.post<ApiEnvelope<AuthUser>>("api/v1/auth/register", data);
+  /** Self-serve register — trả token pair giống login. */
+  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
+    const response = await apiService.post<ApiEnvelope<AuthTokenPair>>(
+      "api/v1/auth/register",
+      data
+    );
     return normalizeApiResponse(response.data);
   },
 

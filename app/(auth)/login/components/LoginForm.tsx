@@ -7,9 +7,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
-import { decodeJwtPayload, readRoleFromPayload } from "@/lib/support/auth/jwt-roles";
-import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
-import { getPostLoginPath } from "@/lib/support/auth/routing";
+import { getSessionRoleFromToken } from "@/lib/support/auth/jwt-roles";
+import { readOrganizationIdFromToken } from "@/lib/support/auth/jwt-claims";
+import { getPostLoginPath } from "@/lib/support/auth/post-login-route";
+import { readFoundationSession } from "@/lib/support/foundation/session-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -24,7 +25,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, isLoading, error, isAuthenticated, user, token, clearError } = useAuth();
+  const { login, isLoading, error, isAuthenticated, token, clearError } = useAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -32,16 +33,13 @@ export function LoginForm() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated && !token) return;
-
-    const role =
-      normalizeAppRole(user?.role) ??
-      (token ? readRoleFromPayload(decodeJwtPayload(token) ?? {}) : null);
-
+    if (!isAuthenticated || !token) return;
+    const role = getSessionRoleFromToken(token);
     if (!role) return;
-
-    router.replace(getPostLoginPath(role));
-  }, [isAuthenticated, user?.role, token, router]);
+    const orgId = readOrganizationIdFromToken(token);
+    const branchId = readFoundationSession().selectedLocationId;
+    router.replace(getPostLoginPath(role, orgId, branchId));
+  }, [isAuthenticated, token, router]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     clearError();
@@ -93,7 +91,7 @@ export function LoginForm() {
           href="/register"
           className="font-semibold text-brand-blue underline-offset-4 hover:underline"
         >
-          Đăng ký
+          Tạo tổ chức mới
         </Link>
       </p>
     </form>

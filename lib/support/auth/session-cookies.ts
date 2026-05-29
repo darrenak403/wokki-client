@@ -1,5 +1,5 @@
 import { deleteCookie, setCookie } from "cookies-next";
-import type { AppRole } from "@/lib/types/roles";
+import type { SessionRole } from "@/lib/types/roles";
 import { getAuthCookieConfig } from "@/utils/cookieConfig";
 import apiService from "@/lib/api/core";
 
@@ -12,7 +12,7 @@ export function attachAccessToken(accessToken: string): void {
   apiService.setAuthToken(accessToken);
 }
 
-export function syncRoleCookie(role: AppRole | null | undefined): void {
+export function syncRoleCookie(role: SessionRole | null | undefined): void {
   const options = { path: "/" as const, ...getAuthCookieConfig() };
   if (role) {
     setCookie(AUTH_ROLE_COOKIE, role, options);
@@ -24,7 +24,7 @@ export function syncRoleCookie(role: AppRole | null | undefined): void {
 export async function persistSession(
   accessToken: string,
   refreshToken: string,
-  role?: AppRole | null
+  role?: SessionRole | null
 ): Promise<{ accessToken: string; refreshToken: string }> {
   attachAccessToken(accessToken);
   syncRoleCookie(role);

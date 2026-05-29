@@ -1,15 +1,22 @@
 import type { ApiResponse } from "@/types/api";
-import type { AppRole } from "@/lib/types/roles";
+import type { SessionRole } from "@/lib/types/roles";
 
 export interface AuthUser {
   id: string;
   email: string;
-  role: AppRole;
+  role: SessionRole;
+  organizationId?: string | null;
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  organizationName: string;
 }
 
 export interface AuthTokenPair {
@@ -27,7 +34,8 @@ export interface RefreshTokenRequest {
 
 export type MeResponse = ApiResponse<AuthUser>;
 
-export type RegisterResponse = ApiResponse<AuthUser>;
+/** Self-serve register — trả token pair giống login. */
+export type RegisterResponse = LoginResponse;
 
 export interface ChangePasswordRequest {
   currentPassword: string;

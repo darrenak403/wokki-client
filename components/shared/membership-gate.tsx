@@ -2,15 +2,18 @@
 
 import { useEffect } from "react";
 import type { ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { UserXIcon } from "lucide-react";
 import { useAppSelector } from "@/lib/redux/hooks";
 import {
+  selectAppRole,
   selectAuthLoading,
   selectIsAuthenticated,
-  selectUserRole,
 } from "@/lib/redux/slices/authSlice";
-import { ROLE_ADMIN, ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
+import { ROLE_USER } from "@/lib/types/roles";
 import { useMyLocationMembership } from "@/hooks/useLocationMembership";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import type { ApiError } from "@/types/api";
 
 function isApiError(e: unknown): e is ApiError {
@@ -23,61 +26,57 @@ function isApiError(e: unknown): e is ApiError {
 }
 
 export function MembershipGate({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
   const router = useRouter();
+  const { logout } = useAuth();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isAuthLoading = useAppSelector(selectAuthLoading);
-  const role = useAppSelector(selectUserRole);
+  const role = useAppSelector(selectAppRole);
 
-  const isPendingPath = pathname === "/pending";
-  const isJoinPath = pathname === "/join";
-  const shouldCheck = isAuthenticated && role === ROLE_USER && !isPendingPath && !isJoinPath;
+  const shouldCheck = isAuthenticated && role === ROLE_USER;
 
-  const { data: membership, isFetched, isError, error } = useMyLocationMembership({
+  const { isFetched, isError, error } = useMyLocationMembership({
     enabled: shouldCheck,
   });
 
   const isNoEmployee = isError && isApiError(error) && error.httpStatus === 404;
-  const isActive = membership?.status === "Active";
-  // 404 = no Employee profile yet — send to /pending to show "contact manager" message
-  const shouldRedirectToNoEmployee = shouldCheck && isFetched && isNoEmployee;
-  // 200+null means no membership record yet — send to /join to pick a location
-  const shouldRedirectToJoin = shouldCheck && isFetched && !isNoEmployee && membership === null;
-  // Non-active membership record (Pending/Rejected/Left) — send to /pending
-  const shouldRedirectToPending = shouldCheck && isFetched && !isNoEmployee && !isActive && membership !== null;
 
-  // Redirect unauthenticated users to login once hydration is settled
   useEffect(() => {
     if (!isAuthenticated && !isAuthLoading) router.replace("/login");
   }, [isAuthenticated, isAuthLoading, router]);
 
-  // Redirect Admin/Manager away from /pending (they should not land there)
-  useEffect(() => {
-    if (isPendingPath && (role === ROLE_ADMIN || role === ROLE_MANAGER)) {
-      router.replace("/");
-    }
-  }, [isPendingPath, role, router]);
-
-  useEffect(() => {
-    if (shouldRedirectToNoEmployee) router.replace("/pending");
-  }, [shouldRedirectToNoEmployee, router]);
-
-  useEffect(() => {
-    if (shouldRedirectToJoin) router.replace("/join");
-  }, [shouldRedirectToJoin, router]);
-
-  useEffect(() => {
-    if (shouldRedirectToPending) router.replace("/pending");
-  }, [shouldRedirectToPending, router]);
-
-  // Suppress render during auth hydration or while unauthenticated
   if (!isAuthenticated) return null;
 
-  // Wait for membership check result
-  if (shouldCheck && !isFetched) return null;
+  if (shouldCheck && !isFetched) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+        Đang tải thông tin nhân viên…
+      </div>
+    );
+  }
 
-  // Redirecting
-  if (shouldRedirectToNoEmployee || shouldRedirectToJoin || shouldRedirectToPending) return null;
+  if (shouldCheck && isNoEmployee) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="max-w-md space-y-6 text-center">
+          <div className="flex justify-center">
+            <div className="flex size-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <UserXIcon className="size-8 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight">Tài khoản chưa được kích hoạt</h1>
+            <p className="text-muted-foreground">
+              Org Admin cần tạo hồ sơ nhân viên và gán phòng ban trước khi bạn dùng app. Liên hệ
+              quản lý để được cấp quyền.
+            </p>
+          </div>
+          <Button variant="ghost" onClick={logout}>
+            Đăng xuất
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

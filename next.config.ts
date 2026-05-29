@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   async redirects() {
-    return [{ source: "/home", destination: "/", permanent: true }];
+    return [
+      { source: "/home", destination: "/", permanent: true },
+      // Legacy paths without org/branch — canonical URLs handled in proxy.ts (JWT + branch cookie).
+    ];
   },
   images: {
     remotePatterns: [

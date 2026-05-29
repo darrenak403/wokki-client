@@ -50,6 +50,12 @@ export const scheduleKeys = {
     [...scheduleKeys.all, "insightContext", scheduleId] as const,
 };
 
+export const statsKeys = {
+  all: ["stats"] as const,
+  org: () => [...statsKeys.all, "org"] as const,
+  platform: () => [...statsKeys.all, "platform"] as const,
+};
+
 export const preferenceKeys = {
   all: ["schedulePreference"] as const,
   draft: (weekStartDate: string) => [...preferenceKeys.all, "draft", weekStartDate] as const,
@@ -64,6 +70,15 @@ export const bedrockKeys = {
 export const membershipKeys = {
   all: ["membership"] as const,
   my: () => [...membershipKeys.all, "my"] as const,
+  pending: () => [...membershipKeys.all, "pending"] as const,
+  byLocation: (locationId: string, status?: string | null) =>
+    [...membershipKeys.all, "location", locationId, { status: status ?? null }] as const,
+};
+
+export const managerKeys = {
+  all: ["locationManagers"] as const,
+  byLocation: (locationId: string) => [...managerKeys.all, "location", locationId] as const,
+  myLocations: () => [...managerKeys.all, "myLocations"] as const,
 };
 
 export const foundationKeys = {

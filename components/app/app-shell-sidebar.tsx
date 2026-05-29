@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { SidebarNavLink } from "./app-shell-nav-link";
+import { BranchSwitcher } from "./branch-switcher";
 
 export type ShellSidebarContentProps = {
   collapsed: boolean;
@@ -33,19 +34,8 @@ export function ShellSidebarContent({
 }: ShellSidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-20 items-center gap-3 px-4">
-        <Link
-          href={homeHref}
-          onClick={onNavigate}
-          className={cn("flex min-w-0 flex-1 items-center gap-3", collapsed && "justify-center")}
-        >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-[#102854] via-[#4C88C6] to-[#1D4D8F] font-black text-white shadow-lg shadow-[#4C88C6]/25">
-            W
-          </span>
-          {!collapsed ? (
-            <span className="truncate text-xl font-extrabold tracking-tight">Wokki</span>
-          ) : null}
-        </Link>
+      <div className="flex h-20 items-center gap-2 px-3">
+        <BranchSwitcher collapsed={collapsed} />
       </div>
 
       <Separator />

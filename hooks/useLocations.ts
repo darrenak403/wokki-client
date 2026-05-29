@@ -13,11 +13,12 @@ import type {
 
 const STALE_MS = 5 * 60 * 1000;
 
-export function useLocationsQuery() {
+export function useLocationsQuery({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: foundationKeys.locations(),
     queryFn: () => fetchLocations.list(),
     staleTime: STALE_MS,
+    enabled,
   });
 }
 

@@ -1,18 +1,43 @@
 import { jwtDecode } from "jwt-decode";
-import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
-import { JWT_ROLE_CLAIM, type AppRole } from "@/lib/types/roles";
+import {
+  normalizeAppRole,
+  normalizeSessionRole,
+} from "@/lib/support/auth/normalize-role";
+import {
+  JWT_ROLE_CLAIM,
+  type AppRole,
+  type SessionRole,
+} from "@/lib/types/roles";
+import type { AuthUser } from "@/types/auth";
 
 type JwtPayload = Record<string, unknown> & {
   role?: string | string[];
   exp?: number;
   sub?: string;
   email?: string;
+  organization_id?: string;
+  organizationId?: string;
 };
 
-export function readRoleFromPayload(payload: JwtPayload): AppRole | null {
+export function readOrganizationIdFromPayload(payload: JwtPayload): string | null {
+  const raw = payload.organization_id ?? payload.organizationId;
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+export function readSessionRoleFromPayload(payload: JwtPayload): SessionRole | null {
   const raw = payload[JWT_ROLE_CLAIM] ?? payload.role;
   if (!raw) return null;
 
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return normalizeSessionRole(value);
+}
+
+/** @deprecated Prefer readSessionRoleFromPayload */
+export function readRoleFromPayload(payload: JwtPayload): AppRole | null {
+  const raw = payload[JWT_ROLE_CLAIM] ?? payload.role;
+  if (!raw) return null;
   const value = Array.isArray(raw) ? raw[0] : raw;
   return normalizeAppRole(value);
 }
@@ -38,15 +63,28 @@ export function getRolesFromToken(token: string | undefined): AppRole[] {
   return readRolesFromPayload(payload);
 }
 
-export function userFromToken(token: string): { id: string; email: string; role: AppRole } | null {
+export function getSessionRoleFromToken(token: string | undefined): SessionRole | null {
+  if (!token) return null;
   const payload = decodeJwtPayload(token);
   if (!payload) return null;
-  const role = readRoleFromPayload(payload);
+  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+  return readSessionRoleFromPayload(payload);
+}
+
+export function userFromToken(token: string): AuthUser | null {
+  const payload = decodeJwtPayload(token);
+  if (!payload) return null;
+  const role = readSessionRoleFromPayload(payload);
   if (!role) return null;
 
   const id = typeof payload.sub === "string" ? payload.sub : "";
   const email = typeof payload.email === "string" ? payload.email : "";
   if (!id) return null;
 
-  return { id, email, role };
+  return {
+    id,
+    email,
+    role,
+    organizationId: readOrganizationIdFromPayload(payload),
+  };
 }
