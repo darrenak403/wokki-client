@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronLeftIcon, MenuIcon } from "lucide-react";
+import { ChevronLeftIcon, MenuIcon, SettingsIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getAppNavForRole, buildTenantNav } from "@/components/app/app-nav";
 import { useTenantParams } from "@/hooks/useTenantParams";
@@ -11,14 +11,12 @@ import { useAppSelector } from "@/lib/redux/hooks";
 import { selectMustChangePassword, selectOrganizationId } from "@/lib/redux/slices/authSlice";
 import { readFoundationSession } from "@/lib/support/foundation/session-context";
 import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { AccountSettingsDialog } from "@/components/auth/account-settings-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { renderNavIcon, getInitials } from "./app-shell-utils";
+import { renderNavIcon } from "./app-shell-utils";
 import { ShellSidebarContent } from "./app-shell-sidebar";
 import { FoundationScopePicker } from "@/components/shared/foundation-scope-picker";
 import { SubscriptionRemainingWidget } from "@/components/app/subscription-remaining-widget";
@@ -88,13 +86,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <ShellSidebarContent
             collapsed={collapsed}
             homeHref={homeHref}
-            isLoading={isLoading}
             navItems={navItems}
             onLogout={logout}
             pathname={pathname}
-            role={role}
             swapPendingCount={swapPendingCount}
-            userEmail={user?.email}
+            isLoading={isLoading}
           />
         </aside>
 
@@ -132,14 +128,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <ShellSidebarContent
                     collapsed={false}
                     homeHref={homeHref}
-                    isLoading={isLoading}
                     navItems={navItems}
                     onLogout={logout}
                     onNavigate={() => setMobileOpen(false)}
                     pathname={pathname}
-                    role={role}
                     swapPendingCount={swapPendingCount}
-                    userEmail={user?.email}
+                    isLoading={isLoading}
                   />
                 </SheetContent>
               </Sheet>
@@ -156,26 +150,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-3">
-              <div className="flex items-center gap-2">
-                <SubscriptionRemainingWidget variant="header" />
-                <ThemeToggle compact />
-              </div>
-              <button
+            <div className="flex shrink-0 items-center gap-2">
+              <SubscriptionRemainingWidget variant="header" />
+              <Button
                 type="button"
+                variant="outline"
+                size="icon"
+                className="size-9 shrink-0"
+                aria-label="Cài đặt tài khoản"
                 onClick={() => setSettingsOpen(true)}
-                className="hidden items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 transition-colors hover:bg-neutral-100 md:flex dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-900"
               >
-                <Avatar
-                  size="sm"
-                  className="bg-[#EEF6FB] text-[#1D4D8F] dark:bg-[#0B1E3D] dark:text-[#BCE8F5]"
-                >
-                  <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
-                </Avatar>
-                <span className="max-w-40 truncate text-sm font-semibold">
-                  {user?.email ?? "Wokki user"}
-                </span>
-              </button>
+                <SettingsIcon className="size-4" />
+              </Button>
             </div>
           </header>
 
@@ -184,6 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             onOpenChange={setSettingsOpen}
             userEmail={user?.email}
             required={mustChangePassword}
+            onLogout={logout}
           />
 
           <main

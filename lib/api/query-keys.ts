@@ -31,6 +31,7 @@ export const payrollKeys = {
 
 export const employeeKeys = {
   all: ["employee"] as const,
+  myProfile: () => [...employeeKeys.all, "myProfile"] as const,
   mySchedule: () => [...employeeKeys.all, "mySchedule"] as const,
   swapTargets: (params: object) => [...employeeKeys.all, "swapTargets", params] as const,
   swaps: () => [...employeeKeys.all, "swaps"] as const,

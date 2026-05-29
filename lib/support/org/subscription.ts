@@ -80,3 +80,13 @@ export function formatSubscriptionDaysLabel(days: number): string {
   if (days === 1) return "ngày còn lại";
   return "ngày còn lại";
 }
+
+export const SUBSCRIPTION_STATUS_LABEL: Record<
+  import("@/types/stats").OrgSubscriptionStatus,
+  string
+> = {
+  NotActivated: "Chưa có gói",
+  Active: "Đang hoạt động",
+  Expired: "Hết hạn",
+  Disabled: "Đã tắt",
+};

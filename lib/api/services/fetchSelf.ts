@@ -9,6 +9,7 @@ import type {
   SwapRequestResponse,
   SwapTargetsParams,
 } from "@/types/employee";
+import type { EmployeeResponse, UpdateMyProfileRequest } from "@/types/foundation";
 
 export const fetchSelf = {
   getSchedule: async (): Promise<ShiftAssignmentResponse[]> => {
@@ -46,6 +47,19 @@ export const fetchSelf = {
         ...(params.fromDate ? { fromDate: params.fromDate } : {}),
         ...(params.toDate ? { toDate: params.toDate } : {}),
       },
+    );
+    return assertEmployeeSuccess(normalizeApiResponse(response.data));
+  },
+
+  getProfile: async (): Promise<EmployeeResponse> => {
+    const response = await apiService.get<ApiEnvelope<EmployeeResponse>>("api/v1/self/profile");
+    return assertEmployeeSuccess(normalizeApiResponse(response.data));
+  },
+
+  updateProfile: async (data: UpdateMyProfileRequest): Promise<EmployeeResponse> => {
+    const response = await apiService.put<ApiEnvelope<EmployeeResponse>>(
+      "api/v1/self/profile",
+      data,
     );
     return assertEmployeeSuccess(normalizeApiResponse(response.data));
   },

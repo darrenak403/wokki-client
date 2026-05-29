@@ -42,11 +42,7 @@ export function BranchSwitcher({ collapsed = false }: BranchSwitcherProps) {
   const canCreate = role === ROLE_ADMIN;
 
   if (!orgId || (role !== ROLE_ADMIN && role !== ROLE_MANAGER)) {
-    return (
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-[#102854] via-[#4C88C6] to-[#1D4D8F] font-black text-white">
-        W
-      </span>
-    );
+    return null;
   }
 
   return (

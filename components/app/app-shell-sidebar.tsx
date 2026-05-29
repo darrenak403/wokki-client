@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { LogOutIcon } from "lucide-react";
 import type { AppNavItem } from "@/components/app/app-nav";
 import { Button } from "@/components/ui/button";
@@ -8,33 +7,33 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { SidebarNavLink } from "./app-shell-nav-link";
 import { BranchSwitcher } from "./branch-switcher";
+import { WokkiSidebarBrand } from "./wokki-sidebar-brand";
 
 export type ShellSidebarContentProps = {
   collapsed: boolean;
-  homeHref: string;
-  isLoading: boolean;
+  homeHref?: string;
   navItems: AppNavItem[];
   onLogout: () => void;
   onNavigate?: () => void;
   pathname: string;
-  role: string | null;
   swapPendingCount: number;
-  userEmail?: string;
+  isLoading?: boolean;
 };
 
 export function ShellSidebarContent({
   collapsed,
-  homeHref,
-  isLoading,
+  homeHref = "/",
   navItems,
   onLogout,
   onNavigate,
   pathname,
   swapPendingCount,
+  isLoading = false,
 }: ShellSidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-20 items-center gap-2 px-3">
+      <div className="flex flex-col gap-2 px-3 py-4">
+        <WokkiSidebarBrand collapsed={collapsed} href={homeHref} />
         <BranchSwitcher collapsed={collapsed} />
       </div>
 
@@ -73,7 +72,7 @@ export function ShellSidebarContent({
 
       <Separator />
 
-      <div className={cn("space-y-2 p-3", collapsed && "flex flex-col items-center")}>
+      <div className={cn("p-3", collapsed && "flex flex-col items-center")}>
         <Button
           type="button"
           variant="ghost"
@@ -84,7 +83,7 @@ export function ShellSidebarContent({
           onClick={onLogout}
           disabled={isLoading}
         >
-          <LogOutIcon className="size-4" />
+          <LogOutIcon className="size-4 shrink-0" />
           {!collapsed ? <span>Đăng xuất</span> : <span className="sr-only">Đăng xuất</span>}
         </Button>
       </div>

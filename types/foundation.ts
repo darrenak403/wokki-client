@@ -131,6 +131,12 @@ export interface UpdateEmployeeRequest {
   departmentIds?: string[] | null;
 }
 
+export interface UpdateMyProfileRequest {
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+}
+
 export interface ShiftDefinitionResponse {
   id: string;
   locationId: string;
