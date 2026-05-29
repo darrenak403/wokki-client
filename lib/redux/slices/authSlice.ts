@@ -112,6 +112,10 @@ export const loginAsync = createAsyncThunk(
       const response = await fetchAuth.login(credentials);
 
       if (!response.success || !response.data?.accessToken) {
+        const code = response.message?.code;
+        if (code === "ORG_PACKAGE_NOT_ACTIVATED" || code === "ORG_PACKAGE_EXPIRED") {
+          return rejectWithValue(code);
+        }
         return rejectWithValue(mapAuthResponseFailure(response) || "Đăng nhập thất bại");
       }
 
@@ -128,6 +132,11 @@ export const loginAsync = createAsyncThunk(
 
       return { token: accessToken, refreshToken, user };
     } catch (error: unknown) {
+      const apiError = error as { messageCode?: string };
+      const code = apiError?.messageCode;
+      if (code === "ORG_PACKAGE_NOT_ACTIVATED" || code === "ORG_PACKAGE_EXPIRED") {
+        return rejectWithValue(code);
+      }
       return rejectWithValue(mapAuthError(error));
     }
   }

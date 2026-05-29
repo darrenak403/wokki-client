@@ -16,8 +16,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - If a rule affects both apps, update both `wokki-client/AGENTS.md` and `wokki-server/AGENTS.md`, plus the matching `CLAUDE.md` files; also check backend docs such as `docs/brd.md`, `docs/business-rules.md`, `docs/process-flows.md`, and API/FE handoff docs.
 - UI copy must reflect business meaning accurately. Example: employee shift preferences are advisory; official work schedules are decided and published by Admin/Manager.
 - Shift preferences: users may edit while schedule is `Draft`; once `Published`, preferences are view-only. Official work schedule = published `ShiftAssignment`.
-- Branch workspace access: Admin sees all chi nhánh **trong tổ chức (JWT `organization_id`)**; Manager sees only chi nhánh assigned by Org Admin through `LocationManager`. UI thao tác nghiệp vụ theo chi nhánh đang chọn: sidebar links use `/{orgId}/{locationId}/{role}/...`; `/{orgId}/{role}/workspace` is only a branch-selection/redirect fallback, not an all-branch workspace. User accounts with no Active branch membership are gated before protected app routes: no membership shows `/join`, Pending/Rejected/Left/Transferred shows `/pending`; Org Admin/Manager of the target chi nhánh approves the request before the employee is managed/scheduled there.
-- Self-serve org: `POST /auth/register` with `organizationName` creates org + Org Admin + JWT. **PlatformOperator** (`admin@gmail.com` seed) uses `/platform` only — no org app routes. Staff are created by Org Admin via `POST /employees` (not self-register); show `temporaryPassword` once.
+- Branch workspace access: Admin sees all chi nhánh **trong tổ chức (JWT `organization_id`)**; Manager sees only chi nhánh assigned by Org Admin through `LocationManager`. UI thao tác nghiệp vụ theo chi nhánh đang chọn: sidebar links use `/{orgId}/{locationId}/{role}/...`; `/{orgId}/{role}/workspace` is only a branch-selection/redirect fallback, not an all-branch workspace. Staff are created by Org Admin with `departmentId`; BE auto-provisions Active `LocationMembership`. There is no employee `/join` or `/pending` gate in the current org flow.
+- Self-serve org + package gate: `POST /auth/register` with `organizationName` creates org + Org Admin + JWT, but the org starts without an activated package. **PlatformOperator** (`admin@gmail.com` seed) uses `/platform` only — no org app routes — and manages `GET /platform/users`, `GET /platform/organizations`, `PUT /platform/organizations/{id}/subscription`. FE must map `ORG_PACKAGE_NOT_ACTIVATED` to "Bạn chưa có gói sử dụng hệ thống." and `ORG_PACKAGE_EXPIRED` to "Bạn phải gia hạn để tiếp tục dùng hệ thống."
 - Auto-scheduling UX must follow the business hierarchy: choose chi nhánh → phòng ban → tuần. Branch `LocationSchedulingPolicy` is mandatory: a short form for the 9 supported solver rules plus optional custom branch notes Admin/Manager can add. Custom branch notes are stored/displayed but not read by CP-SAT until they become typed solver rules. Suggest UI should surface missing setup with clear actions instead of generic empty states.
 - Bedrock schedule insight: Bedrock is an optional support chat over a generated weekly schedule context snapshot. It must be presented as advisory explanation only, never as the engine that creates/applies/publishes assignments. Scheduling flows must remain usable when Bedrock is unavailable.
 
@@ -37,10 +37,13 @@ Business features belong only in `(app)/`.
 | --------------- | ---------------- | ------------------------------------------------ |
 | Guest marketing | `app/(landing)/` | `/`, `/pricing`, `/about`, `/help`, `/community` |
 | Auth            | `app/(auth)/`    | `/login`, `/register`                            |
-| Role app        | `app/(app)/`     | `/admin/*`, `/manager/*`, `/user/*`              |
+| Role app        | `app/(app)/`     | `/{orgId}/{locationId}/{admin\|manager\|user}/*`, org-only `/{orgId}/admin/onboarding` |
+| Platform        | `app/(platform)/` | `/platform` — Wokki admin, quản lý gói org |
+| Org package gate | `app/(auth)/org-package` | Chưa có gói / hết hạn |
 
-- Post-login home: Admin `/admin/dashboard`, Manager `/manager/dashboard`, User `/user/dashboard` (`lib/support/auth/app-routes.ts`).
-- New app feature routes go under `app/(app)/{admin|manager|user}/` and update `components/app/app-nav.ts`.
+- Post-login: tenant paths via `getPostLoginPath` / `buildTenantNav` (`lib/support/routing/tenant-routes.ts`). Legacy `/admin/*` redirect in `proxy.ts`.
+- New branch features: `app/(app)/[orgId]/[locationId]/{admin|manager|user}/` + `components/app/app-nav.ts` (`buildTenantNav`).
+- **FE guide:** [docs/fe-implementation-guide.md](./docs/fe-implementation-guide.md).
 - Do not place logged-in business logic on landing pages.
 
 ## File Structure

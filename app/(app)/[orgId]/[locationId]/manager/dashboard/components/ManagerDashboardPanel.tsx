@@ -9,11 +9,6 @@ export function ManagerDashboardPanel() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Tổng quan</h1>
-        <p className="text-muted-foreground">Thống kê chi nhánh trong phạm vi quản lý của bạn.</p>
-      </div>
-
       {isError ? (
         <Alert variant="destructive">
           <AlertDescription>Không tải được thống kê tổ chức.</AlertDescription>

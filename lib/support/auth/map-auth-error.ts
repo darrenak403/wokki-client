@@ -1,7 +1,11 @@
 import { extractApiMessage } from "@/lib/api/normalize-response";
 import type { ApiError, ApiResponse } from "@/types/api";
 
+import { orgPackageUserMessage, isOrgPackageCode } from "@/lib/support/auth/org-package";
+
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  ORG_PACKAGE_NOT_ACTIVATED: orgPackageUserMessage("ORG_PACKAGE_NOT_ACTIVATED"),
+  ORG_PACKAGE_EXPIRED: orgPackageUserMessage("ORG_PACKAGE_EXPIRED"),
   AUTH_INVALID_CREDENTIALS: "Email hoặc mật khẩu không đúng.",
   AUTH_UNAUTHORIZED: "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.",
   AUTH_NOT_LOGGED_IN: "Bạn chưa đăng nhập.",
@@ -22,6 +26,7 @@ function isErrorCode(value: string): boolean {
 
 function mapCode(code?: string): string | null {
   if (!code) return null;
+  if (isOrgPackageCode(code)) return orgPackageUserMessage(code);
   return AUTH_ERROR_MESSAGES[code] ?? null;
 }
 

@@ -8,14 +8,7 @@ export function PlatformDashboardPanel() {
   const { data: stats, isLoading, isError } = usePlatformStatsQuery();
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Thống kê nền tảng</h1>
-        <p className="text-muted-foreground">
-          Tổng hợp toàn instance — không truy cập dữ liệu vận hành từng tổ chức.
-        </p>
-      </div>
-
+    <div className="space-y-6">
       {isError ? (
         <Alert variant="destructive">
           <AlertDescription>Không tải được thống kê nền tảng.</AlertDescription>

@@ -10,7 +10,6 @@ export const metadata = buildPageMetadata({
 export default function AdminBranchWorkspacePage() {
   return (
     <WorkspacePanel
-      description="Sơ đồ phòng ban, nhân viên và Manager trong chi nhánh hiện tại."
       canWriteLocations
       canWriteDepartments
       canAssignManagers

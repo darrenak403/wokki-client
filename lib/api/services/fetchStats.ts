@@ -1,11 +1,26 @@
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
-import type { ApiEnvelope } from "@/types/api";
-import type { OrgStatsResponse, PlatformStatsResponse } from "@/types/stats";
+import type { ApiEnvelope, ApiError } from "@/types/api";
+import { normalizeOrgStats, normalizeOrgSubscription } from "@/lib/support/org/subscription";
+import type {
+  OrgStatsResponse,
+  OrgSubscriptionResponse,
+  PlatformStatsResponse,
+} from "@/types/stats";
 
-function assertStatsSuccess<T>(response: { success: boolean; data: T | null; message?: { text?: string } }): T {
+function assertStatsSuccess<T>(response: {
+  success: boolean;
+  data: T | null;
+  message?: { text?: string; code?: string; statusCode?: number };
+}): T {
   if (!response.success || response.data == null) {
-    throw new Error(response.message?.text ?? "Không tải được thống kê.");
+    const err: ApiError = {
+      message: response.message?.text ?? "Không tải được thống kê.",
+      messageCode: response.message?.code,
+      httpStatus: response.message?.statusCode,
+      status: false,
+    };
+    throw err;
   }
   return response.data;
 }
@@ -13,7 +28,9 @@ function assertStatsSuccess<T>(response: { success: boolean; data: T | null; mes
 export const fetchStats = {
   org: async (): Promise<OrgStatsResponse> => {
     const response = await apiService.get<ApiEnvelope<OrgStatsResponse>>("api/v1/org/stats");
-    return assertStatsSuccess(normalizeApiResponse(response.data));
+    const envelope = normalizeApiResponse(response.data);
+    const raw = assertStatsSuccess(envelope);
+    return normalizeOrgStats(raw);
   },
 
   platform: async (): Promise<PlatformStatsResponse> => {
@@ -21,5 +38,14 @@ export const fetchStats = {
       "api/v1/platform/stats"
     );
     return assertStatsSuccess(normalizeApiResponse(response.data));
+  },
+
+  subscription: async (): Promise<OrgSubscriptionResponse> => {
+    const response = await apiService.get<ApiEnvelope<OrgSubscriptionResponse>>(
+      "api/v1/org/subscription"
+    );
+    const envelope = normalizeApiResponse(response.data);
+    const raw = assertStatsSuccess(envelope);
+    return normalizeOrgSubscription(raw);
   },
 };

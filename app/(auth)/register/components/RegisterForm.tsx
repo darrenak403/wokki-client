@@ -5,9 +5,15 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { OrgPackageNoticeDialog } from "@/components/auth/org-package-notice-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { applyValidationErrors } from "@/lib/support/auth/validation-errors";
 import { mapAuthError } from "@/lib/support/auth/map-auth-error";
+import {
+  isOrgPackageCode,
+  orgPackageReasonFromCode,
+  type OrgPackageReason,
+} from "@/lib/support/auth/org-package";
 import type { ApiError } from "@/types/api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -36,6 +42,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export function RegisterForm() {
   const { register: registerAccount, isLoading } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [packageReason, setPackageReason] = useState<OrgPackageReason | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -44,9 +51,14 @@ export function RegisterForm() {
 
   const onSubmit = form.handleSubmit(async ({ email, password, organizationName }) => {
     setSubmitError(null);
+    setPackageReason(null);
     try {
       await registerAccount({ email, password, organizationName });
     } catch (error: unknown) {
+      if (typeof error === "string" && isOrgPackageCode(error)) {
+        setPackageReason(orgPackageReasonFromCode(error));
+        return;
+      }
       const apiError = error as ApiError;
       if (applyValidationErrors(form.setError, apiError.errors)) return;
       if (typeof error === "string") {
@@ -58,6 +70,7 @@ export function RegisterForm() {
   });
 
   return (
+    <>
     <form onSubmit={onSubmit} className="space-y-6" noValidate>
       <FieldGroup>
         <Field>
@@ -140,5 +153,14 @@ export function RegisterForm() {
         </Link>
       </p>
     </form>
+
+    <OrgPackageNoticeDialog
+      open={packageReason !== null}
+      onOpenChange={(open) => {
+        if (!open) setPackageReason(null);
+      }}
+      reason={packageReason ?? "not-activated"}
+    />
+    </>
   );
 }

@@ -28,7 +28,12 @@ import {
   getPostLoginPath,
 } from "@/lib/support/auth/post-login-route";
 import { ROLE_ADMIN, ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
-import { buildOrgScopedPath } from "@/lib/support/routing/tenant-routes";
+import {
+  isOrgPackageCode,
+  orgPackagePath,
+  orgPackageReasonFromCode,
+} from "@/lib/support/auth/org-package";
+import type { ApiError } from "@/types/api";
 import type { LoginRequest, RegisterRequest } from "@/types/auth";
 
 export function useAuth() {
@@ -62,7 +67,11 @@ export function useAuth() {
       try {
         const stats = await fetchStats.org();
         return getOrgAdminLandingPath(orgId, stats.locationCount, branchId);
-      } catch {
+      } catch (error: unknown) {
+        const code = (error as ApiError)?.messageCode;
+        if (isOrgPackageCode(code)) {
+          return orgPackagePath(orgPackageReasonFromCode(code));
+        }
         return getPostLoginPath(ROLE_ADMIN, orgId, branchId);
       }
     }
@@ -98,6 +107,9 @@ export function useAuth() {
 
       return result;
     } catch (message: unknown) {
+      if (typeof message === "string" && isOrgPackageCode(message)) {
+        throw message;
+      }
       const text = typeof message === "string" ? message : "Đăng nhập thất bại";
       toast.error(text);
       throw message;
@@ -113,14 +125,12 @@ export function useAuth() {
         setupAutoRefresh(result.token, dispatch);
       }
 
-      toast.success("Đã tạo tổ chức. Hãy thiết lập chi nhánh đầu tiên.");
-      const orgId = result.user?.organizationId ?? organizationId;
-      router.replace(
-        orgId ? buildOrgScopedPath(orgId, ROLE_ADMIN, "onboarding") : "/login"
-      );
-
-      return result;
+      await dispatch(logoutAsync());
+      throw "ORG_PACKAGE_NOT_ACTIVATED";
     } catch (message: unknown) {
+      if (typeof message === "string" && isOrgPackageCode(message)) {
+        throw message;
+      }
       const text = typeof message === "string" ? message : "Đăng ký thất bại";
       toast.error(text);
       throw message;

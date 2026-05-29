@@ -26,7 +26,6 @@ import { buildOrgScopedPath } from "@/lib/support/routing/tenant-routes";
 import { ROLE_ADMIN } from "@/lib/types/roles";
 
 export type WorkspacePanelProps = {
-  description?: string;
   canWriteLocations?: boolean;
   canWriteDepartments?: boolean;
   /** PUT chi nhánh hiện có (vd. đổi tên) khi không có quyền tạo/sửa đầy đủ. */
@@ -41,7 +40,6 @@ export type WorkspacePanelProps = {
 };
 
 export function WorkspacePanel({
-  description = "Sơ đồ chi nhánh, phòng ban và Manager.",
   canWriteLocations = false,
   canWriteDepartments = false,
   canEditLocations = false,
@@ -308,8 +306,7 @@ export function WorkspacePanel({
 
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3 md:px-6 dark:border-neutral-800">
-        <p className="min-w-0 text-sm text-muted-foreground">{description}</p>
+      <div className="flex shrink-0 items-center justify-end gap-4 border-b border-neutral-200 px-4 py-3 md:px-6 dark:border-neutral-800">
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {canWriteLocations && !scopeToCurrentLocation ? (
             <Button

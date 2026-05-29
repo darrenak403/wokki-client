@@ -119,14 +119,3 @@ export function legacyPathToBranchScoped(
   }
   return buildBranchScopedPath(orgId, locationId, role, "dashboard");
 }
-
-export function formatTenantAddressBar(
-  orgId: string,
-  locationId: string | null,
-  featureLabel?: string
-): string {
-  const shortOrg = `${orgId.slice(0, 8)}…`;
-  if (!locationId) return `${shortOrg}${featureLabel ? ` / ${featureLabel}` : ""}`;
-  const shortLoc = `${locationId.slice(0, 8)}…`;
-  return `${shortOrg} / ${shortLoc}${featureLabel ? ` / ${featureLabel}` : ""}`;
-}

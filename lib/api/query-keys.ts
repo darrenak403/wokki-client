@@ -54,6 +54,13 @@ export const statsKeys = {
   all: ["stats"] as const,
   org: () => [...statsKeys.all, "org"] as const,
   platform: () => [...statsKeys.all, "platform"] as const,
+  subscription: () => [...statsKeys.all, "subscription"] as const,
+};
+
+export const platformKeys = {
+  all: ["platform"] as const,
+  users: (params: object) => [...platformKeys.all, "users", params] as const,
+  organizations: (params: object) => [...platformKeys.all, "organizations", params] as const,
 };
 
 export const preferenceKeys = {

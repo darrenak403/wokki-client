@@ -5,10 +5,8 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronLeftIcon, MenuIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { resolveOrganizationDisplayName } from "@/lib/support/auth/org-name-storage";
 import { getAppNavForRole, buildTenantNav } from "@/components/app/app-nav";
 import { useTenantParams } from "@/hooks/useTenantParams";
-import { TenantAddressBar } from "@/components/app/tenant-address-bar";
 import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -19,14 +17,14 @@ import { cn } from "@/lib/utils";
 import { renderNavIcon, getInitials } from "./app-shell-utils";
 import { ShellSidebarContent } from "./app-shell-sidebar";
 import { FoundationScopePicker } from "@/components/shared/foundation-scope-picker";
+import { SubscriptionRemainingWidget } from "@/components/app/subscription-remaining-widget";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user, role, organizationName, logout, isLoading } = useAuth();
+  const { user, role, logout, isLoading } = useAuth();
   const { orgId, locationId, parsed } = useTenantParams();
   const navItems =
     role && orgId ? buildTenantNav(role, orgId, locationId) : role ? getAppNavForRole(role) : [];
-  const orgDisplayName = resolveOrganizationDisplayName(organizationName);
   const swapPendingCount = useSwapInboxPendingCount();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -136,17 +134,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <h1 className="truncate text-xl font-extrabold tracking-tight text-neutral-950 md:text-2xl dark:text-white">
                     {activeItem?.label ?? "Dashboard"}
                   </h1>
-                  <p className="mt-0.5 hidden truncate text-sm text-neutral-500 md:block dark:text-neutral-400">
-                    {orgDisplayName}
-                    {role ? ` · ${role}` : ""}
-                  </p>
-                  <TenantAddressBar />
                 </div>
               </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-3">
-              <ThemeToggle compact />
+              <div className="flex items-center gap-2">
+                <SubscriptionRemainingWidget variant="header" />
+                <ThemeToggle compact />
+              </div>
               <div className="hidden items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 md:flex dark:border-neutral-800 dark:bg-neutral-950">
                 <Avatar
                   size="sm"

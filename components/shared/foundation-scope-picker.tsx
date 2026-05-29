@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDepartmentsQuery } from "@/hooks/useDepartments";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { useWorkspaceLocations } from "@/hooks/useWorkspaceLocations";
 import { useTenantParams } from "@/hooks/useTenantParams";
@@ -17,6 +16,7 @@ import { useTenantNavigation } from "@/hooks/useTenantNavigation";
 import { writeFoundationSession } from "@/lib/support/foundation/session-context";
 import { ROLE_MANAGER } from "@/lib/types/roles";
 import { useAuth } from "@/hooks/useAuth";
+import { DepartmentSelect } from "@/components/shared/department-select";
 
 type FoundationScopePickerProps = {
   /** Branch comes from URL — only show department select. */
@@ -36,16 +36,9 @@ export function FoundationScopePicker({ hideLocationSelect = false }: Foundation
     ? urlLocationId ?? session.selectedLocationId
     : session.selectedLocationId;
 
-  const { data: departments = [] } = useDepartmentsQuery(effectiveLocationId);
-
   const locationItems = locations.map((loc) => ({
     value: loc.id,
     label: `${loc.name}${!loc.isActive ? " (ngưng)" : ""}`,
-  }));
-
-  const departmentItems = departments.map((dept) => ({
-    value: dept.id,
-    label: `${dept.name}${!dept.isActive ? " (ngưng)" : ""}`,
   }));
 
   const isWorkspaceRoute = pathname.includes("/workspace");
@@ -90,37 +83,18 @@ export function FoundationScopePicker({ hideLocationSelect = false }: Foundation
         </>
       ) : null}
 
-      <Select
-        value={session.selectedDepartmentId ?? ""}
-        onValueChange={(departmentId) => {
+      <DepartmentSelect
+        locationId={effectiveLocationId ?? null}
+        value={session.selectedDepartmentId}
+        onChange={(departmentId) => {
           if (!effectiveLocationId) return;
           writeFoundationSession({
             selectedLocationId: effectiveLocationId,
-            selectedDepartmentId: departmentId || null,
+            selectedDepartmentId: departmentId,
           });
         }}
-        disabled={!effectiveLocationId}
-        items={departmentItems}
-      >
-        <SelectTrigger className="w-[min(100%,220px)]" aria-label="Chọn phòng ban">
-          <SelectValue placeholder="Chọn phòng ban">
-            {(value) => departmentItems.find((item) => item.value === value)?.label ?? null}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {departments.length === 0 ? (
-            <SelectItem value="" disabled>
-              Chưa có phòng ban
-            </SelectItem>
-          ) : (
-            departments.map((dept) => (
-              <SelectItem key={dept.id} value={dept.id}>
-                {dept.name}
-              </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
+        className="w-[min(100%,220px)]"
+      />
     </div>
   );
 }

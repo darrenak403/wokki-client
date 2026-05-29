@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { PlatformDashboardPanel } from "@/app/(platform)/platform/components/PlatformDashboardPanel";
+import { PlatformOrganizationsPanel } from "@/app/(platform)/platform/components/PlatformOrganizationsPanel";
 import { Button } from "@/components/ui/button";
 
 export function PlatformShell({ children }: { children: React.ReactNode }) {
@@ -16,7 +17,6 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
             <Link href="/platform" className="text-lg font-semibold tracking-tight">
               Wokki Platform
             </Link>
-            <p className="text-sm text-muted-foreground">Vận hành nền tảng</p>
           </div>
           <div className="flex items-center gap-2">
             {user?.email ? (
@@ -34,5 +34,10 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
 }
 
 export function PlatformHome() {
-  return <PlatformDashboardPanel />;
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-10 px-4 py-8 md:px-6">
+      <PlatformDashboardPanel />
+      <PlatformOrganizationsPanel />
+    </div>
+  );
 }

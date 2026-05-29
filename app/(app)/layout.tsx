@@ -2,6 +2,7 @@ import { AppShell } from "@/components/app/app-shell";
 import { FoundationSessionValidator } from "@/components/shared/foundation-session-validator";
 import { MembershipGate } from "@/components/shared/membership-gate";
 import { OrgAppGuard } from "@/components/shared/org-app-guard";
+import { OrgPackageGuard } from "@/components/shared/org-package-guard";
 import { OrgSetupGuard } from "@/components/shared/org-setup-guard";
 
 /**
@@ -11,10 +12,12 @@ export default function AppAreaLayout({ children }: { children: React.ReactNode 
   return (
     <OrgAppGuard>
       <AppShell>
-        <OrgSetupGuard>
-          <FoundationSessionValidator />
-          <MembershipGate>{children}</MembershipGate>
-        </OrgSetupGuard>
+        <OrgPackageGuard>
+          <OrgSetupGuard>
+            <FoundationSessionValidator />
+            <MembershipGate>{children}</MembershipGate>
+          </OrgSetupGuard>
+        </OrgPackageGuard>
       </AppShell>
     </OrgAppGuard>
   );
