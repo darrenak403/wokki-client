@@ -34,6 +34,10 @@ export function OrgBaseNode({ data, tone = "location", nodeId, nodeType }: OrgBa
         !data.isActive && data.kind !== "pendingMembership" && "opacity-60",
         data.isDraggable && "cursor-grab active:cursor-grabbing",
         data.isDropTarget && dropTargetClass,
+        data.isPreview &&
+          "border-dashed border-[#4C88C6] bg-[#EEF6FB]/60 dark:border-[#4C88C6]/60 dark:bg-[#0B1E3D]/40",
+        data.isSelected &&
+          "ring-2 ring-[#4C88C6] ring-offset-2 border-[#4C88C6] dark:ring-[#BCE8F5]",
       )}
     >
       <Handle type="target" position={Position.Left} className="!bg-neutral-400" />

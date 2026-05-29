@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import { EmployeePaymentProfileTrigger } from "@/components/shared/employee-payment-profile-trigger";
 import { useExportPayrollCsvMutation, usePayrollSummaryQuery } from "@/hooks/usePayroll";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { mapPayrollError } from "@/lib/support/payroll/map-errors";
@@ -114,6 +115,7 @@ export function PayrollPanel({ canExportCsv }: PayrollPanelProps) {
                   <TableHead>Phút</TableHead>
                   <TableHead>Lương/giờ</TableHead>
                   <TableHead>Lương gross</TableHead>
+                  <TableHead>STK / QR</TableHead>
                   <TableHead>OT (phút)</TableHead>
                   <TableHead>Phụ cấp OT</TableHead>
                 </TableRow>
@@ -127,6 +129,18 @@ export function PayrollPanel({ canExportCsv }: PayrollPanelProps) {
                     <TableCell>{line.totalWorkedMinutes}</TableCell>
                     <TableCell>{line.hourlyRate}</TableCell>
                     <TableCell>{line.grossPay}</TableCell>
+                    <TableCell>
+                      <EmployeePaymentProfileTrigger
+                        variant="button"
+                        employeeName={`${line.lastName} ${line.firstName}`}
+                        profile={{
+                          bankName: line.bankName,
+                          bankAccountHolderName: line.bankAccountHolderName,
+                          bankAccountNumber: line.bankAccountNumber,
+                          paymentQrImageUrl: line.paymentQrImageUrl,
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>{line.approvedOvertimeMinutes > 0 ? line.approvedOvertimeMinutes : "—"}</TableCell>
                     <TableCell>
                       {line.overtimePay > 0

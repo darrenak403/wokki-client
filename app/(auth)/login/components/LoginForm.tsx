@@ -16,7 +16,6 @@ import {
   orgPackageReasonFromCode,
   type OrgPackageReason,
 } from "@/lib/support/auth/org-package";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -31,7 +30,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, isLoading, error, clearError, isAuthenticated, role, organizationId } = useAuth();
+  const { login, isLoading, clearError, isAuthenticated, role, organizationId } = useAuth();
   const [packageReason, setPackageReason] = useState<OrgPackageReason | null>(null);
   const [mode, setMode] = useState<"login" | "forgot">("login");
 
@@ -109,12 +108,6 @@ export function LoginForm() {
             <FieldError errors={[form.formState.errors.password]} />
           </Field>
         </FieldGroup>
-
-        {error ? (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : null}
 
         <Button type="submit" className="h-11 w-full text-base font-semibold" disabled={isLoading}>
           {isLoading ? "Đang đăng nhập…" : "Đăng nhập"}

@@ -86,10 +86,14 @@ export interface EmployeeResponse {
   phone: string;
   position: string;
   hourlyRate: number;
-  departmentId: string;
-  departmentName: string;
-  locationId: string;
-  locationName: string;
+  departmentId: string | null;
+  departmentName: string | null;
+  locationId: string | null;
+  locationName: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountHolderName?: string | null;
+  bankName?: string | null;
+  paymentQrImageUrl?: string | null;
   employedAt: string;
   terminatedAt: string | null;
   createdAt: string;
@@ -109,10 +113,11 @@ export interface CreateEmployeeRequest {
   lastName: string;
   phone?: string;
   hourlyRate: number;
-  departmentId: string;
+  departmentId?: string;
   role?: AppRole;
   password?: string | null;
   departmentIds?: string[] | null;
+  locationIds?: string[] | null;
 }
 
 export interface CreateEmployeeResponse {
@@ -135,6 +140,10 @@ export interface UpdateMyProfileRequest {
   firstName: string;
   lastName: string;
   phone?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountHolderName?: string | null;
+  bankName?: string | null;
+  removePaymentQr?: boolean;
 }
 
 export interface ShiftDefinitionResponse {

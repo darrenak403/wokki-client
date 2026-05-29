@@ -63,4 +63,13 @@ export const fetchSelf = {
     );
     return assertEmployeeSuccess(normalizeApiResponse(response.data));
   },
+
+  uploadPaymentQr: async (file: File): Promise<{ paymentQrImageUrl: string; paymentQrPublicId: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiService.post<
+      ApiEnvelope<{ paymentQrImageUrl: string; paymentQrPublicId: string }>
+    >("api/v1/self/profile/payment-qr", formData);
+    return assertEmployeeSuccess(normalizeApiResponse(response.data));
+  },
 };

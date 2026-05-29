@@ -15,6 +15,10 @@ export interface PayrollLineResponse {
   grossPay: number;
   approvedOvertimeMinutes: number;
   overtimePay: number;
+  bankAccountNumber?: string | null;
+  bankAccountHolderName?: string | null;
+  bankName?: string | null;
+  paymentQrImageUrl?: string | null;
 }
 
 export interface PayrollSummaryResponse {

@@ -105,7 +105,7 @@ export function employeeRoleLabel(role: string): string {
     case ROLE_ADMIN:
       return "Admin";
     case ROLE_MANAGER:
-      return "Quản lý";
+      return "Quản lý tổ chức";
     case ROLE_USER:
       return "Nhân viên";
     default:

@@ -50,8 +50,8 @@ export function TransferEmployeeDialog({
   onTransferred,
 }: TransferEmployeeDialogProps) {
   const idPrefix = useId();
-  const [targetLocationId, setTargetLocationId] = useState(employee.locationId);
-  const [targetDepartmentId, setTargetDepartmentId] = useState(employee.departmentId);
+  const [targetLocationId, setTargetLocationId] = useState(employee.locationId ?? "");
+  const [targetDepartmentId, setTargetDepartmentId] = useState(employee.departmentId ?? "");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const locationsQuery = useLocationsQuery();
@@ -127,7 +127,7 @@ export function TransferEmployeeDialog({
   const handleLocationChange = (value: string | null) => {
     const nextLocationId = value ?? "";
     setTargetLocationId(nextLocationId);
-    setTargetDepartmentId(nextLocationId === employee.locationId ? employee.departmentId : "");
+    setTargetDepartmentId(nextLocationId === employee.locationId ? (employee.departmentId ?? "") : "");
     setSubmitError(null);
   };
 

@@ -236,7 +236,11 @@ export const refreshTokenAsync = createAsyncThunk(
         return rejectWithValue(mapAuthResponseFailure(response) || "Làm mới phiên thất bại");
       }
 
-      const { accessToken, refreshToken: newRefreshToken } = response.data;
+      const {
+        accessToken,
+        refreshToken: newRefreshToken,
+        mustChangePassword,
+      } = response.data;
       const user = sessionUserFromAccessToken(accessToken) ?? state.auth.user;
 
       if (!user) {
@@ -246,7 +250,15 @@ export const refreshTokenAsync = createAsyncThunk(
       await persistSession(accessToken, newRefreshToken, user.role);
       setupAutoRefresh(accessToken, dispatch as AppDispatch);
 
-      return { token: accessToken, refreshToken: newRefreshToken, user };
+      return {
+        token: accessToken,
+        refreshToken: newRefreshToken,
+        user,
+        mustChangePassword:
+          typeof mustChangePassword === "boolean"
+            ? mustChangePassword
+            : state.auth.mustChangePassword,
+      };
     } catch (error: unknown) {
       return rejectWithValue(mapAuthError(error));
     }
@@ -368,7 +380,9 @@ const authSlice = createSlice({
           state,
           action.payload.token,
           action.payload.refreshToken,
-          action.payload.user
+          action.payload.user,
+          undefined,
+          action.payload.mustChangePassword
         );
       })
       .addCase(refreshTokenAsync.rejected, (state) => {

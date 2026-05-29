@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CopyIcon, PlusIcon } from "lucide-react";
+import { CopyIcon, PlusIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -38,26 +38,56 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DepartmentSelect } from "@/components/shared/department-select";
+import {
+  EMPLOYEE_CREATE_PAIR_HEIGHT_CLASS,
+  EMPLOYEE_PANEL_WIDTH_CLASS,
+} from "@/components/shared/employee-create-dialog-pair-layout";
+import { EmployeeCreatePairShell } from "@/components/shared/employee-create-pair-shell";
+import { EmployeeDepartmentWorkspacePanel } from "@/components/shared/employee-department-workspace-panel";
+import { EmployeeManagerLocationPanel } from "@/components/shared/employee-manager-location-panel";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { EmployeeRowActions, employeeRoleLabel } from "./EmployeeRowActions";
+import { EmployeePaymentProfileTrigger } from "@/components/shared/employee-payment-profile-trigger";
 import {
   useCreateEmployeeMutation,
   useEmployeesQuery,
   useTerminateEmployeeMutation,
   useUpdateEmployeeMutation,
 } from "@/hooks/useEmployees";
+import { useDepartmentsQuery } from "@/hooks/useDepartments";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
+import { useLocationsQuery } from "@/hooks/useLocations";
+import { useIsMobile } from "@/hooks/useMobile";
 import { ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
 import type { CreateEmployeeResponse, EmployeeResponse } from "@/types/foundation";
 
-const employeeCreateSchema = z.object({
-  email: z.string().email("Email không hợp lệ"),
-  firstName: z.string().min(1, "Vui lòng nhập họ"),
-  lastName: z.string().min(1, "Vui lòng nhập tên"),
-  departmentId: z.string().min(1, "Vui lòng chọn phòng ban"),
-  role: z.enum([ROLE_USER, ROLE_MANAGER]),
-});
+const employeeCreateSchema = z
+  .object({
+    email: z.string().email("Email không hợp lệ"),
+    firstName: z.string().min(1, "Vui lòng nhập họ"),
+    lastName: z.string().min(1, "Vui lòng nhập tên"),
+    departmentId: z.string().optional(),
+    locationIds: z.array(z.string()).optional(),
+    role: z.enum([ROLE_USER, ROLE_MANAGER]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === ROLE_USER && !data.departmentId?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vui lòng chọn phòng ban",
+        path: ["departmentId"],
+      });
+    }
+    if (data.role === ROLE_MANAGER && (data.locationIds?.length ?? 0) === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vui lòng chọn ít nhất một chi nhánh",
+        path: ["locationIds"],
+      });
+    }
+  });
 
 const employeeUpdateSchema = z.object({
   firstName: z.string().min(1),
@@ -77,7 +107,7 @@ const CREATE_ROLE_OPTIONS = [
     value: ROLE_MANAGER,
     title: "Quản lý chi nhánh",
     description:
-      "Xếp lịch và duyệt ca trong chi nhánh được giao. Sau khi tạo, Admin gán chi nhánh trong mục Tổ chức.",
+      "Toàn quyền trên các chi nhánh Admin chỉ định lúc tạo. Khi đăng nhập chỉ thấy các chi nhánh được giao — không cần gán phòng ban.",
   },
 ] as const;
 
@@ -90,6 +120,12 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
   const { session } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const filterDepartmentId = session.selectedDepartmentId;
+  const isMobile = useIsMobile();
+  const { data: locations = [] } = useLocationsQuery();
+  const currentLocation = useMemo(
+    () => locations.find((location) => location.id === locationId),
+    [locations, locationId]
+  );
 
   const [page, setPage] = useState(1);
   const [includeTerminated, setIncludeTerminated] = useState(false);
@@ -105,6 +141,7 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
   );
 
   const { data, isLoading, isError } = useEmployeesQuery(listParams);
+  const { data: departments = [] } = useDepartmentsQuery(locationId);
   const createMutation = useCreateEmployeeMutation();
   const updateMutation = useUpdateEmployeeMutation();
   const terminateMutation = useTerminateEmployeeMutation();
@@ -121,6 +158,7 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
       firstName: "",
       lastName: "",
       departmentId: filterDepartmentId ?? "",
+      locationIds: locationId ? [locationId] : [],
       role: ROLE_USER,
     },
   });
@@ -132,6 +170,14 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
     control: createForm.control,
     name: "departmentId",
   });
+  const createRole = useWatch({
+    control: createForm.control,
+    name: "role",
+  });
+  const createLocationIds = useWatch({
+    control: createForm.control,
+    name: "locationIds",
+  }) ?? [];
   const updateDepartmentId = useWatch({
     control: updateForm.control,
     name: "departmentId",
@@ -144,9 +190,18 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
       firstName: "",
       lastName: "",
       departmentId: filterDepartmentId ?? "",
+      locationIds: locationId ? [locationId] : [],
       role: ROLE_USER,
     });
     setOpen(true);
+  };
+
+  const toggleCreateLocation = (targetLocationId: string) => {
+    const current = createForm.getValues("locationIds") ?? [];
+    const next = current.includes(targetLocationId)
+      ? current.filter((id) => id !== targetLocationId)
+      : [...current, targetLocationId];
+    createForm.setValue("locationIds", next, { shouldValidate: true });
   };
 
   const openEdit = (row: EmployeeResponse) => {
@@ -156,15 +211,24 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
       lastName: row.lastName,
       phone: row.phone,
       hourlyRate: row.hourlyRate,
-      departmentId: row.departmentId,
+      departmentId: row.departmentId ?? "",
     });
     setOpen(true);
   };
 
   const onCreate = createForm.handleSubmit(async (values: z.infer<typeof employeeCreateSchema>) => {
     const result = await createMutation.mutateAsync({
-      ...values,
+      email: values.email,
+      firstName: values.firstName,
+      lastName: values.lastName,
       hourlyRate: 0,
+      role: values.role,
+      ...(values.role === ROLE_USER && values.departmentId
+        ? { departmentId: values.departmentId }
+        : {}),
+      ...(values.role === ROLE_MANAGER && values.locationIds?.length
+        ? { locationIds: values.locationIds }
+        : {}),
     });
     setOpen(false);
     setTempPassword(result);
@@ -180,6 +244,25 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
   const items = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
   const showActions = canWrite || canTransfer;
+  const usePairLayout =
+    open && !editing && !isMobile && (createRole === ROLE_USER || createRole === ROLE_MANAGER);
+  const showDepartmentWorkspaceMobile = open && !editing && isMobile && createRole === ROLE_USER;
+  const showManagerLocationMobile = open && !editing && isMobile && createRole === ROLE_MANAGER;
+  const selectedCreateDepartmentName = useMemo(
+    () => departments.find((dept) => dept.id === createDepartmentId)?.name,
+    [departments, createDepartmentId]
+  );
+  const selectedCreateLocationNames = useMemo(
+    () =>
+      locations
+        .filter((loc) => createLocationIds.includes(loc.id))
+        .map((loc) => loc.name),
+    [locations, createLocationIds]
+  );
+
+  const handleEmployeeDialogOpenChange = (next: boolean) => {
+    setOpen(next);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -219,6 +302,7 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
                   <TableHead>Email</TableHead>
                   <TableHead>Phòng ban</TableHead>
                   <TableHead>Vai trò</TableHead>
+                  <TableHead>STK / QR</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   {showActions ? (
                     <TableHead className="w-[72px] text-right">Thao tác</TableHead>
@@ -228,14 +312,17 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={showActions ? 7 : 6}
+                      className="h-24 text-center text-muted-foreground"
+                    >
                       Đang tải…
                     </TableCell>
                   </TableRow>
                 ) : items.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={showActions ? 6 : 5}
+                      colSpan={showActions ? 7 : 6}
                       className="h-24 text-center text-muted-foreground"
                     >
                       Không có nhân viên.
@@ -251,6 +338,17 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
                       <TableCell>{row.departmentName ?? "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{employeeRoleLabel(row.role)}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <EmployeePaymentProfileTrigger
+                          employeeName={`${row.lastName} ${row.firstName}`}
+                          profile={{
+                            bankName: row.bankName,
+                            bankAccountHolderName: row.bankAccountHolderName,
+                            bankAccountNumber: row.bankAccountNumber,
+                            paymentQrImageUrl: row.paymentQrImageUrl,
+                          }}
+                        />
                       </TableCell>
                       <TableCell>
                         {row.terminatedAt ? (
@@ -283,41 +381,199 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
               {data?.totalCount != null ? `${data.totalCount} nhân viên` : null}
             </p>
             <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Trước
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Trang {page} / {totalPages}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Sau
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Trước
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Trang {page} / {totalPages}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+              </Button>
             </div>
           </div>
         </>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+      {usePairLayout ? (
+        <EmployeeCreatePairShell open={open} onOpenChange={handleEmployeeDialogOpenChange}>
+          <div
+            role="dialog"
+            aria-labelledby="create-employee-title"
+            className={cn(
+              EMPLOYEE_PANEL_WIDTH_CLASS,
+              EMPLOYEE_CREATE_PAIR_HEIGHT_CLASS,
+              "relative flex flex-col overflow-hidden rounded-2xl bg-popover p-4 text-popover-foreground shadow-xl ring-1 ring-foreground/10 sm:p-5"
+            )}
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="absolute top-4 right-4"
+              aria-label="Đóng"
+              onClick={() => setOpen(false)}
+            >
+              <XIcon />
+            </Button>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <header className="mb-4 shrink-0 pr-8">
+                <h2 id="create-employee-title" className="text-base font-medium leading-none">
+                  Thêm nhân viên
+                </h2>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                  Tạo tài khoản đăng nhập và hồ sơ nhân viên. Gửi mật khẩu tạm sau khi tạo.
+                </p>
+              </header>
+              <form onSubmit={onCreate} className="flex min-h-0 flex-1 flex-col gap-5" noValidate>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <FieldGroup className="gap-4">
+                    <Field>
+                      <FieldLabel>Email đăng nhập</FieldLabel>
+                      <Input
+                        type="email"
+                        autoComplete="off"
+                        placeholder="nhanvien@congty.vn"
+                        {...createForm.register("email")}
+                      />
+                      <FieldError errors={[createForm.formState.errors.email]} />
+                    </Field>
+                    <div className="flex flex-col gap-4">
+                      <Field>
+                        <FieldLabel>Họ</FieldLabel>
+                        <Input {...createForm.register("firstName")} />
+                        <FieldError errors={[createForm.formState.errors.firstName]} />
+                      </Field>
+                      <Field>
+                        <FieldLabel>Tên</FieldLabel>
+                        <Input {...createForm.register("lastName")} />
+                        <FieldError errors={[createForm.formState.errors.lastName]} />
+                      </Field>
+                    </div>
+                    <Field>
+                      <FieldLabel>Quyền truy cập</FieldLabel>
+                      <Controller
+                        control={createForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={(value) => {
+                              if (value === ROLE_USER || value === ROLE_MANAGER) {
+                                field.onChange(value);
+                                if (value === ROLE_MANAGER) {
+                                  createForm.setValue("departmentId", "", { shouldValidate: true });
+                                  const currentLocations = createForm.getValues("locationIds");
+                                  if (!currentLocations?.length && locationId) {
+                                    createForm.setValue("locationIds", [locationId], {
+                                      shouldValidate: true,
+                                    });
+                                  }
+                                }
+                                if (value === ROLE_USER) {
+                                  createForm.setValue("locationIds", [], { shouldValidate: true });
+                                }
+                              }
+                            }}
+                            className="gap-2"
+                          >
+                            {CREATE_ROLE_OPTIONS.map((option) => (
+                              <label
+                                key={option.value}
+                                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
+                                  field.value === option.value
+                                    ? "border-[#4C88C6] bg-[#EEF6FB]/80 dark:border-[#4C88C6]/50 dark:bg-[#0B1E3D]/40"
+                                    : "border-border hover:bg-muted/40"
+                                }`}
+                              >
+                                <RadioGroupItem value={option.value} className="mt-0.5" />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block text-sm font-semibold">
+                                    {option.title}
+                                  </span>
+                                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                                    {option.description}
+                                  </span>
+                                </span>
+                              </label>
+                            ))}
+                          </RadioGroup>
+                        )}
+                      />
+                    </Field>
+                    {createForm.formState.errors.departmentId && createRole === ROLE_USER ? (
+                      <FieldError errors={[createForm.formState.errors.departmentId]} />
+                    ) : null}
+                    {createForm.formState.errors.locationIds && createRole === ROLE_MANAGER ? (
+                      <FieldError errors={[createForm.formState.errors.locationIds]} />
+                    ) : null}
+                  </FieldGroup>
+                </div>
+                <div className="flex shrink-0 flex-col gap-2 border-t bg-muted/50 pt-4 sm:flex-row sm:justify-end">
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                    Hủy
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending}>
+                    Tạo tài khoản
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+          {createRole === ROLE_USER ? (
+          <EmployeeDepartmentWorkspacePanel
+            embedded
+            open={open}
+            locationId={locationId}
+            locationName={currentLocation?.name ?? "Chi nhánh"}
+            locationAddress={currentLocation?.address}
+            selectedDepartmentId={createDepartmentId || null}
+            onSelectDepartment={(departmentId) => {
+              createForm.setValue("departmentId", departmentId, { shouldValidate: true });
+            }}
+            onCreated={(departmentId) => {
+              createForm.setValue("departmentId", departmentId, { shouldValidate: true });
+            }}
+          />
+          ) : (
+          <EmployeeManagerLocationPanel
+            embedded
+            open={open}
+            selectedLocationIds={createLocationIds}
+            onToggleLocation={toggleCreateLocation}
+            onLocationCreated={(locationId) => {
+              const current = createForm.getValues("locationIds") ?? [];
+              if (!current.includes(locationId)) {
+                createForm.setValue("locationIds", [...current, locationId], {
+                  shouldValidate: true,
+                });
+              }
+            }}
+          />
+          )}
+        </EmployeeCreatePairShell>
+      ) : null}
+
+      <Dialog open={open && !usePairLayout} onOpenChange={handleEmployeeDialogOpenChange}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editing ? "Sửa nhân viên" : "Thêm nhân viên"}</DialogTitle>
             {!editing ? (
               <DialogDescription>
                 Một bước tạo cả tài khoản đăng nhập và hồ sơ nhân viên trong tổ chức. Sau khi tạo,
-                gửi mật khẩu tạm cho người đó — họ đăng nhập và vào app ngay, không cần tự đăng
-                ký.
+                gửi mật khẩu tạm cho người đó — họ đăng nhập và vào app ngay, không cần tự đăng ký.
               </DialogDescription>
             ) : null}
           </DialogHeader>
@@ -376,7 +632,6 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
                   />
                   <FieldError errors={[createForm.formState.errors.email]} />
                 </Field>
-
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field>
                     <FieldLabel>Họ</FieldLabel>
@@ -389,18 +644,46 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
                     <FieldError errors={[createForm.formState.errors.lastName]} />
                   </Field>
                 </div>
-
+                {createRole === ROLE_USER ? (
                 <Field>
                   <FieldLabel>Phòng ban</FieldLabel>
-                  <DepartmentSelect
-                    locationId={locationId}
-                    value={createDepartmentId || null}
-                    onChange={(id) => createForm.setValue("departmentId", id ?? "", { shouldValidate: true })}
-                    allowEmpty={false}
-                  />
+                  <div
+                    className={cn(
+                      "flex min-h-10 items-center rounded-lg border px-3 text-sm",
+                      selectedCreateDepartmentName
+                        ? "border-input bg-background font-medium"
+                        : "border-dashed border-muted-foreground/40 bg-muted/20 text-muted-foreground italic"
+                    )}
+                  >
+                    {selectedCreateDepartmentName ?? "Chọn trên sơ đồ phía trên"}
+                  </div>
                   <FieldError errors={[createForm.formState.errors.departmentId]} />
                 </Field>
-
+                ) : null}
+                {createRole === ROLE_MANAGER ? (
+                <Field>
+                  <FieldLabel>Chi nhánh quản lý</FieldLabel>
+                  <div
+                    className={cn(
+                      "flex min-h-10 flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+                      selectedCreateLocationNames.length > 0
+                        ? "border-input bg-background"
+                        : "border-dashed border-muted-foreground/40 bg-muted/20 text-muted-foreground italic"
+                    )}
+                  >
+                    {selectedCreateLocationNames.length > 0 ? (
+                      selectedCreateLocationNames.map((name) => (
+                        <Badge key={name} variant="secondary">
+                          {name}
+                        </Badge>
+                      ))
+                    ) : (
+                      "Chọn trên sơ đồ phía trên"
+                    )}
+                  </div>
+                  <FieldError errors={[createForm.formState.errors.locationIds]} />
+                </Field>
+                ) : null}
                 <Field>
                   <FieldLabel>Quyền truy cập</FieldLabel>
                   <Controller
@@ -412,6 +695,18 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
                         onValueChange={(value) => {
                           if (value === ROLE_USER || value === ROLE_MANAGER) {
                             field.onChange(value);
+                            if (value === ROLE_MANAGER) {
+                              createForm.setValue("departmentId", "", { shouldValidate: true });
+                              const currentLocations = createForm.getValues("locationIds");
+                              if (!currentLocations?.length && locationId) {
+                                createForm.setValue("locationIds", [locationId], {
+                                  shouldValidate: true,
+                                });
+                              }
+                            }
+                            if (value === ROLE_USER) {
+                              createForm.setValue("locationIds", [], { shouldValidate: true });
+                            }
                           }
                         }}
                         className="gap-2"
@@ -452,14 +747,46 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
         </DialogContent>
       </Dialog>
 
+      {showDepartmentWorkspaceMobile ? (
+        <EmployeeDepartmentWorkspacePanel
+          open={showDepartmentWorkspaceMobile}
+          locationId={locationId}
+          locationName={currentLocation?.name ?? "Chi nhánh"}
+          locationAddress={currentLocation?.address}
+          selectedDepartmentId={createDepartmentId || null}
+          onSelectDepartment={(departmentId) => {
+            createForm.setValue("departmentId", departmentId, { shouldValidate: true });
+          }}
+          onCreated={(departmentId) => {
+            createForm.setValue("departmentId", departmentId, { shouldValidate: true });
+          }}
+        />
+      ) : null}
+
+      {showManagerLocationMobile ? (
+        <EmployeeManagerLocationPanel
+          open={showManagerLocationMobile}
+          selectedLocationIds={createLocationIds}
+          onToggleLocation={toggleCreateLocation}
+          onLocationCreated={(locationId) => {
+            const current = createForm.getValues("locationIds") ?? [];
+            if (!current.includes(locationId)) {
+              createForm.setValue("locationIds", [...current, locationId], {
+                shouldValidate: true,
+              });
+            }
+          }}
+        />
+      ) : null}
+
       <Dialog open={Boolean(tempPassword)} onOpenChange={() => setTempPassword(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Tài khoản đã sẵn sàng</DialogTitle>
             <DialogDescription>
               Gửi thông tin bên dưới cho nhân viên. Họ đăng nhập một lần bằng mật khẩu tạm, sau đó
-              vào đúng khu vực theo quyền đã chọn (Nhân viên → dashboard nhân viên; Quản lý → quản
-              lý chi nhánh như Admin).
+              vào đúng khu vực theo quyền đã chọn (Nhân viên → chi nhánh/phòng ban đã gán; Quản lý →
+              các chi nhánh được Admin chỉ định).
             </DialogDescription>
           </DialogHeader>
           {tempPassword ? (

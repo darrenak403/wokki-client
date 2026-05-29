@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckIcon, ChevronsUpDownIcon, Building2Icon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, Building2Icon, PlusIcon } from "lucide-react";
 import { useDepartmentsQuery } from "@/hooks/useDepartments";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -21,6 +22,7 @@ type DepartmentSelectProps = {
   className?: string;
   allowEmpty?: boolean;
   disabled?: boolean;
+  onQuickCreate?: () => void;
 };
 
 export function DepartmentSelect({
@@ -30,6 +32,7 @@ export function DepartmentSelect({
   className,
   allowEmpty = true,
   disabled,
+  onQuickCreate,
 }: DepartmentSelectProps) {
   const [open, setOpen] = useState(false);
   const { data: departments = [], isLoading } = useDepartmentsQuery(locationId);
@@ -65,7 +68,24 @@ export function DepartmentSelect({
         <Command>
           <CommandInput placeholder="Tìm phòng ban..." />
           <CommandList>
-            <CommandEmpty>Không tìm thấy phòng ban.</CommandEmpty>
+            <CommandEmpty className="py-4">
+              <p className="text-sm text-muted-foreground">Không tìm thấy phòng ban.</p>
+              {onQuickCreate && locationId ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => {
+                    setOpen(false);
+                    onQuickCreate();
+                  }}
+                >
+                  <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                  Tạo phòng ban nhanh
+                </Button>
+              ) : null}
+            </CommandEmpty>
             <CommandGroup heading="Phòng ban">
               {allowEmpty ? (
                 <CommandItem
@@ -97,6 +117,23 @@ export function DepartmentSelect({
               ))}
             </CommandGroup>
           </CommandList>
+          {onQuickCreate && locationId ? (
+            <div className="border-t p-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start font-normal"
+                onClick={() => {
+                  setOpen(false);
+                  onQuickCreate();
+                }}
+              >
+                <PlusIcon className="size-4" aria-hidden="true" />
+                Tạo phòng ban nhanh
+              </Button>
+            </div>
+          ) : null}
         </Command>
       </PopoverContent>
     </Popover>

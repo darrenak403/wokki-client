@@ -6,7 +6,7 @@ import { orgPackageUserMessage, isOrgPackageCode } from "@/lib/support/auth/org-
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   ORG_PACKAGE_NOT_ACTIVATED: orgPackageUserMessage("ORG_PACKAGE_NOT_ACTIVATED"),
   ORG_PACKAGE_EXPIRED: orgPackageUserMessage("ORG_PACKAGE_EXPIRED"),
-  AUTH_INVALID_CREDENTIALS: "Email hoặc mật khẩu không đúng.",
+  AUTH_INVALID_CREDENTIALS: "Email hoặc mật khẩu không chính xác.",
   AUTH_UNAUTHORIZED: "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.",
   AUTH_NOT_LOGGED_IN: "Bạn chưa đăng nhập.",
   AUTH_FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",

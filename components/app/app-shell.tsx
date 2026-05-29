@@ -12,6 +12,8 @@ import { selectMustChangePassword, selectOrganizationId } from "@/lib/redux/slic
 import { readFoundationSession } from "@/lib/support/foundation/session-context";
 import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
 import { AccountSettingsDialog } from "@/components/auth/account-settings-dialog";
+import type { AccountSettingsSection } from "@/components/auth/account-settings-dialog";
+import { TempAuthWarningBanner } from "@/components/auth/temp-auth-warning-banner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -38,16 +40,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInitialSection, setSettingsInitialSection] =
+    useState<AccountSettingsSection>("profile");
   const isAdminRoute = pathname.includes("/admin/") || pathname.startsWith("/admin");
   const isWorkspaceRoute = Boolean(
     parsed?.featurePath === "workspace" || parsed?.featurePath.startsWith("workspace/")
   );
 
-  useEffect(() => {
-    if (mustChangePassword) {
-      setSettingsOpen(true);
-    }
-  }, [mustChangePassword]);
+  const openAccountSettings = (section: AccountSettingsSection = "profile") => {
+    setSettingsInitialSection(section);
+    setSettingsOpen(true);
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -158,18 +161,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                 size="icon"
                 className="size-9 shrink-0"
                 aria-label="Cài đặt tài khoản"
-                onClick={() => setSettingsOpen(true)}
+                onClick={() => openAccountSettings("profile")}
               >
                 <SettingsIcon className="size-4" />
               </Button>
             </div>
           </header>
 
+          {mustChangePassword ? (
+            <TempAuthWarningBanner onChangePassword={() => openAccountSettings("security")} />
+          ) : null}
+
           <AccountSettingsDialog
-            open={settingsOpen || mustChangePassword}
+            open={settingsOpen}
             onOpenChange={setSettingsOpen}
             userEmail={user?.email}
-            required={mustChangePassword}
+            initialSection={settingsInitialSection}
             onLogout={logout}
           />
 

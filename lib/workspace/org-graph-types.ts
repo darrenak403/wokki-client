@@ -23,6 +23,10 @@ export type OrgNodeData = {
   isDraggable?: boolean;
   /** Department nodes: highlight when employee dragged over */
   isDropTarget?: boolean;
+  /** Preview node while quick-creating a department */
+  isPreview?: boolean;
+  /** Highlight when selected in picker workspace */
+  isSelected?: boolean;
 };
 
 export type OrgFlowNode = Node<OrgNodeData, OrgNodeKind>;

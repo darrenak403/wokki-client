@@ -32,6 +32,8 @@ type OrgGraphProps = {
     fromDepartmentId: string,
     toDepartmentId: string,
   ) => void;
+  showMiniMap?: boolean;
+  showControls?: boolean;
 };
 
 function isDepartmentNode(node: Node): node is OrgFlowNode {
@@ -49,6 +51,8 @@ function OrgGraphInner({
   onToggleExpand,
   canDragEmployees = false,
   onEmployeeDropOnDepartment,
+  showMiniMap = true,
+  showControls = true,
 }: OrgGraphProps) {
   const { getIntersectingNodes } = useReactFlow();
 
@@ -156,8 +160,8 @@ function OrgGraphInner({
           proOptions={{ hideAttribution: true }}
         >
           <Background gap={16} />
-          <Controls />
-          <MiniMap zoomable pannable className="!bg-background/90" />
+          {showControls ? <Controls /> : null}
+          {showMiniMap ? <MiniMap zoomable pannable className="!bg-background/90" /> : null}
         </ReactFlow>
       </div>
     </WorkspaceGraphProvider>

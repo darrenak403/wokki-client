@@ -11,6 +11,17 @@ export const injectStore = (_store: any) => {
   store = _store;
 };
 
+/** Login/register must surface 401 credentials errors — not trigger refresh flow. */
+function shouldSkipTokenRefresh(url?: string): boolean {
+  if (!url) return false;
+  const path = url.split("?")[0]?.replace(/^\//, "") ?? "";
+  return (
+    path.endsWith("api/v1/auth/login") ||
+    path.endsWith("api/v1/auth/register") ||
+    path.includes("api/v1/auth/forgot-password")
+  );
+}
+
 class ApiService {
   private client: AxiosInstance;
   private isRefreshing = false;
@@ -52,7 +63,7 @@ class ApiService {
       async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !shouldSkipTokenRefresh(originalRequest.url)) {
           if (this.isRefreshing) {
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
