@@ -16,14 +16,30 @@ import {
 } from "@/lib/support/auth/resolve-request-role";
 import { BRANCH_ID_COOKIE } from "@/lib/support/routing/branch-cookie";
 import {
+  buildOrgScopedPath,
   isLegacyRolePath,
   isUuidSegment,
   legacyPathToBranchScoped,
 } from "@/lib/support/routing/tenant-routes";
-import { isAppRole, ROLE_PLATFORM_OPERATOR, ROLE_USER } from "@/lib/types/roles";
+import { isAppRole, ROLE_PLATFORM_OPERATOR, type SessionRole } from "@/lib/types/roles";
 import { MARKETING_PATHS } from "@/components/shared/site-nav";
 
 const AUTH_ROUTES = ["/login", "/register"];
+
+function resolveRequestHomePath(
+  sessionRole: SessionRole | null,
+  orgId: string | null,
+  branchId: string | undefined
+): string {
+  if (!sessionRole) return "/login";
+  if (sessionRole === ROLE_PLATFORM_OPERATOR) return "/platform";
+  if (orgId && isAppRole(sessionRole)) {
+    return branchId
+      ? getTenantHomePath(sessionRole, orgId, branchId)
+      : buildOrgScopedPath(orgId, sessionRole, "workspace");
+  }
+  return getSessionHomePath(sessionRole, orgId, branchId);
+}
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -56,7 +72,9 @@ export function proxy(request: NextRequest) {
   }
 
   if (pathname === "/join" || pathname.startsWith("/join/") || pathname === "/pending") {
-    return NextResponse.redirect(new URL(getSessionHomePath(sessionRole), request.url));
+    return NextResponse.redirect(
+      new URL(resolveRequestHomePath(sessionRole, orgId, branchId), request.url)
+    );
   }
 
   if (isLegacyRolePath(pathname) && orgId && appRole) {
@@ -64,20 +82,14 @@ export function proxy(request: NextRequest) {
       const dest = legacyPathToBranchScoped(pathname, orgId, branchId, appRole);
       return NextResponse.redirect(new URL(dest, request.url));
     }
-    if (appRole === "Admin") {
-      return NextResponse.redirect(new URL(`/${orgId}/admin/workspace`, request.url));
-    }
+    return NextResponse.redirect(new URL(buildOrgScopedPath(orgId, appRole, "workspace"), request.url));
   }
 
   const isAppRoute = isAppAreaPath(pathname);
   const isPlatformRoute = isPlatformPath(pathname);
 
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
-    const home = sessionRole
-      ? orgId && branchId && isAppRole(sessionRole)
-        ? getTenantHomePath(sessionRole, orgId, branchId)
-        : getSessionHomePath(sessionRole)
-      : "/login";
+    const home = resolveRequestHomePath(sessionRole, orgId, branchId);
     return NextResponse.redirect(new URL(home, request.url));
   }
 
@@ -92,10 +104,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (isAuthRoute) {
-    const home =
-      orgId && branchId && isAppRole(sessionRole)
-        ? getTenantHomePath(sessionRole, orgId, branchId)
-        : getSessionHomePath(sessionRole);
+    const home = resolveRequestHomePath(sessionRole, orgId, branchId);
     return NextResponse.redirect(new URL(home, request.url));
   }
 
@@ -105,7 +114,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (isPlatformRoute) {
-    return NextResponse.redirect(new URL(getAppHomePath(sessionRole), request.url));
+    return NextResponse.redirect(new URL(resolveRequestHomePath(sessionRole, orgId, branchId), request.url));
   }
 
   if (isAppRoute && appRole && isAppRole(sessionRole)) {
@@ -115,16 +124,15 @@ export function proxy(request: NextRequest) {
     const fallback =
       orgId && branchId
         ? getTenantHomePath(appRole, orgId, branchId)
-        : getAppHomePath(appRole);
+        : orgId
+          ? buildOrgScopedPath(orgId, appRole, "workspace")
+          : getAppHomePath(appRole, orgId, branchId);
     return NextResponse.redirect(new URL(fallback, request.url));
   }
 
   if (isPublicRoute) return NextResponse.next();
 
-  const home =
-    orgId && branchId && isAppRole(sessionRole)
-      ? getTenantHomePath(sessionRole, orgId, branchId)
-      : getSessionHomePath(sessionRole);
+  const home = resolveRequestHomePath(sessionRole, orgId, branchId);
   return NextResponse.redirect(new URL(home, request.url));
 }
 

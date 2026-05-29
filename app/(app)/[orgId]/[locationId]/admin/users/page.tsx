@@ -1,12 +1,12 @@
-import { UsersPanel } from "@/app/(app)/[orgId]/[locationId]/admin/users/components/UsersPanel";
+import { EmployeesHubPanel } from "@/app/(app)/[orgId]/[locationId]/admin/employees/components/EmployeesHubPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
-  title: "Tài khoản — Admin",
+  title: "Nhân sự — Admin",
   path: "/admin/users",
   noindex: true,
 });
 
 export default function AdminUsersPage() {
-  return <UsersPanel />;
+  return <EmployeesHubPanel />;
 }

@@ -37,6 +37,8 @@ Wave 1 Auth → Wave 2 Foundation (location, dept, employee, shift)
 
 Tenant app routes are branch-scoped for business actions: `/{orgId}/{locationId}/{role}/...`. `/{orgId}/{role}/workspace` is a redirect/branch-selection fallback, not an all-branch workspace.
 
+Org staff creation is not a separate "system account" flow. The FE must use `POST /employees` for staff/Manager creation so BE creates both `User` and `Employee` plus active branch membership; same-org legacy Users without Employee are linked through this flow. Do not call `POST /users` to create org staff.
+
 | Module | Admin panel path | Notes |
 |--------|------------------|-------|
 | Dashboard | `[orgId]/[locationId]/admin/dashboard` | |

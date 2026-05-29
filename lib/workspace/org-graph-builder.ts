@@ -98,7 +98,7 @@ export function buildOrgGraph(input: BuildOrgGraphInput): BuildOrgGraphResult {
           data: {
             kind: "employee",
             label: `${emp.firstName} ${emp.lastName}`.trim(),
-            subtitle: emp.position,
+            subtitle: emp.departmentName ?? emp.position,
             locationId: loc.id,
             departmentId: dept.id,
             employeeId: emp.id,

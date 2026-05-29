@@ -7,8 +7,12 @@ import { ChevronLeftIcon, MenuIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getAppNavForRole, buildTenantNav } from "@/components/app/app-nav";
 import { useTenantParams } from "@/hooks/useTenantParams";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { selectMustChangePassword, selectOrganizationId } from "@/lib/redux/slices/authSlice";
+import { readFoundationSession } from "@/lib/support/foundation/session-context";
 import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { AccountSettingsDialog } from "@/components/auth/account-settings-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -22,16 +26,30 @@ import { SubscriptionRemainingWidget } from "@/components/app/subscription-remai
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, role, logout, isLoading } = useAuth();
-  const { orgId, locationId, parsed } = useTenantParams();
+  const jwtOrgId = useAppSelector(selectOrganizationId);
+  const mustChangePassword = useAppSelector(selectMustChangePassword);
+  const { orgId: urlOrgId, locationId: urlLocationId, parsed } = useTenantParams();
+  const sessionBranchId = readFoundationSession().selectedLocationId;
+  const effectiveOrgId = urlOrgId ?? jwtOrgId ?? user?.organizationId ?? null;
+  const effectiveLocationId = urlLocationId ?? sessionBranchId ?? null;
   const navItems =
-    role && orgId ? buildTenantNav(role, orgId, locationId) : role ? getAppNavForRole(role) : [];
+    role && effectiveOrgId
+      ? buildTenantNav(role, effectiveOrgId, effectiveLocationId)
+      : [];
   const swapPendingCount = useSwapInboxPendingCount();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const isAdminRoute = pathname.includes("/admin/") || pathname.startsWith("/admin");
   const isWorkspaceRoute = Boolean(
     parsed?.featurePath === "workspace" || parsed?.featurePath.startsWith("workspace/")
   );
+
+  useEffect(() => {
+    if (mustChangePassword) {
+      setSettingsOpen(true);
+    }
+  }, [mustChangePassword]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -143,7 +161,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <SubscriptionRemainingWidget variant="header" />
                 <ThemeToggle compact />
               </div>
-              <div className="hidden items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 md:flex dark:border-neutral-800 dark:bg-neutral-950">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                className="hidden items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 transition-colors hover:bg-neutral-100 md:flex dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-900"
+              >
                 <Avatar
                   size="sm"
                   className="bg-[#EEF6FB] text-[#1D4D8F] dark:bg-[#0B1E3D] dark:text-[#BCE8F5]"
@@ -153,9 +175,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="max-w-40 truncate text-sm font-semibold">
                   {user?.email ?? "Wokki user"}
                 </span>
-              </div>
+              </button>
             </div>
           </header>
+
+          <AccountSettingsDialog
+            open={settingsOpen || mustChangePassword}
+            onOpenChange={setSettingsOpen}
+            userEmail={user?.email}
+            required={mustChangePassword}
+          />
 
           <main
             className={cn(
@@ -170,11 +199,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                   : "mx-auto w-full max-w-7xl"
               )}
             >
-              {isAdminRoute && !isWorkspaceRoute && !locationId ? (
+              {isAdminRoute && !isWorkspaceRoute && !effectiveLocationId ? (
                 <div className="mb-4">
                   <FoundationScopePicker />
                 </div>
-              ) : isAdminRoute && !isWorkspaceRoute && locationId ? (
+              ) : isAdminRoute && !isWorkspaceRoute && effectiveLocationId ? (
                 <div className="mb-4">
                   <FoundationScopePicker hideLocationSelect />
                 </div>

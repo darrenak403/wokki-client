@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { PlatformDashboardPanel } from "@/app/(platform)/platform/components/PlatformDashboardPanel";
 import { PlatformOrganizationsPanel } from "@/app/(platform)/platform/components/PlatformOrganizationsPanel";
+import { PlatformAuthGuard } from "@/components/shared/platform-auth-guard";
 import { Button } from "@/components/ui/button";
 
 export function PlatformShell({ children }: { children: React.ReactNode }) {
   const { logout, user } = useAuth();
 
   return (
+    <PlatformAuthGuard>
     <div className="min-h-screen bg-white text-neutral-950 dark:bg-neutral-950 dark:text-white">
       <header className="border-b border-neutral-200 px-4 py-4 dark:border-neutral-800 md:px-6">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
@@ -30,6 +32,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
       </header>
       <main>{children}</main>
     </div>
+    </PlatformAuthGuard>
   );
 }
 

@@ -1,4 +1,5 @@
 import { normalizeAppRole, normalizeSessionRole } from "@/lib/support/auth/normalize-role";
+import { getPostLoginPath } from "@/lib/support/auth/post-login-route";
 import {
   parseTenantPath,
   buildBranchScopedPath,
@@ -50,21 +51,26 @@ export function getAppAreaForRole(role: AppRole): string {
   return APP_AREA_PREFIX[role];
 }
 
-export function getAppHomePath(role: AppRole | string | unknown): string {
+export function getAppHomePath(
+  role: AppRole | string | unknown,
+  orgId?: string | null,
+  locationId?: string | null
+): string {
   const sessionRole = normalizeSessionRole(role);
-  if (sessionRole === ROLE_PLATFORM_OPERATOR) return PLATFORM_HOME_PATH;
-  if (sessionRole && isAppRole(sessionRole)) return APP_HOME_PATH[sessionRole];
+  if (sessionRole) return getPostLoginPath(sessionRole, orgId, locationId);
 
   const normalized = normalizeAppRole(role);
-  if (normalized) return APP_HOME_PATH[normalized];
-  return APP_HOME_PATH[ROLE_USER];
+  if (normalized) return getPostLoginPath(normalized, orgId, locationId);
+  return getPostLoginPath(ROLE_USER, orgId, locationId);
 }
 
-export function getSessionHomePath(role: SessionRole | null | undefined): string {
-  if (!role) return "/login";
-  if (role === ROLE_PLATFORM_OPERATOR) return PLATFORM_HOME_PATH;
-  if (isAppRole(role)) return APP_HOME_PATH[role];
-  return APP_HOME_PATH[ROLE_USER];
+/** @deprecated Prefer getPostLoginPath(role, orgId, locationId) — legacy `/admin/dashboard` has no page. */
+export function getSessionHomePath(
+  role: SessionRole | null | undefined,
+  orgId?: string | null,
+  locationId?: string | null
+): string {
+  return getPostLoginPath(role, orgId, locationId);
 }
 
 /** Role được phép truy cập pathname trong khu app. */

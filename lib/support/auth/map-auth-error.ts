@@ -11,7 +11,12 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   AUTH_NOT_LOGGED_IN: "Bạn chưa đăng nhập.",
   AUTH_FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
   VALIDATION_FAILED: "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
-  USER_EXISTS: "Email đã được sử dụng.",
+  AUTH_PASSWORD_CONFIRM_MISMATCH: "Mật khẩu mới và xác nhận không khớp.",
+  AUTH_OTP_INVALID: "Mã OTP không hợp lệ hoặc đã hết hạn.",
+  AUTH_OTP_NOT_VERIFIED: "Vui lòng xác minh mã OTP trước khi đặt mật khẩu mới.",
+  AUTH_OTP_RESEND_TOO_SOON: "Vui lòng đợi mã hiện tại hết hạn (1 phút) trước khi gửi lại.",
+  AUTH_OTP_SEND_LOCKED: "Gửi OTP quá nhiều lần. Thử lại sau 30 phút.",
+  AUTH_OTP_SENT: "Nếu email tồn tại, mã xác minh đã được gửi.",
   INTERNAL_ERROR: "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
 };
 

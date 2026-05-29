@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   role: SessionRole;
   organizationId?: string | null;
+  mustChangePassword?: boolean;
 }
 
 export interface LoginRequest {
@@ -22,6 +23,7 @@ export interface RegisterRequest {
 export interface AuthTokenPair {
   accessToken: string;
   refreshToken: string;
+  mustChangePassword?: boolean;
   expiresAt?: string;
   tokenType?: string;
 }
@@ -34,21 +36,37 @@ export interface RefreshTokenRequest {
 
 export type MeResponse = ApiResponse<AuthUser>;
 
-/** Self-serve register — trả token pair giống login. */
 export type RegisterResponse = LoginResponse;
 
-export interface ChangePasswordRequest {
+/** Đổi mật khẩu khi đã đăng nhập */
+export interface ResetPasswordRequest {
   currentPassword: string;
   newPassword: string;
+  confirmNewPassword: string;
 }
 
-export type ChangePasswordResponse = ApiResponse<AuthUser>;
+export type ResetPasswordResponse = ApiResponse<AuthUser>;
 
 export interface ForgotPasswordRequest {
   email: string;
 }
 
-export interface ResetPasswordRequest {
+export interface VerifyForgotPasswordOtpRequest {
+  email: string;
+  otpCode: string;
+}
+
+export interface CompleteForgotPasswordRequest {
   email: string;
   newPassword: string;
+  confirmNewPassword: string;
 }
+
+/** @deprecated use ResetPasswordRequest */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword?: string;
+}
+
+export type ChangePasswordResponse = ResetPasswordResponse;

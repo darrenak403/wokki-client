@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CopyIcon, PencilIcon, PlusIcon, UserXIcon } from "lucide-react";
+import { CopyIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -26,15 +26,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Table,
   TableBody,
@@ -46,7 +40,7 @@ import {
 import { DepartmentSelect } from "@/components/shared/department-select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { EmployeeTransferAction } from "@/app/(app)/[orgId]/admin/workspace/components/EmployeeTransferAction";
+import { EmployeeRowActions, employeeRoleLabel } from "./EmployeeRowActions";
 import {
   useCreateEmployeeMutation,
   useEmployeesQuery,
@@ -61,9 +55,6 @@ const employeeCreateSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
   firstName: z.string().min(1, "Vui lòng nhập họ"),
   lastName: z.string().min(1, "Vui lòng nhập tên"),
-  phone: z.string().optional(),
-  position: z.string().min(1, "Vui lòng nhập chức danh"),
-  hourlyRate: z.number().min(0, "Lương giờ phải ≥ 0"),
   departmentId: z.string().min(1, "Vui lòng chọn phòng ban"),
   role: z.enum([ROLE_USER, ROLE_MANAGER]),
 });
@@ -72,10 +63,23 @@ const employeeUpdateSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   phone: z.string(),
-  position: z.string().min(1),
   hourlyRate: z.number().min(0),
   departmentId: z.string().min(1),
 });
+
+const CREATE_ROLE_OPTIONS = [
+  {
+    value: ROLE_USER,
+    title: "Nhân viên",
+    description: "Xem lịch ca, đăng ký ca và chấm công của bản thân.",
+  },
+  {
+    value: ROLE_MANAGER,
+    title: "Quản lý chi nhánh",
+    description:
+      "Xếp lịch và duyệt ca trong chi nhánh được giao. Sau khi tạo, Admin gán chi nhánh trong mục Tổ chức.",
+  },
+] as const;
 
 type EmployeesPanelProps = {
   canWrite?: boolean;
@@ -116,9 +120,6 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
       email: "",
       firstName: "",
       lastName: "",
-      phone: "",
-      position: "",
-      hourlyRate: 0,
       departmentId: filterDepartmentId ?? "",
       role: ROLE_USER,
     },
@@ -142,9 +143,6 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
       email: "",
       firstName: "",
       lastName: "",
-      phone: "",
-      position: "",
-      hourlyRate: 25000,
       departmentId: filterDepartmentId ?? "",
       role: ROLE_USER,
     });
@@ -157,7 +155,6 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
       firstName: row.firstName,
       lastName: row.lastName,
       phone: row.phone,
-      position: row.position,
       hourlyRate: row.hourlyRate,
       departmentId: row.departmentId,
     });
@@ -167,11 +164,11 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
   const onCreate = createForm.handleSubmit(async (values: z.infer<typeof employeeCreateSchema>) => {
     const result = await createMutation.mutateAsync({
       ...values,
-      phone: values.phone || undefined,
+      hourlyRate: 0,
     });
     setOpen(false);
     setTempPassword(result);
-    toast.success("Đã tạo nhân viên.");
+    toast.success("Đã tạo nhân viên và tài khoản đăng nhập.");
   });
 
   const onUpdate = updateForm.handleSubmit(async (values: z.infer<typeof employeeUpdateSchema>) => {
@@ -214,80 +211,78 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
         <p className="text-sm text-destructive">Không tải được danh sách nhân viên.</p>
       ) : (
         <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Họ tên</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phòng ban</TableHead>
-                <TableHead>Vai trò</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                {showActions ? <TableHead className="w-[260px]" /> : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={showActions ? 6 : 5}>Đang tải…</TableCell>
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead>Họ tên</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phòng ban</TableHead>
+                  <TableHead>Vai trò</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  {showActions ? (
+                    <TableHead className="w-[72px] text-right">Thao tác</TableHead>
+                  ) : null}
                 </TableRow>
-              ) : items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={showActions ? 6 : 5} className="text-muted-foreground">
-                    Không có nhân viên.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                items.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">
-                      {row.lastName} {row.firstName}
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center text-muted-foreground">
+                      Đang tải…
                     </TableCell>
-                    <TableCell>{row.email}</TableCell>
-                    <TableCell>{row.departmentName}</TableCell>
-                    <TableCell>{row.role}</TableCell>
-                    <TableCell>
-                      {row.terminatedAt ? (
-                        <Badge variant="outline">Đã chấm dứt</Badge>
-                      ) : (
-                        <Badge variant="secondary">Đang làm</Badge>
-                      )}
-                    </TableCell>
-                    {showActions ? (
-                      <TableCell>
-                        <div className="flex flex-wrap justify-end gap-1">
-                          {canTransfer ? <EmployeeTransferAction employee={row} /> : null}
-                          {canWrite ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEdit(row)}
-                              disabled={Boolean(row.terminatedAt)}
-                            >
-                              <PencilIcon data-icon="inline-start" aria-hidden="true" />
-                              Sửa
-                            </Button>
-                          ) : null}
-                          {canWrite && !row.terminatedAt ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setTerminateTarget(row)}
-                            >
-                              <UserXIcon data-icon="inline-start" aria-hidden="true" />
-                              Chấm dứt
-                            </Button>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                    ) : null}
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          <div className="flex items-center gap-2">
+                ) : items.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={showActions ? 6 : 5}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      Không có nhân viên.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  items.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-medium">
+                        {row.lastName} {row.firstName}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{row.email}</TableCell>
+                      <TableCell>{row.departmentName ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{employeeRoleLabel(row.role)}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {row.terminatedAt ? (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Đã chấm dứt
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">Đang làm</Badge>
+                        )}
+                      </TableCell>
+                      {showActions ? (
+                        <TableCell className="text-right">
+                          <EmployeeRowActions
+                            employee={row}
+                            canWrite={canWrite}
+                            canTransfer={canTransfer}
+                            onEdit={openEdit}
+                            onTerminate={setTerminateTarget}
+                          />
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              {data?.totalCount != null ? `${data.totalCount} nhân viên` : null}
+            </p>
+            <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="outline"
@@ -309,6 +304,7 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
             >
               Sau
             </Button>
+            </div>
           </div>
         </>
       )}
@@ -317,6 +313,13 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Sửa nhân viên" : "Thêm nhân viên"}</DialogTitle>
+            {!editing ? (
+              <DialogDescription>
+                Một bước tạo cả tài khoản đăng nhập và hồ sơ nhân viên trong tổ chức. Sau khi tạo,
+                gửi mật khẩu tạm cho người đó — họ đăng nhập và vào app ngay, không cần tự đăng
+                ký.
+              </DialogDescription>
+            ) : null}
           </DialogHeader>
           {editing ? (
             <form onSubmit={onUpdate} className="flex flex-col gap-4" noValidate>
@@ -333,10 +336,6 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
                 <Field>
                   <FieldLabel>Điện thoại</FieldLabel>
                   <Input {...updateForm.register("phone")} />
-                </Field>
-                <Field>
-                  <FieldLabel>Chức danh</FieldLabel>
-                  <Input {...updateForm.register("position")} />
                 </Field>
                 <Field>
                   <FieldLabel>Lương giờ</FieldLabel>
@@ -365,61 +364,77 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
               </DialogFooter>
             </form>
           ) : (
-            <form onSubmit={onCreate} className="flex flex-col gap-4" noValidate>
-              <FieldGroup>
+            <form onSubmit={onCreate} className="flex flex-col gap-5" noValidate>
+              <FieldGroup className="gap-4">
                 <Field>
-                  <FieldLabel>Email</FieldLabel>
-                  <Input type="email" {...createForm.register("email")} />
+                  <FieldLabel>Email đăng nhập</FieldLabel>
+                  <Input
+                    type="email"
+                    autoComplete="off"
+                    placeholder="nhanvien@congty.vn"
+                    {...createForm.register("email")}
+                  />
                   <FieldError errors={[createForm.formState.errors.email]} />
                 </Field>
-                <Field>
-                  <FieldLabel>Họ</FieldLabel>
-                  <Input {...createForm.register("firstName")} />
-                </Field>
-                <Field>
-                  <FieldLabel>Tên</FieldLabel>
-                  <Input {...createForm.register("lastName")} />
-                </Field>
-                <Field>
-                  <FieldLabel>Chức danh</FieldLabel>
-                  <Input {...createForm.register("position")} />
-                </Field>
-                <Field>
-                  <FieldLabel>Lương giờ</FieldLabel>
-                  <Input
-                    type="number"
-                    {...createForm.register("hourlyRate", { valueAsNumber: true })}
-                  />
-                </Field>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel>Họ</FieldLabel>
+                    <Input {...createForm.register("firstName")} />
+                    <FieldError errors={[createForm.formState.errors.firstName]} />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Tên</FieldLabel>
+                    <Input {...createForm.register("lastName")} />
+                    <FieldError errors={[createForm.formState.errors.lastName]} />
+                  </Field>
+                </div>
+
                 <Field>
                   <FieldLabel>Phòng ban</FieldLabel>
                   <DepartmentSelect
                     locationId={locationId}
                     value={createDepartmentId || null}
-                    onChange={(id) => createForm.setValue("departmentId", id ?? "")}
+                    onChange={(id) => createForm.setValue("departmentId", id ?? "", { shouldValidate: true })}
                     allowEmpty={false}
                   />
+                  <FieldError errors={[createForm.formState.errors.departmentId]} />
                 </Field>
+
                 <Field>
-                  <FieldLabel>Vai trò</FieldLabel>
+                  <FieldLabel>Quyền truy cập</FieldLabel>
                   <Controller
                     control={createForm.control}
                     name="role"
                     render={({ field }) => (
-                      <Select
+                      <RadioGroup
                         value={field.value}
-                        onValueChange={(v) => {
-                          if (v !== null) field.onChange(v);
+                        onValueChange={(value) => {
+                          if (value === ROLE_USER || value === ROLE_MANAGER) {
+                            field.onChange(value);
+                          }
                         }}
+                        className="gap-2"
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={ROLE_USER}>Người đi làm (User)</SelectItem>
-                          <SelectItem value={ROLE_MANAGER}>Trưởng ca (Manager)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        {CREATE_ROLE_OPTIONS.map((option) => (
+                          <label
+                            key={option.value}
+                            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
+                              field.value === option.value
+                                ? "border-[#4C88C6] bg-[#EEF6FB]/80 dark:border-[#4C88C6]/50 dark:bg-[#0B1E3D]/40"
+                                : "border-border hover:bg-muted/40"
+                            }`}
+                          >
+                            <RadioGroupItem value={option.value} className="mt-0.5" />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold">{option.title}</span>
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
+                                {option.description}
+                              </span>
+                            </span>
+                          </label>
+                        ))}
+                      </RadioGroup>
                     )}
                   />
                 </Field>
@@ -429,7 +444,7 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
                   Hủy
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  Tạo nhân viên
+                  Tạo tài khoản
                 </Button>
               </DialogFooter>
             </form>
@@ -440,10 +455,11 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
       <Dialog open={Boolean(tempPassword)} onOpenChange={() => setTempPassword(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Mật khẩu tạm</DialogTitle>
+            <DialogTitle>Tài khoản đã sẵn sàng</DialogTitle>
             <DialogDescription>
-              Chỉ hiển thị một lần. Sao chép và gửi cho nhân viên — họ đăng nhập và vào app
-              trực tiếp (không tự đăng ký).
+              Gửi thông tin bên dưới cho nhân viên. Họ đăng nhập một lần bằng mật khẩu tạm, sau đó
+              vào đúng khu vực theo quyền đã chọn (Nhân viên → dashboard nhân viên; Quản lý → quản
+              lý chi nhánh như Admin).
             </DialogDescription>
           </DialogHeader>
           {tempPassword ? (

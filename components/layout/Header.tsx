@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useMobile";
-import { getAppHomePath } from "@/lib/support/auth/app-routes";
+import { getPostLoginPath } from "@/lib/support/auth/post-login-route";
+import { readFoundationSession } from "@/lib/support/foundation/session-context";
 import { normalizeAppRole } from "@/lib/support/auth/normalize-role";
 import { ChainThemeToggle } from "@/components/ui/chain-theme-toggle";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
@@ -25,10 +26,13 @@ export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const isMobile = useIsMobile();
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, organizationId } = useAuth();
+  const branchId = readFoundationSession().selectedLocationId;
 
   const normalizedRole = normalizeAppRole(role);
-  const appHome = normalizedRole ? getAppHomePath(normalizedRole) : "/login";
+  const appHome = normalizedRole
+    ? getPostLoginPath(normalizedRole, organizationId, branchId)
+    : "/login";
   const showAppEntry = isAuthenticated && Boolean(normalizedRole);
 
   useEffect(() => {

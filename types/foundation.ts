@@ -108,10 +108,9 @@ export interface CreateEmployeeRequest {
   firstName: string;
   lastName: string;
   phone?: string;
-  position: string;
   hourlyRate: number;
   departmentId: string;
-  role?: Extract<AppRole, "User" | "Manager">;
+  role?: AppRole;
   password?: string | null;
   departmentIds?: string[] | null;
 }
@@ -127,7 +126,6 @@ export interface UpdateEmployeeRequest {
   firstName: string;
   lastName: string;
   phone: string;
-  position: string;
   hourlyRate: number;
   departmentId: string;
   departmentIds?: string[] | null;
@@ -181,12 +179,6 @@ export interface UserListParams {
   page?: number;
   pageSize?: number;
   withoutEmployee?: boolean;
-}
-
-export interface CreateUserRequest {
-  email: string;
-  password: string;
-  role?: AppRole;
 }
 
 /** Handoff §7 — persisted for Wave 3. */

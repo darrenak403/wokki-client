@@ -10,6 +10,7 @@ import {
   persistSession,
   syncRoleCookie,
 } from "@/lib/support/auth/session-cookies";
+import { clearBranchIdCookie } from "@/lib/support/routing/branch-cookie";
 import {
   clearCachedOrganizationName,
   readCachedOrganizationName,
@@ -31,6 +32,7 @@ interface AuthState {
   refreshToken: string | null;
   organizationId: string | null;
   organizationName: string | null;
+  mustChangePassword: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -44,6 +46,7 @@ const initialState: AuthState = {
   refreshToken: null,
   organizationId: null,
   organizationName: null,
+  mustChangePassword: false,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -54,7 +57,8 @@ function applySessionToState(
   accessToken: string,
   refreshToken: string | null,
   user: AuthUser,
-  organizationName?: string | null
+  organizationName?: string | null,
+  mustChangePassword?: boolean
 ) {
   state.token = accessToken;
   state.refreshToken = refreshToken;
@@ -62,6 +66,9 @@ function applySessionToState(
   state.organizationId = user.organizationId ?? null;
   state.isAuthenticated = true;
   state.error = null;
+  if (typeof mustChangePassword === "boolean") {
+    state.mustChangePassword = mustChangePassword;
+  }
   if (organizationName) {
     state.organizationName = organizationName;
   } else if (!state.organizationName) {
@@ -75,6 +82,7 @@ function clearAuthState(state: AuthState) {
   state.refreshToken = null;
   state.organizationId = null;
   state.organizationName = null;
+  state.mustChangePassword = false;
   state.isAuthenticated = false;
   state.error = null;
 }
@@ -119,7 +127,7 @@ export const loginAsync = createAsyncThunk(
         return rejectWithValue(mapAuthResponseFailure(response) || "Đăng nhập thất bại");
       }
 
-      const { accessToken, refreshToken } = response.data;
+      const { accessToken, refreshToken, mustChangePassword } = response.data;
       const user = sessionUserFromAccessToken(accessToken);
 
       if (!user) {
@@ -130,7 +138,7 @@ export const loginAsync = createAsyncThunk(
       await persistSession(accessToken, refreshToken, user.role);
       setupAutoRefresh(accessToken, dispatch as AppDispatch);
 
-      return { token: accessToken, refreshToken, user };
+      return { token: accessToken, refreshToken, user, mustChangePassword: mustChangePassword ?? false };
     } catch (error: unknown) {
       const apiError = error as { messageCode?: string };
       const code = apiError?.messageCode;
@@ -205,6 +213,7 @@ export const logoutAsync = createAsyncThunk("auth/logout", async () => {
     // Still clear local session if API fails
   } finally {
     clearSessionCookies();
+    clearBranchIdCookie();
     clearAutoRefresh();
     clearCachedOrganizationName();
   }
@@ -271,12 +280,19 @@ const authSlice = createSlice({
     logout: (state) => {
       clearAuthState(state);
       clearSessionCookies();
+      clearBranchIdCookie();
       clearCachedMyEmployeeId();
       clearCachedOrganizationName();
       clearAutoRefresh();
     },
     clearError: (state) => {
       state.error = null;
+    },
+    clearMustChangePassword: (state) => {
+      state.mustChangePassword = false;
+      if (state.user) {
+        state.user = { ...state.user, mustChangePassword: false };
+      }
     },
   },
   extraReducers: (builder) => {
@@ -291,7 +307,9 @@ const authSlice = createSlice({
           state,
           action.payload.token,
           action.payload.refreshToken ?? null,
-          action.payload.user
+          action.payload.user,
+          undefined,
+          action.payload.mustChangePassword
         );
       })
       .addCase(loginAsync.rejected, (state, action) => {
@@ -359,7 +377,8 @@ const authSlice = createSlice({
   },
 });
 
-export const { setTokenWithRefresh, setOrganizationName, logout, clearError } = authSlice.actions;
+export const { setTokenWithRefresh, setOrganizationName, logout, clearError, clearMustChangePassword } =
+  authSlice.actions;
 
 export const selectAuth = (state: RootState) => state.auth;
 export const selectUser = (state: RootState) => state.auth.user;
@@ -369,6 +388,7 @@ export const selectAuthLoading = (state: RootState) => state.auth.isLoading;
 export const selectAuthError = (state: RootState) => state.auth.error;
 export const selectOrganizationId = (state: RootState) => state.auth.organizationId;
 export const selectOrganizationName = (state: RootState) => state.auth.organizationName;
+export const selectMustChangePassword = (state: RootState) => state.auth.mustChangePassword;
 
 export const selectUserRole = (state: RootState): SessionRole | null =>
   state.auth.user?.role ?? null;

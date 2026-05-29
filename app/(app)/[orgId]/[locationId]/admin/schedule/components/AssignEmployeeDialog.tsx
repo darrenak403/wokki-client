@@ -87,7 +87,7 @@ export function AssignEmployeeDialog({
               <SelectContent>
                 {employees.map((emp) => (
                   <SelectItem key={emp.id} value={emp.id}>
-                    {emp.firstName} {emp.lastName} — {emp.position}
+                    {emp.firstName} {emp.lastName} — {emp.departmentName ?? emp.position}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -13,11 +13,11 @@ export function attachAccessToken(accessToken: string): void {
 }
 
 export function syncRoleCookie(role: SessionRole | null | undefined): void {
-  const options = { path: "/" as const, ...getAuthCookieConfig() };
+  const options = getAuthCookieConfig();
   if (role) {
     setCookie(AUTH_ROLE_COOKIE, role, options);
   } else {
-    deleteCookie(AUTH_ROLE_COOKIE, { path: "/" });
+    deleteCookie(AUTH_ROLE_COOKIE, authCookieDeleteOptions());
   }
 }
 
@@ -31,8 +31,14 @@ export async function persistSession(
   return { accessToken, refreshToken };
 }
 
+function authCookieDeleteOptions() {
+  const { path, domain, secure, sameSite } = getAuthCookieConfig();
+  return { path: path ?? "/", domain, secure, sameSite };
+}
+
 export function clearSessionCookies(): void {
-  deleteCookie(AUTH_TOKEN_COOKIE, { path: "/" });
-  deleteCookie(AUTH_ROLE_COOKIE, { path: "/" });
+  const options = authCookieDeleteOptions();
+  deleteCookie(AUTH_TOKEN_COOKIE, options);
+  deleteCookie(AUTH_ROLE_COOKIE, options);
   apiService.setAuthToken(null);
 }

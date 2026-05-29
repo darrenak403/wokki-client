@@ -21,20 +21,26 @@ import {
 } from "@/lib/redux/slices/authSlice";
 import { fetchStats } from "@/lib/api/services/fetchStats";
 import { readFoundationSession, writeFoundationSession } from "@/lib/support/foundation/session-context";
-import { setBranchIdCookie } from "@/lib/support/routing/branch-cookie";
+import { clearBranchIdCookie, setBranchIdCookie } from "@/lib/support/routing/branch-cookie";
 import { fetchLocationMembership } from "@/lib/api/services/fetchLocationMembership";
 import {
   getOrgAdminLandingPath,
   getPostLoginPath,
 } from "@/lib/support/auth/post-login-route";
-import { ROLE_ADMIN, ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
+import {
+  isAppRole,
+  ROLE_ADMIN,
+  ROLE_MANAGER,
+  ROLE_PLATFORM_OPERATOR,
+  ROLE_USER,
+} from "@/lib/types/roles";
 import {
   isOrgPackageCode,
   orgPackagePath,
   orgPackageReasonFromCode,
 } from "@/lib/support/auth/org-package";
 import type { ApiError } from "@/types/api";
-import type { LoginRequest, RegisterRequest } from "@/types/auth";
+import type { AuthUser, LoginRequest, RegisterRequest } from "@/types/auth";
 
 export function useAuth() {
   const dispatch = useAppDispatch();
@@ -53,17 +59,19 @@ export function useAuth() {
   const isAdmin = role === ROLE_ADMIN;
   const isManager = role === ROLE_MANAGER;
 
-  const resolveLandingPath = async () => {
-    const orgId = organizationId ?? user?.organizationId ?? null;
+  const resolveLandingPath = async (loginUser?: AuthUser | null) => {
+    const effectiveRole = loginUser?.role ?? sessionRole;
+    const effectiveAppRole = isAppRole(effectiveRole) ? effectiveRole : null;
+    const orgId = loginUser?.organizationId ?? organizationId ?? user?.organizationId ?? null;
     const branchId = readFoundationSession().selectedLocationId;
 
-    if (isPlatformOperator || sessionRole === "PlatformOperator") {
-      return getPostLoginPath("PlatformOperator");
+    if (effectiveRole === ROLE_PLATFORM_OPERATOR) {
+      return getPostLoginPath(ROLE_PLATFORM_OPERATOR);
     }
 
-    if (!orgId) return getPostLoginPath(sessionRole);
+    if (!orgId) return getPostLoginPath(effectiveRole);
 
-    if (role === ROLE_ADMIN) {
+    if (effectiveAppRole === ROLE_ADMIN) {
       try {
         const stats = await fetchStats.org();
         return getOrgAdminLandingPath(orgId, stats.locationCount, branchId);
@@ -76,7 +84,7 @@ export function useAuth() {
       }
     }
 
-    if (role === ROLE_USER && !branchId) {
+    if (effectiveAppRole === ROLE_USER && !branchId) {
       try {
         const membership = await fetchLocationMembership.getMy();
         if (membership?.locationId) {
@@ -90,7 +98,7 @@ export function useAuth() {
     }
 
     if (branchId) setBranchIdCookie(branchId);
-    return getPostLoginPath(sessionRole, orgId, branchId);
+    return getPostLoginPath(effectiveRole, orgId, branchId);
   };
 
   const login = async (credentials: LoginRequest) => {
@@ -103,7 +111,7 @@ export function useAuth() {
       }
 
       toast.success("Đăng nhập thành công");
-      router.replace(await resolveLandingPath());
+      router.replace(await resolveLandingPath(result.user));
 
       return result;
     } catch (message: unknown) {
@@ -140,8 +148,15 @@ export function useAuth() {
   const logout = async () => {
     try {
       await dispatch(logoutAsync()).unwrap();
+      clearBranchIdCookie();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("logout"));
+      }
       toast.success("Đăng xuất thành công");
-      router.push("/login");
+      router.replace("/login");
+      if (typeof window !== "undefined") {
+        window.location.replace("/login");
+      }
     } catch {
       toast.error("Có lỗi xảy ra khi đăng xuất");
     }
@@ -153,6 +168,7 @@ export function useAuth() {
     role,
     sessionRole,
     organizationName,
+    organizationId,
     isAdmin,
     isManager,
     isPlatformOperator,

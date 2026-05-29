@@ -24,6 +24,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { MaskedInput } from "@/components/ui/masked-input";
 
 const registerSchema = z
   .object({
@@ -100,9 +101,8 @@ export function RegisterForm() {
 
         <Field>
           <FieldLabel htmlFor="register-password">Mật khẩu</FieldLabel>
-          <Input
+          <MaskedInput
             id="register-password"
-            type="password"
             autoComplete="new-password"
             className="h-11"
             {...form.register("password")}
@@ -112,9 +112,8 @@ export function RegisterForm() {
 
         <Field>
           <FieldLabel htmlFor="register-confirm">Xác nhận mật khẩu</FieldLabel>
-          <Input
+          <MaskedInput
             id="register-confirm"
-            type="password"
             autoComplete="new-password"
             className="h-11"
             {...form.register("confirmPassword")}

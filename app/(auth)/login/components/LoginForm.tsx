@@ -7,9 +7,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { OrgPackageNoticeDialog } from "@/components/auth/org-package-notice-dialog";
+import { ForgotPasswordPanel } from "@/components/auth/forgot-auth-panel";
 import { useAuth } from "@/hooks/useAuth";
-import { getSessionRoleFromToken } from "@/lib/support/auth/jwt-roles";
-import { readOrganizationIdFromToken } from "@/lib/support/auth/jwt-claims";
 import { getPostLoginPath } from "@/lib/support/auth/post-login-route";
 import { readFoundationSession } from "@/lib/support/foundation/session-context";
 import {
@@ -21,6 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { MaskedInput } from "@/components/ui/masked-input";
 
 const loginSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
@@ -31,8 +31,9 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, isLoading, error, isAuthenticated, token, clearError } = useAuth();
+  const { login, isLoading, error, clearError, isAuthenticated, role, organizationId } = useAuth();
   const [packageReason, setPackageReason] = useState<OrgPackageReason | null>(null);
+  const [mode, setMode] = useState<"login" | "forgot">("login");
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -40,13 +41,10 @@ export function LoginForm() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated || !token || packageReason) return;
-    const role = getSessionRoleFromToken(token);
-    if (!role) return;
-    const orgId = readOrganizationIdFromToken(token);
+    if (!isAuthenticated || !role || packageReason) return;
     const branchId = readFoundationSession().selectedLocationId;
-    router.replace(getPostLoginPath(role, orgId, branchId));
-  }, [isAuthenticated, token, router, packageReason]);
+    router.replace(getPostLoginPath(role, organizationId, branchId));
+  }, [isAuthenticated, role, organizationId, router, packageReason]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     clearError();
@@ -56,10 +54,20 @@ export function LoginForm() {
     } catch (message: unknown) {
       if (typeof message === "string" && isOrgPackageCode(message)) {
         setPackageReason(orgPackageReasonFromCode(message));
-        return;
       }
     }
   });
+
+  if (mode === "forgot") {
+    return (
+      <ForgotPasswordPanel
+        onBackToLogin={() => {
+          clearError();
+          setMode("login");
+        }}
+      />
+    );
+  }
 
   return (
     <>
@@ -79,10 +87,21 @@ export function LoginForm() {
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
-            <Input
+            <div className="flex items-center justify-between gap-2">
+              <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
+              <button
+                type="button"
+                className="text-sm font-medium text-brand-blue underline-offset-4 hover:underline"
+                onClick={() => {
+                  clearError();
+                  setMode("forgot");
+                }}
+              >
+                Quên mật khẩu?
+              </button>
+            </div>
+            <MaskedInput
               id="password"
-              type="password"
               autoComplete="current-password"
               className="h-11"
               {...form.register("password")}

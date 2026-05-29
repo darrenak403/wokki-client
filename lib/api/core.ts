@@ -118,12 +118,13 @@ class ApiService {
             this.isRefreshing = false;
             this.processQueue(refreshError, null);
 
-            deleteCookie("authToken", { path: "/" });
             if (store) {
               import("@/lib/redux/slices/authSlice").then(({ logout }) => {
                 store.dispatch(logout());
               });
             }
+            const { clearSessionCookies } = await import("@/lib/support/auth/session-cookies");
+            clearSessionCookies();
 
             if (typeof window !== "undefined") {
               window.dispatchEvent(new Event("logout"));

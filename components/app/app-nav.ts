@@ -30,7 +30,7 @@ const ADMIN_NAV: AppNavItemDef[] = [
   {
     href: "/admin/workspace",
     label: "Tổ chức",
-    description: "Sơ đồ chi nhánh, phòng ban, Manager và duyệt tham gia.",
+    description: "Sơ đồ chi nhánh, phòng ban và Manager phụ trách.",
     module: "workspace",
   },
   {
@@ -42,7 +42,7 @@ const ADMIN_NAV: AppNavItemDef[] = [
   {
     href: "/admin/employees",
     label: "Nhân sự",
-    description: "Quản lý nhân viên và tài khoản hệ thống.",
+    description: "Tạo nhân viên kèm tài khoản đăng nhập, phòng ban và vai trò.",
     module: "wave2",
   },
   {
