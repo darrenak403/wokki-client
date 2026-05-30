@@ -5,7 +5,7 @@ import type {
   SchedulingRuleValue,
 } from "@/types/foundation";
 
-export const ORG_SCHEDULING_POLICY_SCHEMA = "org-scheduling-policy.v1";
+export const ORG_SCHEDULING_POLICY_SCHEMA = "org-scheduling-policy.v1.1";
 export const MAX_ADVISORY_RULES = 20;
 
 export type RuleCategoryId = string;
@@ -79,7 +79,7 @@ export function mergeEffectiveRules(
       inputLabel: entry.inputLabel,
       valueType: entry.valueType,
       value: saved?.value ?? entry.defaultValue,
-      enabled: saved?.enabled ?? true,
+      enabled: saved?.enabled ?? false,
       isDefault: true,
       isRequired: entry.isRequired,
       sortOrder: entry.sortOrder,

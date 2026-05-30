@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { endOfWeek, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CalendarDaysIcon, ZapIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ZapIcon } from "lucide-react";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";
 import { DayCard } from "./DayCard";
@@ -51,73 +50,61 @@ export function MyPublishedScheduleView() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          Lịch đã công bố — {assignments.length} phân ca trong 28 ngày tới.
-        </p>
-        <Badge variant="outline" className="h-9 gap-2 rounded-lg px-3 text-sm">
-          <CalendarDaysIcon className="size-4 text-primary" />
-          {format(now, "MMMM yyyy", { locale: vi })}
-        </Badge>
-      </div>
-
-      <section className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-lg border bg-primary p-5 text-primary-foreground shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <p className="text-xs font-semibold uppercase text-primary-foreground/70">Ca sắp tới</p>
-            <ZapIcon className="size-5 text-primary-foreground/70" />
+    <div className="space-y-4">
+      <section className="grid gap-2 sm:grid-cols-3">
+        <div className="rounded-lg border bg-primary px-3 py-2.5 text-primary-foreground shadow-sm sm:col-span-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-primary-foreground/70">
+              Ca sắp tới
+            </p>
+            <ZapIcon className="size-4 text-primary-foreground/70" aria-hidden />
           </div>
           {upcoming ? (
-            <div className="mt-8 space-y-4">
-              <div>
-                <h2 className="text-xl font-semibold">{upcoming.shiftName}</h2>
-                <p className="mt-1 text-sm text-primary-foreground/75">
-                  {isSameDay(parseISO(upcoming.date), now)
-                    ? "Hôm nay"
-                    : format(parseISO(upcoming.date), "EEEE, dd/MM", { locale: vi })}
-                  , {toTime(upcoming.startTime)} - {toTime(upcoming.endTime)}
-                </p>
-              </div>
-              <div className="border-t border-primary-foreground/20 pt-4 text-sm text-primary-foreground/75">
+            <div className="mt-2">
+              <p className="text-sm font-semibold leading-tight">{upcoming.shiftName}</p>
+              <p className="mt-0.5 text-xs text-primary-foreground/75">
+                {isSameDay(parseISO(upcoming.date), now)
+                  ? "Hôm nay"
+                  : format(parseISO(upcoming.date), "EEEE, dd/MM", { locale: vi })}
+                , {toTime(upcoming.startTime)} – {toTime(upcoming.endTime)}
+              </p>
+              <p className="mt-1 text-[11px] text-primary-foreground/65">
                 {getRelativeStart(upcoming, now)}
-              </div>
+              </p>
             </div>
           ) : (
-            <p className="mt-8 text-sm text-primary-foreground/75">Không còn ca sắp tới.</p>
+            <p className="mt-2 text-xs text-primary-foreground/75">Không còn ca sắp tới.</p>
           )}
         </div>
 
-        <div className="rounded-lg border bg-card p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Tổng ca (28 ngày)</p>
-          <div className="mt-8 flex items-center gap-4">
-            <span className="flex size-14 items-center justify-center rounded-lg bg-emerald-100 text-2xl font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-              {assignments.length}
-            </span>
-            <div>
-              <p className="font-semibold">Tổng số ca làm</p>
-              <p className="text-sm text-muted-foreground">Lịch đã được công bố</p>
-            </div>
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-lg font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+            {assignments.length}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Tổng ca (28 ngày)
+            </p>
+            <p className="text-sm font-medium leading-tight">Tổng số ca làm</p>
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Tuần này</p>
-          <div className="mt-8 flex items-center gap-4">
-            <span className="flex size-14 items-center justify-center rounded-lg bg-orange-100 text-2xl font-semibold text-orange-800 dark:bg-orange-950/40 dark:text-orange-300">
-              {weeklyCount}
-            </span>
-            <div>
-              <p className="font-semibold">Ca làm tuần này</p>
-              <p className="text-sm text-muted-foreground">Từ Thứ Hai đến Chủ Nhật</p>
-            </div>
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-lg font-semibold text-orange-800 dark:bg-orange-950/40 dark:text-orange-300">
+            {weeklyCount}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Tuần này
+            </p>
+            <p className="text-sm font-medium leading-tight">Ca làm tuần này</p>
           </div>
         </div>
       </section>
 
-      <section className="space-y-4">
-        <div className="border-b pb-3">
-          <h2 className="text-lg font-semibold tracking-tight">Lịch làm việc chi tiết</h2>
+      <section className="space-y-3">
+        <div className="border-b pb-2">
+          <h2 className="text-base font-semibold tracking-tight">Lịch làm việc chi tiết</h2>
         </div>
 
         <div className="space-y-3">

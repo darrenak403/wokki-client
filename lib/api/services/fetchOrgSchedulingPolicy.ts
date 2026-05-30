@@ -4,6 +4,8 @@ import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
 import type {
   OrganizationSchedulingPolicyResponse,
+  SchedulingPolicyWizardDraftResponse,
+  SchedulingPolicyWizardRequest,
   SchedulingRuleCatalogResponse,
   UpsertOrganizationSchedulingPolicyRequest,
 } from "@/types/foundation";
@@ -28,6 +30,16 @@ export const fetchOrgSchedulingPolicy = {
   ): Promise<OrganizationSchedulingPolicyResponse> => {
     const response = await apiService.put<ApiEnvelope<OrganizationSchedulingPolicyResponse>>(
       "api/v1/org/scheduling-policy",
+      data,
+    );
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
+  },
+
+  buildWizardDraft: async (
+    data: SchedulingPolicyWizardRequest,
+  ): Promise<SchedulingPolicyWizardDraftResponse> => {
+    const response = await apiService.post<ApiEnvelope<SchedulingPolicyWizardDraftResponse>>(
+      "api/v1/org/scheduling-policy/wizard-draft",
       data,
     );
     return assertFoundationSuccess(normalizeApiResponse(response.data));

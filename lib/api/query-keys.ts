@@ -51,6 +51,13 @@ export const scheduleKeys = {
     [...scheduleKeys.all, "insightContext", scheduleId] as const,
 };
 
+export const leaveRequestKeys = {
+  all: ["leaveRequests"] as const,
+  mine: (scheduleId?: string) => [...leaveRequestKeys.all, "mine", scheduleId ?? "all"] as const,
+  review: (scheduleId: string, status?: string) =>
+    [...leaveRequestKeys.all, "review", scheduleId, status ?? "all"] as const,
+};
+
 export const statsKeys = {
   all: ["stats"] as const,
   org: () => [...statsKeys.all, "org"] as const,

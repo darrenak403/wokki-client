@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { foundationKeys } from "@/lib/api/query-keys";
 import { fetchOrgSchedulingPolicy } from "@/lib/api/services/fetchOrgSchedulingPolicy";
 import { mapFoundationError } from "@/lib/support/foundation/map-errors";
-import type { UpsertOrganizationSchedulingPolicyRequest } from "@/types/foundation";
+import type { UpsertOrganizationSchedulingPolicyRequest, SchedulingPolicyWizardRequest } from "@/types/foundation";
 
 const STALE_MS = 5 * 60 * 1000;
 
@@ -36,6 +36,14 @@ export function useUpdateOrgSchedulingPolicyMutation() {
       void queryClient.invalidateQueries({ queryKey: foundationKeys.orgSchedulingPolicy() });
       toast.success("Đã lưu luật xếp lịch tổ chức.");
     },
+    onError: (error) => toast.error(mapFoundationError(error)),
+  });
+}
+
+export function useSchedulingPolicyWizardDraftMutation() {
+  return useMutation({
+    mutationFn: (data: SchedulingPolicyWizardRequest) =>
+      fetchOrgSchedulingPolicy.buildWizardDraft(data),
     onError: (error) => toast.error(mapFoundationError(error)),
   });
 }

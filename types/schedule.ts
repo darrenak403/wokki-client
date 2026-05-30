@@ -37,9 +37,33 @@ export interface ShiftAssignmentResponse {
   createdAt: string;
 }
 
+export interface ScheduleRebalanceConflict {
+  assignmentId: string;
+  employeeId: string;
+  employeeName: string;
+  shiftDefinitionId: string;
+  shiftName: string;
+  date: string;
+}
+
+export interface ScheduleRebalanceHints {
+  hasRecentPreferenceChanges: boolean;
+  conflictCount: number;
+  pendingLeaveCount: number;
+  conflicts: ScheduleRebalanceConflict[];
+}
+
+export const EMPTY_REBALANCE_HINTS: ScheduleRebalanceHints = {
+  hasRecentPreferenceChanges: false,
+  conflictCount: 0,
+  pendingLeaveCount: 0,
+  conflicts: [],
+};
+
 export interface ScheduleDetailResponse {
   schedule: ScheduleResponse;
   assignments: ShiftAssignmentResponse[];
+  rebalanceHints: ScheduleRebalanceHints;
 }
 
 export interface ScheduleSuggestion {

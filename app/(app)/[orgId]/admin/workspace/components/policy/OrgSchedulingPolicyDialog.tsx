@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   useOrgSchedulingPolicyQuery,
+  useSchedulingPolicyWizardDraftMutation,
   useSchedulingRuleCatalogQuery,
   useUpdateOrgSchedulingPolicyMutation,
 } from "@/hooks/useOrgSchedulingPolicy";
@@ -92,6 +94,10 @@ export function OrgSchedulingPolicyDialog({
   const catalogQuery = useSchedulingRuleCatalogQuery(open);
   const policyQuery = useOrgSchedulingPolicyQuery(open);
   const updatePolicy = useUpdateOrgSchedulingPolicyMutation();
+  const wizardDraft = useSchedulingPolicyWizardDraftMutation();
+
+  const [wizardEmployees, setWizardEmployees] = useState("5");
+  const [wizardShiftsPerDay, setWizardShiftsPerDay] = useState("3");
 
   const baseRules = useMemo(
     () => mergeEffectiveRules(catalogQuery.data, policyQuery.data?.rules),
@@ -174,6 +180,18 @@ export function OrgSchedulingPolicyDialog({
     void policyQuery.refetch();
   };
 
+  const applyWizardDraft = async () => {
+    const averageEmployees = Number.parseInt(wizardEmployees, 10);
+    const shiftsPerDay = Number.parseInt(wizardShiftsPerDay, 10);
+    if (!Number.isFinite(averageEmployees) || !Number.isFinite(shiftsPerDay)) return;
+
+    const draft = await wizardDraft.mutateAsync({ averageEmployees, shiftsPerDay });
+    setEditedRules(draft.suggestedRules);
+    toast.success(draft.summary);
+  };
+
+  const enabledRuleCount = rules.filter((rule) => rule.enforcement === "enforced" && rule.enabled).length;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
@@ -214,12 +232,54 @@ export function OrgSchedulingPolicyDialog({
           <p className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
             <InfoIcon className="mt-0.5 size-4 shrink-0 text-brand-medium" aria-hidden />
             <span>
-              Luật <strong className="font-medium text-foreground">bật</strong> được solver áp dụng khi
+              Mặc định mọi luật <strong className="font-medium text-foreground">tắt</strong> — bật và
+              điền tham số theo nhu cầu org. Đang bật: {enabledRuleCount}. Luật{" "}
+              <strong className="font-medium text-foreground">bật</strong> được solver áp dụng khi
               gợi ý lịch.{" "}
               <strong className="font-medium text-foreground">Ghi chú</strong> — nội bộ, tối đa{" "}
               {MAX_ADVISORY_RULES}/org (tự thêm/xóa).
             </span>
           </p>
+
+          {canWrite ? (
+            <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-background px-3 py-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground" htmlFor="wizard-employees">
+                  Số NV (ước lượng)
+                </label>
+                <Input
+                  id="wizard-employees"
+                  type="number"
+                  min={1}
+                  className="h-9 w-24"
+                  value={wizardEmployees}
+                  onChange={(e) => setWizardEmployees(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground" htmlFor="wizard-shifts">
+                  Ca / ngày
+                </label>
+                <Input
+                  id="wizard-shifts"
+                  type="number"
+                  min={1}
+                  className="h-9 w-24"
+                  value={wizardShiftsPerDay}
+                  onChange={(e) => setWizardShiftsPerDay(e.target.value)}
+                />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={wizardDraft.isPending}
+                onClick={() => void applyWizardDraft()}
+              >
+                Gợi ý luật (wizard)
+              </Button>
+            </div>
+          ) : null}
 
           {!searchQuery.trim() && categoryNav.length > 0 ? (
             <div className="flex flex-wrap gap-2">

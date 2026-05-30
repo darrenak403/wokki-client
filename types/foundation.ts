@@ -62,6 +62,17 @@ export interface UpsertOrganizationSchedulingPolicyRequest {
   >;
 }
 
+export interface SchedulingPolicyWizardRequest {
+  averageEmployees: number;
+  shiftsPerDay: number;
+}
+
+export interface SchedulingPolicyWizardDraftResponse {
+  schemaVersion: string;
+  suggestedRules: SchedulingRule[];
+  summary: string;
+}
+
 export interface SchedulingRuleCatalogCategory {
   id: string;
   label: string;

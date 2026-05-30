@@ -2,7 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Bot, CheckCircle2, SendHorizontal, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  Bot,
+  CheckCheck,
+  Loader2,
+  SendHorizontal,
+  Sparkles,
+  Square,
+  X,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,20 +19,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  CalendarEmptySlot,
+  WeekShiftCalendar,
+} from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/WeekShiftCalendar";
 import {
   useApplySuggestionsMutation,
   useScheduleInsightChatMutation,
@@ -35,27 +38,16 @@ import { useTenantNavigation } from "@/hooks/useTenantNavigation";
 import { useAuth } from "@/hooks/useAuth";
 import { isAppRole, ROLE_ADMIN } from "@/lib/types/roles";
 import { mapSuggestReason } from "@/lib/support/schedule/suggest-reasons";
+import { buildReadinessLine } from "@/lib/support/schedule/suggest-readiness";
+import { shiftAccentColor, shiftChipStyle } from "@/lib/support/schedule/shift-calendar";
 import { weekDayDates } from "@/lib/support/schedule/week";
-import { OrgSchedulingPolicySummary } from "@/components/shared/org-scheduling-policy-summary";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import type { CSSProperties } from "react";
 import type { ScheduleSuggestion } from "@/types/schedule";
-
-const DAY_HEADERS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
 function timeToMinutes(value: string) {
   const [hours = "0", minutes = "0"] = value.slice(0, 5).split(":");
   return Number(hours) * 60 + Number(minutes);
-}
-
-function shiftPillStyle(color: string): CSSProperties {
-  return {
-    backgroundColor: `color-mix(in srgb, ${color} 22%, white)`,
-    borderColor: `color-mix(in srgb, ${color} 38%, white)`,
-    color: `color-mix(in srgb, ${color} 72%, #0b1e3d)`,
-    boxShadow: `0 1px 2px color-mix(in srgb, ${color} 18%, transparent)`,
-  };
 }
 
 type SuggestionsSheetProps = {
@@ -64,6 +56,7 @@ type SuggestionsSheetProps = {
   scheduleId: string;
   locationId: string;
   listParams: { departmentId: string; weekStartDate: string };
+  conflictCount?: number;
 };
 
 type ChatMessage = {
@@ -78,6 +71,7 @@ export function SuggestionsSheet({
   scheduleId,
   locationId,
   listParams,
+  conflictCount = 0,
 }: SuggestionsSheetProps) {
   const router = useRouter();
   const { branchPath, orgPath, parsed } = useTenantNavigation();
@@ -89,7 +83,6 @@ export function SuggestionsSheet({
 
   const [suggestions, setSuggestions] = useState<ScheduleSuggestion[]>([]);
   const [reason, setReason] = useState<string | null>(null);
-  const [provider, setProvider] = useState<string | null>(null);
   const [fallbackUsed, setFallbackUsed] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [hasGenerated, setHasGenerated] = useState(false);
@@ -99,7 +92,6 @@ export function SuggestionsSheet({
   const resetSheetState = () => {
     setSuggestions([]);
     setReason(null);
-    setProvider(null);
     setFallbackUsed(false);
     setSelected(new Set());
     setHasGenerated(false);
@@ -117,7 +109,6 @@ export function SuggestionsSheet({
       const data = await suggestMutation.mutateAsync({ useAi: false });
       setSuggestions(data.suggestions);
       setReason(data.reason);
-      setProvider(data.provider);
       setFallbackUsed(data.fallbackUsed);
       setSelected(new Set(data.suggestions.map((s) => s.id)));
       setHasGenerated(true);
@@ -135,6 +126,9 @@ export function SuggestionsSheet({
       return next;
     });
   };
+
+  const selectAll = () => setSelected(new Set(suggestions.map((s) => s.id)));
+  const selectNone = () => setSelected(new Set());
 
   const handleApply = async () => {
     const picked = suggestions.filter((s) => selected.has(s.id));
@@ -173,33 +167,6 @@ export function SuggestionsSheet({
 
   const loading = suggestMutation.isPending;
   const empty = hasGenerated && !loading && suggestions.length === 0;
-  const isInfeasible = empty && reason === "infeasible";
-
-  // Parse insight context JSON for schedule display when suggestions are empty.
-  const parsedContext = (() => {
-    if (!contextQuery.data?.jsonContent) return null;
-    try {
-      return JSON.parse(contextQuery.data.jsonContent) as {
-        shifts?: Array<{ id: string; name: string; startTime: string; endTime: string }>;
-        existingAssignments?: Array<{
-          date: string;
-          shiftName: string;
-          employeeId: string;
-          employeeName: string;
-          shiftDefinitionId: string;
-        }>;
-        suggestedAssignments?: Array<{
-          date: string;
-          shiftName: string;
-          employeeId: string;
-          employeeName: string;
-          shiftDefinitionId: string;
-        }>;
-      };
-    } catch {
-      return null;
-    }
-  })();
 
   const hasContext = Boolean(
     contextQuery.data &&
@@ -230,10 +197,12 @@ export function SuggestionsSheet({
     }
     return map;
   }, [suggestions]);
+
   const contextGeneratedAt = contextQuery.data?.generatedAt
     ? format(parseISO(contextQuery.data.generatedAt), "dd/MM HH:mm")
     : null;
-  const preflightItems = buildPreflightItems(reason, hasGenerated, suggestions.length);
+  const readinessLine = buildReadinessLine(reason, hasGenerated, suggestions.length);
+  const weekLabel = format(parseISO(listParams.weekStartDate), "dd/MM/yyyy");
 
   const goToSetup = (target: "locations" | "employees" | "shifts" | "preferences") => {
     if (target === "preferences") {
@@ -261,254 +230,244 @@ export function SuggestionsSheet({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="top-0 left-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 ring-0 sm:max-w-none">
-        <DialogHeader className="border-b px-5 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0 space-y-0.5">
-              <DialogTitle className="flex items-center gap-2">
-                <Sparkles className="size-4 text-primary" aria-hidden />
-                Gợi ý phân ca & insight
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          "flex h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-[1680px] flex-col gap-0 overflow-hidden",
+          "rounded-2xl border border-border/80 p-0 shadow-2xl sm:max-w-[calc(100vw-1.5rem)]",
+        )}
+      >
+        <header className="flex shrink-0 items-center gap-3 border-b bg-muted/30 px-4 py-3 sm:px-5">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+              <Sparkles className="size-4" aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="truncate text-base font-semibold sm:text-lg">
+                Gợi ý phân ca
               </DialogTitle>
-              <DialogDescription>
-                Gợi ý chạy theo từng phòng ban/tuần. Snapshot insight được tạo tự động sau khi gợi ý thành công.
+              <DialogDescription className="truncate text-xs sm:text-sm">
+                Tuần {weekLabel} · CP-SAT
+                {hasGenerated && suggestions.length > 0
+                  ? ` · ${selected.size}/${suggestions.length} đã chọn`
+                  : ""}
               </DialogDescription>
             </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            {fallbackUsed ? (
+              <Badge variant="outline" className="hidden sm:inline-flex">
+                Một phần
+              </Badge>
+            ) : null}
             <Button
               type="button"
-              className="shrink-0"
+              variant="secondary"
+              size="sm"
               disabled={loading}
               onClick={() => void handleGenerate()}
             >
-              {loading ? "Đang tạo gợi ý…" : "Tạo gợi ý"}
+              {loading ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Đang tạo…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-4" aria-hidden />
+                  Tạo gợi ý
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={
+                !hasGenerated || empty || selected.size === 0 || applyMutation.isPending
+              }
+              onClick={() => void handleApply()}
+            >
+              {applyMutation.isPending ? "Áp dụng…" : `Áp dụng (${selected.size})`}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleOpenChange(false)}
+              aria-label="Đóng"
+            >
+              <X className="size-4" />
             </Button>
           </div>
-        </DialogHeader>
+        </header>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <section className="flex min-h-0 flex-col border-b lg:border-r lg:border-b-0">
+        {conflictCount > 0 ? (
+          <div className="shrink-0 border-b border-amber-200/80 bg-amber-50 px-4 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200 sm:px-5">
+            Có {conflictCount} ca không khớp đăng ký — xóa trên lưới lịch nếu cần, rồi tạo gợi ý
+            lại.
+          </div>
+        ) : null}
 
-            <ScrollArea className="min-h-0 flex-1">
-              <div className="p-5">
-                <div className="mb-5">
-                  <OrgSchedulingPolicySummary canOpenFull />
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+          <section className="flex min-h-0 min-w-0 flex-[3] flex-col border-b lg:border-r lg:border-b-0">
+            {readinessLine ? (
+              <div className="flex shrink-0 items-start gap-2 border-b border-amber-200/60 bg-amber-50/80 px-4 py-2.5 text-xs dark:bg-amber-950/20 sm:px-5">
+                <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-amber-600" aria-hidden />
+                <span className="flex-1 leading-relaxed">{readinessLine}</span>
+                {setupTargetForReason(reason) ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto shrink-0 px-2 py-0.5 text-xs"
+                    onClick={() => goToSetup(setupTargetForReason(reason)!)}
+                  >
+                    Kiểm tra
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+
+            {hasGenerated && suggestions.length > 0 ? (
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 py-2 sm:px-5">
+                <p className="text-xs text-muted-foreground">
+                  Chọn gợi ý cần áp dụng vào lịch nháp
+                </p>
+                <div className="flex gap-1">
+                  <Button type="button" variant="ghost" size="sm" className="h-8 text-xs" onClick={selectAll}>
+                    <CheckCheck className="size-3.5" aria-hidden />
+                    Tất cả
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" className="h-8 text-xs" onClick={selectNone}>
+                    <Square className="size-3.5" aria-hidden />
+                    Bỏ chọn
+                  </Button>
                 </div>
-                <div className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  {preflightItems.map((item) => (
-                    <div
-                      key={item.key}
-                      className="flex min-h-20 items-start gap-3 rounded-md border bg-background p-3"
-                    >
-                      {item.ok ? (
-                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-                      ) : (
-                        <AlertCircle className="mt-0.5 size-4 shrink-0 text-amber-600" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">{item.label}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+              </div>
+            ) : null}
+
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              {hasGenerated && !loading && !empty && suggestions.length > 0 ? (
+                <div className="flex min-h-0 flex-1 flex-col overflow-x-auto p-4 sm:p-5">
+                  <WeekShiftCalendar
+                    fillHeight
+                    className="min-w-[880px]"
+                    days={days}
+                    shifts={activeShifts}
+                    renderCell={(shift, date) => {
+                      const color = shiftAccentColor(shift.color);
+                      const cell = suggestionsByKey.get(`${shift.id}|${date}`) ?? [];
+
+                      if (cell.length === 0) {
+                        return <CalendarEmptySlot />;
+                      }
+
+                      return cell.map((s) => (
+                        <label
+                          key={s.id}
+                          className={cn(
+                            "flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 transition-all",
+                            !selected.has(s.id) && "opacity-40 saturate-50",
+                          )}
+                          style={shiftChipStyle(color)}
+                        >
+                          <Checkbox
+                            checked={selected.has(s.id)}
+                            onCheckedChange={(c) => toggle(s.id, c === true)}
+                            aria-label={`Chọn ${s.employeeName}`}
+                            className="size-3.5 shrink-0 border-current/40 data-[state=checked]:border-current"
+                          />
+                          <span className="truncate text-xs font-semibold">{s.employeeName}</span>
+                        </label>
+                      ));
+                    }}
+                  />
+                </div>
+              ) : (
+                <ScrollArea className="min-h-0 flex-1">
+                  <div className="p-4 sm:p-5">
+                    {!hasGenerated ? (
+                      <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-muted/20 px-6 py-12 text-center">
+                        <Sparkles className="size-8 text-violet-500/70" aria-hidden />
+                        <p className="max-w-md text-sm text-muted-foreground">
+                          Nhấn <strong className="text-foreground">Tạo gợi ý</strong> để CP-SAT đề
+                          xuất phân ca từ đăng ký đã gửi. Bạn có thể hỏi trợ lý bên phải sau khi có
+                          gợi ý.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={loading}
+                          onClick={() => void handleGenerate()}
+                        >
+                          Tạo gợi ý
+                        </Button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                {!hasGenerated ? (
-                  <div className="flex min-h-[360px] items-center justify-center rounded-md border border-dashed bg-muted/20 p-6 text-center">
-                    <p className="max-w-sm text-sm text-muted-foreground">
-                      Nhấn Tạo gợi ý để xem danh sách phân ca đề xuất cho lịch Nháp.
-                    </p>
-                  </div>
-                ) : loading ? (
-                  <p className="text-sm text-muted-foreground">Đang tạo gợi ý…</p>
-                ) : empty ? (
-                  <div className="space-y-4">
-                    {hasContext && parsedContext?.shifts && parsedContext.shifts.length > 0 ? (
-                      <ContextCalendarTable
-                        label="Lịch hiện tại (snapshot)"
-                        shifts={parsedContext.shifts}
-                        assignments={parsedContext.existingAssignments ?? []}
-                        days={days}
-                      />
-                    ) : null}
-                    {isInfeasible ? (
-                      <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50/60 px-3 py-2 text-xs dark:bg-amber-950/20">
-                        <AlertCircle className="size-3.5 shrink-0 text-amber-600" aria-hidden />
-                        <span className="text-amber-800 dark:text-amber-300">
-                          Solver không tìm được lịch hợp lệ — ràng buộc quá chặt. Kiểm tra nhân viên, ca và đăng ký ca, sau đó thử lại.
-                        </span>
+                    ) : loading ? (
+                      <div className="flex min-h-[240px] items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="size-4 animate-spin" aria-hidden />
+                        Đang chạy CP-SAT…
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                        <AlertCircle className="size-3.5 shrink-0" aria-hidden />
-                        <span>{mapSuggestReason(reason)}</span>
-                        {setupTargetForReason(reason) ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="ml-auto h-auto px-2 py-0.5 text-xs"
-                            onClick={() => goToSetup(setupTargetForReason(reason)!)}
-                          >
-                            Kiểm tra
-                          </Button>
-                        ) : null}
+                      <div className="flex min-h-[240px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed px-6 py-10 text-center">
+                        <AlertCircle className="size-8 text-muted-foreground/60" aria-hidden />
+                        <p className="max-w-md text-sm text-muted-foreground">
+                          {mapSuggestReason(reason)}
+                        </p>
                       </div>
                     )}
                   </div>
-                ) : (
-                  <>
-                    {provider ? (
-                      <div className="mb-4 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">
-                          Nguồn:{" "}
-                          {provider?.startsWith("cpsat")
-                            ? "CP-SAT"
-                            : provider === "bedrock"
-                              ? "Bedrock"
-                              : "Heuristic"}
-                        </Badge>
-                        {fallbackUsed ? <Badge variant="outline">Fallback</Badge> : null}
-                        <Badge variant="outline">
-                          {selected.size}/{suggestions.length} đã chọn
-                        </Badge>
-                      </div>
-                    ) : null}
-                    <div className="overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-800 dark:bg-neutral-950/30">
-                      <div className="overflow-x-auto">
-                        <Table className="min-w-[900px]">
-                          <TableHeader>
-                            <TableRow className="border-neutral-100 hover:bg-transparent dark:border-neutral-800">
-                              <TableHead className="sticky left-0 z-10 min-w-[150px] bg-neutral-50/80 dark:bg-neutral-900/80">
-                                Khung ca
-                              </TableHead>
-                              {days.map((date, index) => (
-                                <TableHead
-                                  key={date}
-                                  className="min-w-[110px] bg-neutral-50/80 text-left dark:bg-neutral-900/80"
-                                >
-                                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    {DAY_HEADERS[index]}
-                                  </div>
-                                  <div className="text-sm font-semibold text-foreground">
-                                    {format(parseISO(date), "dd/MM")}
-                                  </div>
-                                </TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {activeShifts.map((shift) => {
-                              const color = shift.color || "#1d4d8f";
-                              return (
-                                <TableRow
-                                  key={shift.id}
-                                  className="border-neutral-100 dark:border-neutral-800"
-                                >
-                                  <TableCell className="sticky left-0 z-10 bg-white align-top dark:bg-neutral-900">
-                                    <div className="flex items-center gap-2 py-1">
-                                      <span
-                                        className="size-2.5 shrink-0 rounded-full ring-2 ring-white dark:ring-neutral-900"
-                                        style={{ backgroundColor: color }}
-                                      />
-                                      <span className="text-sm font-semibold text-foreground">
-                                        {shift.name}
-                                      </span>
-                                    </div>
-                                  </TableCell>
-                                  {days.map((date) => {
-                                    const cell =
-                                      suggestionsByKey.get(`${shift.id}|${date}`) ?? [];
-                                    return (
-                                      <TableCell
-                                        key={`${shift.id}-${date}`}
-                                        className="align-top bg-white dark:bg-neutral-900"
-                                      >
-                                        <div className="min-h-[72px] space-y-1.5 py-0.5">
-                                          {cell.length === 0 ? (
-                                            <span className="text-xs text-muted-foreground">
-                                              —
-                                            </span>
-                                          ) : (
-                                            cell.map((s) => (
-                                              <label
-                                                key={s.id}
-                                                className="flex cursor-pointer items-center gap-1.5"
-                                              >
-                                                <Checkbox
-                                                  checked={selected.has(s.id)}
-                                                  onCheckedChange={(c) =>
-                                                    toggle(s.id, c === true)
-                                                  }
-                                                  aria-label={`Chọn ${s.employeeName}`}
-                                                  className="shrink-0"
-                                                />
-                                                <span
-                                                  className={cn(
-                                                    "block w-full truncate rounded-lg border px-2 py-1.5 text-xs font-semibold transition-opacity",
-                                                    !selected.has(s.id) && "opacity-40",
-                                                  )}
-                                                  style={shiftPillStyle(color)}
-                                                >
-                                                  {s.employeeName}
-                                                </span>
-                                              </label>
-                                            ))
-                                          )}
-                                        </div>
-                                      </TableCell>
-                                    );
-                                  })}
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </ScrollArea>
+                </ScrollArea>
+              )}
+            </div>
           </section>
 
-          <aside className="flex min-h-0 flex-col bg-muted/10">
-            <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
-              <div className="min-w-0 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Bot className="size-4 text-primary" aria-hidden />
-                  <p className="truncate text-sm font-medium">Trợ lý insight Bedrock</p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {hasContext ? `Đã có context: ${contextGeneratedAt}` : "Chưa có context hợp lệ"}
+          <aside className="flex min-h-[280px] min-w-0 flex-1 flex-col bg-muted/15 lg:max-w-[25%] lg:min-w-[280px] lg:flex-[1]">
+            <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
+              <Bot className="size-4 text-primary" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Trợ lý lịch</p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {hasContext
+                    ? `Snapshot ${contextGeneratedAt}`
+                    : "Chạy gợi ý trước để hỏi AI"}
                 </p>
               </div>
             </div>
 
             <ScrollArea className="min-h-0 flex-1">
-              <div className="space-y-4 p-5">
-                <div className="flex gap-3">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <Bot className="size-4" aria-hidden />
+              <div className="space-y-3 p-4">
+                <div className="flex gap-2">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Bot className="size-3.5" aria-hidden />
                   </div>
-                  <div className="max-w-[85%] rounded-lg bg-background p-3 text-sm leading-6 shadow-sm ring-1 ring-border">
-                    Bạn cần tôi hổ trợ phân bố lịch cho tuần này như nào?
+                  <div className="rounded-lg rounded-tl-none bg-background px-3 py-2 text-xs leading-5 shadow-sm ring-1 ring-border/80">
+                    Hỏi về lý do phân ca, ràng buộc org, hoặc cách cải thiện lịch tuần này. Tôi
+                    chỉ giải thích — không tự áp dụng lịch.
                   </div>
                 </div>
 
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={message.role === "user" ? "flex justify-end" : "flex gap-3"}
+                    className={cn(
+                      "flex gap-2",
+                      message.role === "user" ? "justify-end" : "justify-start",
+                    )}
                   >
                     {message.role === "assistant" ? (
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <Bot className="size-4" aria-hidden />
+                      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Bot className="size-3.5" aria-hidden />
                       </div>
                     ) : null}
                     <div
-                      className={
+                      className={cn(
+                        "max-w-[92%] rounded-lg px-3 py-2 text-xs leading-5 whitespace-pre-wrap",
                         message.role === "user"
-                          ? "max-w-[85%] rounded-lg bg-primary px-3 py-2 text-sm leading-6 text-primary-foreground"
-                          : "max-w-[85%] rounded-lg bg-background p-3 text-sm leading-6 whitespace-pre-wrap shadow-sm ring-1 ring-border"
-                      }
+                          ? "rounded-tr-none bg-primary text-primary-foreground"
+                          : "rounded-tl-none bg-background shadow-sm ring-1 ring-border/80",
+                      )}
                     >
                       {message.content}
                     </div>
@@ -516,19 +475,19 @@ export function SuggestionsSheet({
                 ))}
 
                 {chatMutation.isPending ? (
-                  <div className="flex gap-3">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Bot className="size-4" aria-hidden />
+                  <div className="flex gap-2">
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      <Loader2 className="size-3.5 animate-spin text-primary" aria-hidden />
                     </div>
-                    <div className="rounded-lg bg-background p-3 text-sm text-muted-foreground shadow-sm ring-1 ring-border">
-                      Đang phân tích snapshot...
+                    <div className="rounded-lg bg-background px-3 py-2 text-xs text-muted-foreground ring-1 ring-border/80">
+                      Đang phân tích…
                     </div>
                   </div>
                 ) : null}
               </div>
             </ScrollArea>
 
-            <div className="border-t bg-background p-4">
+            <div className="shrink-0 border-t bg-background p-3">
               <div className="relative">
                 <Textarea
                   value={question}
@@ -539,11 +498,13 @@ export function SuggestionsSheet({
                       void handleAsk();
                     }
                   }}
-                  placeholder="Hỏi về lịch tuần này..."
-                  rows={3}
+                  placeholder={
+                    hasContext ? "Hỏi về lịch tuần này…" : "Tạo gợi ý trước để chat"
+                  }
+                  rows={2}
                   maxLength={1000}
                   disabled={!hasContext || chatMutation.isPending}
-                  className="min-h-20 resize-none rounded-xl pr-12"
+                  className="min-h-[72px] resize-none rounded-xl pr-11 text-sm"
                 />
                 <Button
                   type="button"
@@ -556,180 +517,12 @@ export function SuggestionsSheet({
                   <SendHorizontal className="size-4" aria-hidden />
                 </Button>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {hasContext
-                  ? "Trợ lý chỉ hỗ trợ giải thích, không áp dụng hoặc cập nhật lịch."
-                  : "Chạy Tạo gợi ý thành công để backend tự tạo context cho chatbot."}
-              </p>
             </div>
           </aside>
         </div>
-
-        <DialogFooter className="border-t px-5 py-4">
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Đóng
-          </Button>
-          <Button
-            disabled={!hasGenerated || empty || selected.size === 0 || applyMutation.isPending}
-            onClick={() => void handleApply()}
-          >
-            {applyMutation.isPending ? "Đang áp dụng…" : `Áp dụng (${selected.size})`}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
-
-type ContextShift = { id: string; name: string; startTime: string; endTime: string };
-type ContextAssignment = {
-  date: string;
-  shiftName: string;
-  employeeId: string;
-  employeeName: string;
-  shiftDefinitionId: string;
-};
-
-const CONTEXT_COLORS = ["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#ef4444"];
-
-function ContextCalendarTable({
-  label,
-  shifts,
-  assignments,
-  days,
-}: {
-  label: string;
-  shifts: ContextShift[];
-  assignments: ContextAssignment[];
-  days: string[];
-}) {
-  const sortedShifts = [...shifts].sort(
-    (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
-  );
-  const byKey = new Map<string, ContextAssignment[]>();
-  for (const a of assignments) {
-    const key = `${a.shiftDefinitionId}|${a.date}`;
-    const list = byKey.get(key) ?? [];
-    list.push(a);
-    byKey.set(key, list);
-  }
-  return (
-    <div>
-      <p className="mb-2 text-sm font-medium">{label}</p>
-      <div className="overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-800 dark:bg-neutral-950/30">
-        <div className="overflow-x-auto">
-          <Table className="min-w-[900px]">
-            <TableHeader>
-              <TableRow className="border-neutral-100 hover:bg-transparent dark:border-neutral-800">
-                <TableHead className="sticky left-0 z-10 min-w-[150px] bg-neutral-50/80 dark:bg-neutral-900/80">
-                  Khung ca
-                </TableHead>
-                {days.map((date, index) => (
-                  <TableHead
-                    key={date}
-                    className="min-w-[110px] bg-neutral-50/80 text-left dark:bg-neutral-900/80"
-                  >
-                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {DAY_HEADERS[index]}
-                    </div>
-                    <div className="text-sm font-semibold text-foreground">
-                      {format(parseISO(date), "dd/MM")}
-                    </div>
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedShifts.map((shift, si) => {
-                const color = CONTEXT_COLORS[si % CONTEXT_COLORS.length]!;
-                return (
-                  <TableRow key={shift.id} className="border-neutral-100 dark:border-neutral-800">
-                    <TableCell className="sticky left-0 z-10 bg-white align-top dark:bg-neutral-900">
-                      <div className="flex items-center gap-2 py-1">
-                        <span
-                          className="size-2.5 shrink-0 rounded-full ring-2 ring-white dark:ring-neutral-900"
-                          style={{ backgroundColor: color }}
-                        />
-                        <span className="text-sm font-semibold text-foreground">{shift.name}</span>
-                      </div>
-                    </TableCell>
-                    {days.map((date) => {
-                      const cell = byKey.get(`${shift.id}|${date}`) ?? [];
-                      return (
-                        <TableCell
-                          key={`${shift.id}-${date}`}
-                          className="align-top bg-white dark:bg-neutral-900"
-                        >
-                          <div className="min-h-[64px] space-y-1.5 py-0.5">
-                            {cell.length === 0 ? (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            ) : (
-                              cell.map((a) => (
-                                <span
-                                  key={`${a.employeeId}-${a.date}`}
-                                  className="block truncate rounded-lg border px-2 py-1.5 text-xs font-semibold"
-                                  style={shiftPillStyle(color)}
-                                >
-                                  {a.employeeName}
-                                </span>
-                              ))
-                            )}
-                          </div>
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function buildPreflightItems(
-  reason: string | null,
-  hasGenerated: boolean,
-  suggestionCount: number,
-) {
-  const blocked = hasGenerated ? reason : null;
-  return [
-    {
-      key: "org-policy",
-      label: "Luật tổ chức",
-      ok: true,
-      description: "Solver dùng luật org (catalog mặc định nếu chưa lưu).",
-    },
-    {
-      key: "employees",
-      label: "Nhân viên phòng ban",
-      ok: blocked !== "no_employees" && blocked !== "missing_department_memberships",
-      description:
-        blocked === "no_employees" || blocked === "missing_department_memberships"
-          ? "Cần nhân viên active thuộc phòng ban này."
-          : "Nhân viên được lọc theo membership phòng ban.",
-    },
-    {
-      key: "shifts",
-      label: "Ca làm việc",
-      ok: blocked !== "no_shifts",
-      description:
-        blocked === "no_shifts"
-          ? "Phòng ban chưa có ca active để xếp."
-          : "Gợi ý chỉ dùng ca active của phòng ban.",
-    },
-    {
-      key: "preferences",
-      label: "Đăng ký ca",
-      ok: blocked !== "missing_preferences" && (!hasGenerated || suggestionCount > 0),
-      description:
-        blocked === "missing_preferences"
-          ? "Cần nhân viên gửi đăng ký ca cho tuần này."
-          : "Preference là input bắt buộc để tăng hài lòng.",
-    },
-  ];
 }
 
 function setupTargetForReason(

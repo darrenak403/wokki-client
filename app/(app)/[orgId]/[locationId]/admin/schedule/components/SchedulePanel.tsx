@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CopyWeekDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/CopyWeekDialog";
+import { LeaveRequestsDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/LeaveRequestsDialog";
 import { PreferenceBoardDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/PreferenceBoardDialog";
 import { ScheduleGrid } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/ScheduleGrid";
 import { ScheduleWorkspaceBar } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/ScheduleWorkspaceBar";
@@ -43,7 +44,7 @@ import {
   scheduleStatusLabel,
 } from "@/lib/support/schedule/status";
 import { addWeeksISO, toMondayISO } from "@/lib/support/schedule/week";
-import { SCHEDULE_STATUS } from "@/types/schedule";
+import { EMPTY_REBALANCE_HINTS, SCHEDULE_STATUS } from "@/types/schedule";
 import { cn } from "@/lib/utils";
 import { addDays, format, parseISO } from "date-fns";
 import type { ApiError } from "@/types/api";
@@ -63,6 +64,7 @@ export function SchedulePanel() {
   const [copyOpen, setCopyOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const [boardScheduleIdHint, setBoardScheduleIdHint] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,10 +93,16 @@ export function SchedulePanel() {
   const preferenceBoardSchedule = schedule ?? draftSchedule;
   const showPreferenceBoard = isScheduleBoardVisible(schedule?.status);
   const assignments = detail?.assignments ?? [];
+  const rebalanceHints = detail?.rebalanceHints ?? EMPTY_REBALANCE_HINTS;
   const status = schedule?.status ?? SCHEDULE_STATUS.Draft;
   const editable = isScheduleEditable(status);
   const isDraft = isScheduleDraft(status);
   const isPublished = status === SCHEDULE_STATUS.Published;
+  const showRebalanceBanner =
+    isDraft &&
+    (rebalanceHints.hasRecentPreferenceChanges ||
+      rebalanceHints.conflictCount > 0 ||
+      rebalanceHints.pendingLeaveCount > 0);
   const currentWeekStartDate = useMemo(() => toMondayISO(new Date()), []);
   const canDeleteDraftSchedule =
     Boolean(scheduleId && schedule) && isDraft && schedule!.weekStartDate > currentWeekStartDate;
@@ -237,6 +245,33 @@ export function SchedulePanel() {
             onUnpublish={() => void unpublishMutation.mutateAsync()}
           />
 
+          {showRebalanceBanner ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300/80 bg-amber-50/70 px-4 py-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+              <p className="min-w-0 flex-1">
+                Có thay đổi đăng ký / xin nghỉ — kiểm tra bảng đăng ký trước khi gợi ý lại.
+                {rebalanceHints.conflictCount > 0
+                  ? ` (${rebalanceHints.conflictCount} ca không khớp)`
+                  : null}
+                {rebalanceHints.pendingLeaveCount > 0
+                  ? ` · ${rebalanceHints.pendingLeaveCount} đơn chờ duyệt`
+                  : null}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {rebalanceHints.pendingLeaveCount > 0 ? (
+                  <Button size="sm" variant="outline" onClick={() => setLeaveOpen(true)}>
+                    Duyệt xin nghỉ
+                  </Button>
+                ) : null}
+                <Button size="sm" variant="outline" onClick={() => setBoardOpen(true)}>
+                  Bảng đăng ký
+                </Button>
+                <Button size="sm" onClick={() => setSuggestOpen(true)}>
+                  Gợi ý AI
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <ScheduleGrid
             scheduleId={schedule.id}
             departmentId={schedule.departmentId}
@@ -267,6 +302,14 @@ export function SchedulePanel() {
             scheduleId={schedule.id}
             locationId={locationId}
             listParams={listParams!}
+            conflictCount={rebalanceHints.conflictCount}
+          />
+
+          <LeaveRequestsDialog
+            open={leaveOpen}
+            onOpenChange={setLeaveOpen}
+            scheduleId={schedule.id}
+            weekStartDate={schedule.weekStartDate}
           />
 
           <CopyWeekDialog

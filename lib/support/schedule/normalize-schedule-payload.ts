@@ -2,6 +2,7 @@ import type {
   ScheduleDetailResponse,
   ScheduleResponse,
 } from "@/types/schedule";
+import { EMPTY_REBALANCE_HINTS } from "@/types/schedule";
 import { normalizeScheduleStatus } from "@/lib/support/schedule/normalize-status";
 
 export function normalizeScheduleResponse(schedule: ScheduleResponse): ScheduleResponse {
@@ -15,5 +16,6 @@ export function normalizeScheduleDetail(detail: ScheduleDetailResponse): Schedul
   return {
     ...detail,
     schedule: normalizeScheduleResponse(detail.schedule),
+    rebalanceHints: detail.rebalanceHints ?? EMPTY_REBALANCE_HINTS,
   };
 }
