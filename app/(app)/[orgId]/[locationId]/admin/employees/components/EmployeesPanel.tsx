@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CopyIcon, PlusIcon, XIcon } from "lucide-react";
+import { CopyIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
 import { DepartmentSelect } from "@/components/shared/department-select";
 import {
   EMPLOYEE_CREATE_PAIR_HEIGHT_CLASS,
@@ -45,8 +46,6 @@ import {
 import { EmployeeCreatePairShell } from "@/components/shared/employee-create-pair-shell";
 import { EmployeeDepartmentWorkspacePanel } from "@/components/shared/employee-department-workspace-panel";
 import { EmployeeManagerLocationPanel } from "@/components/shared/employee-manager-location-panel";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { EmployeeRowActions, employeeRoleLabel } from "./EmployeeRowActions";
 import { EmployeePaymentProfileTrigger } from "@/components/shared/employee-payment-profile-trigger";
@@ -117,7 +116,7 @@ type EmployeesPanelProps = {
 };
 
 export function EmployeesPanel({ canWrite = false, canTransfer = false }: EmployeesPanelProps) {
-  const { session } = useFoundationSession();
+  const { session, setDepartmentId } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const filterDepartmentId = session.selectedDepartmentId;
   const isMobile = useIsMobile();
@@ -128,19 +127,34 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
   );
 
   const [page, setPage] = useState(1);
-  const [includeTerminated, setIncludeTerminated] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   const listParams = useMemo(
-    () => ({
-      page,
-      pageSize: 20,
-      ...(filterDepartmentId ? { departmentId: filterDepartmentId } : {}),
-      ...(locationId && !filterDepartmentId ? { locationId } : {}),
-      ...(includeTerminated ? { includeTerminated: true } : {}),
-    }),
-    [page, filterDepartmentId, locationId, includeTerminated]
+    () =>
+      filterDepartmentId
+        ? {
+            page,
+            pageSize: 20,
+            departmentId: filterDepartmentId,
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
+          }
+        : { page, pageSize: 20 },
+    [page, filterDepartmentId, debouncedSearch],
   );
 
-  const { data, isLoading, isError } = useEmployeesQuery(listParams);
+  const { data, isLoading, isError } = useEmployeesQuery(listParams, {
+    enabled: Boolean(filterDepartmentId),
+  });
   const { data: departments = [] } = useDepartmentsQuery(locationId);
   const createMutation = useCreateEmployeeMutation();
   const updateMutation = useUpdateEmployeeMutation();
@@ -150,6 +164,16 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
   const [editing, setEditing] = useState<EmployeeResponse | null>(null);
   const [tempPassword, setTempPassword] = useState<CreateEmployeeResponse | null>(null);
   const [terminateTarget, setTerminateTarget] = useState<EmployeeResponse | null>(null);
+
+  useEffect(() => {
+    if (!locationId || filterDepartmentId || departments.length === 0) return;
+    const firstActive = departments.find((dept) => dept.isActive) ?? departments[0];
+    if (firstActive) setDepartmentId(firstActive.id);
+  }, [departments, filterDepartmentId, locationId, setDepartmentId]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filterDepartmentId]);
 
   const createForm = useForm<z.infer<typeof employeeCreateSchema>>({
     resolver: zodResolver(employeeCreateSchema),
@@ -266,31 +290,59 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-4">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="include-terminated"
-              checked={includeTerminated}
-              onCheckedChange={(checked) => {
-                setIncludeTerminated(Boolean(checked));
-                setPage(1);
-              }}
-            />
-            <Label htmlFor="include-terminated" className="text-sm font-normal cursor-pointer">
-              Hiện đã chấm dứt
-            </Label>
+      <div className="space-y-4 border-b pb-4">
+        <DepartmentScopeChips
+          locationId={locationId}
+          value={filterDepartmentId}
+          onChange={setDepartmentId}
+          allowAll={false}
+          maxVisible={5}
+        />
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex min-w-0 flex-1 flex-wrap items-end gap-4">
+            <div className="relative w-full min-w-[220px] max-w-sm">
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Tìm theo tên, email, SĐT…"
+                className="h-9 bg-background pl-9 pr-9"
+                aria-label="Tìm nhân viên"
+              />
+              {searchInput ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute top-1/2 right-1 size-7 -translate-y-1/2 text-muted-foreground"
+                  aria-label="Xóa tìm kiếm"
+                  onClick={() => setSearchInput("")}
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              ) : null}
+            </div>
           </div>
+          {canWrite ? (
+            <Button
+              type="button"
+              onClick={openCreate}
+              disabled={!locationId || !filterDepartmentId}
+            >
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Thêm nhân viên
+            </Button>
+          ) : null}
         </div>
-        {canWrite ? (
-          <Button type="button" onClick={openCreate} disabled={!locationId}>
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Thêm nhân viên
-          </Button>
-        ) : null}
       </div>
 
-      {isError ? (
+      {!locationId ? (
+        <p className="text-sm text-muted-foreground">Chọn chi nhánh trước.</p>
+      ) : departments.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Chưa có phòng ban trong chi nhánh này.</p>
+      ) : !filterDepartmentId ? (
+        <p className="text-sm text-muted-foreground">Chọn phòng ban để xem nhân sự.</p>
+      ) : isError ? (
         <p className="text-sm text-destructive">Không tải được danh sách nhân viên.</p>
       ) : (
         <>
@@ -325,7 +377,8 @@ export function EmployeesPanel({ canWrite = false, canTransfer = false }: Employ
                       colSpan={showActions ? 7 : 6}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      Không có nhân viên.
+                      Không có nhân viên
+                      {debouncedSearch ? " phù hợp" : ""} trong phòng ban này.
                     </TableCell>
                   </TableRow>
                 ) : (

@@ -21,6 +21,7 @@ export const fetchEmployees = {
         ...(params.departmentId ? { departmentId: params.departmentId } : {}),
         ...(params.locationId ? { locationId: params.locationId } : {}),
         ...(params.includeTerminated ? { includeTerminated: true } : {}),
+        ...(params.search?.trim() ? { search: params.search.trim() } : {}),
       },
     );
     return assertFoundationSuccess(normalizeApiResponse(response.data));

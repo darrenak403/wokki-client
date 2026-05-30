@@ -16,7 +16,7 @@ export function useEmployeesQuery(params: EmployeeListParams, options?: { enable
     queryKey: foundationKeys.employees(params),
     queryFn: () => fetchEmployees.list(params),
     staleTime: 60 * 1000,
-    enabled: (options?.enabled ?? true) && Boolean(params.locationId),
+    enabled: (options?.enabled ?? true) && Boolean(params.departmentId || params.locationId),
   });
 }
 

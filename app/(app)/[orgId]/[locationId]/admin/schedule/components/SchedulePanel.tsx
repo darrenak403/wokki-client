@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2Icon,
@@ -24,8 +24,10 @@ import { CopyWeekDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/
 import { PreferenceBoardDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/PreferenceBoardDialog";
 import { ScheduleGrid } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/ScheduleGrid";
 import { SuggestionsSheet } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/SuggestionsSheet";
+import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
 import { Label } from "@/components/ui/label";
 import { scheduleKeys } from "@/lib/api/query-keys";
+import { useDepartmentsQuery } from "@/hooks/useDepartments";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import {
   useCreateScheduleMutation,
@@ -51,9 +53,10 @@ const primaryActionClass =
 
 export function SchedulePanel() {
   const queryClient = useQueryClient();
-  const { session } = useFoundationSession();
+  const { session, setDepartmentId } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const departmentId = session.selectedDepartmentId;
+  const { data: departments = [] } = useDepartmentsQuery(locationId);
   const [weekStartDate, setWeekStartDate] = useState(() => toMondayISO(new Date()));
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [boardOpen, setBoardOpen] = useState(false);
@@ -61,6 +64,12 @@ export function SchedulePanel() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [boardScheduleIdHint, setBoardScheduleIdHint] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!locationId || departmentId || departments.length === 0) return;
+    const firstActive = departments.find((dept) => dept.isActive) ?? departments[0];
+    if (firstActive) setDepartmentId(firstActive.id);
+  }, [departmentId, departments, locationId, setDepartmentId]);
 
   const listParams = departmentId && weekStartDate ? { departmentId, weekStartDate } : null;
 
@@ -128,7 +137,15 @@ export function SchedulePanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-4 border-b pb-4 justify-between">
+      <div className="space-y-4 border-b pb-4">
+        <DepartmentScopeChips
+          locationId={locationId}
+          value={departmentId}
+          onChange={setDepartmentId}
+          allowAll={false}
+          maxVisible={5}
+        />
+        <div className="flex flex-wrap items-end gap-4 justify-between">
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Tuần</Label>
@@ -174,10 +191,15 @@ export function SchedulePanel() {
             {scheduleStatusLabel(schedule.status)}
           </div>
         ) : null}
+        </div>
       </div>
 
-      {!locationId || !departmentId ? (
-        <p className="text-sm text-muted-foreground">Chọn chi nhánh và phòng ban để xem lịch.</p>
+      {!locationId ? (
+        <p className="text-sm text-muted-foreground">Chọn chi nhánh trước.</p>
+      ) : departments.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Chưa có phòng ban trong chi nhánh này.</p>
+      ) : !departmentId ? (
+        <p className="text-sm text-muted-foreground">Chọn phòng ban để xem lịch.</p>
       ) : listLoading || (scheduleId && detailLoading) ? (
         <p className="text-sm text-muted-foreground">Đang tải lịch…</p>
       ) : !scheduleId ? (

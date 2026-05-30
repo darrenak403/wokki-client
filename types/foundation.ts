@@ -153,6 +153,7 @@ export interface EmployeeListParams {
   departmentId?: string;
   locationId?: string;
   includeTerminated?: boolean;
+  search?: string;
 }
 
 export interface CreateEmployeeRequest {

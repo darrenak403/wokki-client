@@ -45,6 +45,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     useState<AccountSettingsSection>("profile");
   const isAdminRoute = pathname.includes("/admin/") || pathname.startsWith("/admin");
   const isShiftsRoute = /\/(admin|manager)\/shifts(\/|$)/.test(pathname);
+  const isEmployeesRoute = /\/(admin|manager)\/employees(\/|$)/.test(pathname);
+  const isScheduleRoute = /\/(admin|manager)\/schedule(\/|$)/.test(pathname);
+  const isDepartmentScopedRoute = isShiftsRoute || isEmployeesRoute || isScheduleRoute;
   const isWorkspaceRoute = Boolean(
     parsed?.featurePath === "workspace" || parsed?.featurePath.startsWith("workspace/")
   );
@@ -200,7 +203,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="mb-4">
                   <FoundationScopePicker />
                 </div>
-              ) : isAdminRoute && !isWorkspaceRoute && effectiveLocationId && !isShiftsRoute ? (
+              ) : isAdminRoute && !isWorkspaceRoute && effectiveLocationId && !isDepartmentScopedRoute ? (
                 <div className="mb-4">
                   <FoundationScopePicker hideLocationSelect />
                 </div>
