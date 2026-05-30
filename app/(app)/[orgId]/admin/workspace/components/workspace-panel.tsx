@@ -3,10 +3,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import Link from "next/link";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, SlidersHorizontalIcon } from "lucide-react";
 import { DepartmentDetailDrawer } from "@/app/(app)/[orgId]/admin/workspace/components/DepartmentDetailDrawer";
 import { EmployeeProfileDialog, type EmployeeProfileSection } from "@/app/(app)/[orgId]/admin/workspace/components/EmployeeProfileDialog";
 import { LocationDetailDrawer } from "@/app/(app)/[orgId]/admin/workspace/components/LocationDetailDrawer";
+import { OrgSchedulingPolicyDialog } from "@/app/(app)/[orgId]/admin/workspace/components/policy/OrgSchedulingPolicyDialog";
 import { OrgGraph } from "@/app/(app)/[orgId]/admin/workspace/components/org-graph";
 import { Button } from "@/components/ui/button";
 import { fetchDepartments } from "@/lib/api/services/fetchDepartments";
@@ -83,6 +84,7 @@ export function WorkspacePanel({
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeResponse | null>(null);
   const [employeeProfileSection, setEmployeeProfileSection] =
     useState<EmployeeProfileSection>("profile");
+  const [orgPolicyOpen, setOrgPolicyOpen] = useState(false);
 
   const activeExpandedLocations = useMemo(() => {
     if (!scopeToCurrentLocation || !scopedLocation) return expandedLocations;
@@ -331,6 +333,12 @@ export function WorkspacePanel({
     <div className="flex min-h-[calc(100vh-5rem)] flex-col">
       <div className="flex shrink-0 items-center justify-end gap-4 border-b border-neutral-200 px-4 py-3 md:px-6 dark:border-neutral-800">
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {(canWriteLocations || isManagerScope) ? (
+            <Button type="button" variant="outline" onClick={() => setOrgPolicyOpen(true)}>
+              <SlidersHorizontalIcon data-icon="inline-start" aria-hidden="true" />
+              Luật xếp lịch
+            </Button>
+          ) : null}
           {canWriteLocations && !scopeToCurrentLocation ? (
             <Button
               type="button"
@@ -447,6 +455,12 @@ export function WorkspacePanel({
           onTransferred={invalidateGraph}
         />
       ) : null}
+
+      <OrgSchedulingPolicyDialog
+        open={orgPolicyOpen}
+        onOpenChange={setOrgPolicyOpen}
+        canWrite={canWriteLocations}
+      />
     </div>
   );
 }

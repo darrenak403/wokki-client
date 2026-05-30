@@ -3,8 +3,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { getValueUnit } from "@/lib/support/schedule/location-scheduling-rules";
-import type { LocationSchedulingRule } from "@/types/foundation";
+import { getValueUnit } from "@/lib/support/schedule/org-scheduling-rules";
+import type { SchedulingRule } from "@/types/foundation";
 
 export function PolicyRuleRow({
   rule,
@@ -13,11 +13,11 @@ export function PolicyRuleRow({
   onUpdate,
   onValueChange,
 }: {
-  rule: LocationSchedulingRule;
+  rule: SchedulingRule;
   canWrite: boolean;
   showCategoryTag: boolean;
-  onUpdate: (patch: Partial<LocationSchedulingRule>) => void;
-  onValueChange: (value: LocationSchedulingRule["value"]) => void;
+  onUpdate: (patch: Partial<SchedulingRule>) => void;
+  onValueChange: (value: SchedulingRule["value"]) => void;
 }) {
   const unit = getValueUnit(rule);
 
@@ -36,6 +36,9 @@ export function PolicyRuleRow({
               Bắt buộc
             </Badge>
           ) : null}
+          <Badge variant="outline" className="text-[10px] font-normal">
+            Solver áp dụng
+          </Badge>
         </div>
         <p className="text-sm leading-relaxed text-muted-foreground">{rule.content}</p>
       </div>

@@ -5,7 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckIcon, CopyIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { CheckIcon, CopyIcon, PlusIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,10 +36,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DepartmentSelect } from "@/components/shared/department-select";
 import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
 import { CopyShiftsDialog } from "./CopyShiftsDialog";
+import { ShiftEmployeesDialog } from "./ShiftEmployeesDialog";
+import { ShiftRowActions } from "./ShiftRowActions";
 import { useDepartmentsQuery } from "@/hooks/useDepartments";
+import { useEmployeesQuery } from "@/hooks/useEmployees";
 
 import {
   useCreateShiftMutation,
@@ -49,15 +51,18 @@ import {
 } from "@/hooks/useShifts";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { ROLE_USER } from "@/lib/types/roles";
+import { getShiftEligibleEmployees } from "@/lib/support/shift/shift-eligible-employees";
 import { cn } from "@/lib/utils";
-import type { DepartmentResponse, ShiftDefinitionResponse } from "@/types/foundation";
+import type { ShiftDefinitionResponse } from "@/types/foundation";
 
-function shiftDepartmentLabel(
-  departmentId: string | null | undefined,
-  departments: DepartmentResponse[]
-): string {
-  if (!departmentId) return "Chung chi nhánh";
-  return departments.find((dept) => dept.id === departmentId)?.name ?? "—";
+function compareShiftsForDisplay(
+  left: ShiftDefinitionResponse,
+  right: ShiftDefinitionResponse,
+): number {
+  const leftStart = toApiTime(toTimeInput(left.startTime));
+  const rightStart = toApiTime(toTimeInput(right.startTime));
+  if (leftStart !== rightStart) return leftStart.localeCompare(rightStart);
+  return left.name.localeCompare(right.name, "vi");
 }
 
 function toTimeInput(value: string): string {
@@ -101,15 +106,22 @@ export function ShiftsPanel() {
   const { session, setDepartmentId } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const departmentId = session.selectedDepartmentId;
-  const showAllDepartments = !departmentId;
 
   const listParams = useMemo(
-    () => (locationId ? { locationId, departmentId: departmentId ?? undefined } : null),
-    [locationId, departmentId]
+    () => (locationId && departmentId ? { locationId, departmentId } : null),
+    [locationId, departmentId],
   );
 
   const { data: shifts = [], isLoading, isError } = useShiftsQuery(listParams);
   const { data: departments = [] } = useDepartmentsQuery(locationId);
+  const { data: employeesPage } = useEmployeesQuery(
+    { departmentId: departmentId ?? undefined, pageSize: 200 },
+    { enabled: Boolean(departmentId) },
+  );
+  const departmentEmployees = useMemo(
+    () => (employeesPage?.items ?? []).filter((employee) => !employee.terminatedAt),
+    [employeesPage],
+  );
   const createMutation = useCreateShiftMutation(listParams);
   const updateMutation = useUpdateShiftMutation(listParams);
   const deactivateMutation = useDeactivateShiftMutation(listParams);
@@ -118,10 +130,18 @@ export function ShiftsPanel() {
   const [copyOpen, setCopyOpen] = useState(false);
   const [editing, setEditing] = useState<ShiftDefinitionResponse | null>(null);
   const [deactivateId, setDeactivateId] = useState<string | null>(null);
+  const [employeesDialogShift, setEmployeesDialogShift] =
+    useState<ShiftDefinitionResponse | null>(null);
 
   useEffect(() => {
     setCopyOpen(false);
   }, [departmentId]);
+
+  useEffect(() => {
+    if (!locationId || departmentId || departments.length === 0) return;
+    const firstActive = departments.find((dept) => dept.isActive) ?? departments[0];
+    if (firstActive) setDepartmentId(firstActive.id);
+  }, [departmentId, departments, locationId, setDepartmentId]);
 
   const form = useForm<ShiftFormValues>({
     resolver: zodResolver(shiftSchema),
@@ -135,12 +155,11 @@ export function ShiftsPanel() {
       departmentId: "",
     },
   });
-  const selectedFormDepartmentId = useWatch({ control: form.control, name: "departmentId" });
   const selectedColor = useWatch({ control: form.control, name: "color" });
   const selectedIsActive = useWatch({ control: form.control, name: "isActive" });
 
   const openCreate = () => {
-    if (!locationId) return;
+    if (!locationId || !departmentId) return;
     setEditing(null);
     form.reset({
       name: "",
@@ -149,7 +168,7 @@ export function ShiftsPanel() {
       requiredRole: ROLE_USER,
       color: "#3B82F6",
       isActive: true,
-      departmentId: departmentId ?? "",
+      departmentId,
     });
     setOpen(true);
   };
@@ -169,7 +188,7 @@ export function ShiftsPanel() {
   };
 
   const onSubmit = form.handleSubmit(async (values) => {
-    if (!locationId) return;
+    if (!locationId || !departmentId) return;
     if (editing) {
       await updateMutation.mutateAsync({
         id: editing.id,
@@ -185,7 +204,7 @@ export function ShiftsPanel() {
     } else {
       await createMutation.mutateAsync({
         locationId,
-        ...(values.departmentId ? { departmentId: values.departmentId } : {}),
+        departmentId,
         name: values.name,
         startTime: toApiTime(values.startTime),
         endTime: toApiTime(values.endTime),
@@ -202,6 +221,11 @@ export function ShiftsPanel() {
   const sourceDepartmentName =
     departments.find((dept) => dept.id === departmentId)?.name ?? "Phòng ban hiện tại";
 
+  const sortedShifts = useMemo(
+    () => [...shifts].sort(compareShiftsForDisplay),
+    [shifts],
+  );
+
   const openCopy = () => {
     if (!departmentId) {
       toast.error("Chọn phòng ban nguồn trước khi sao chép ca.");
@@ -217,11 +241,11 @@ export function ShiftsPanel() {
           locationId={locationId}
           value={departmentId}
           onChange={setDepartmentId}
-          allowAll
+          allowAll={false}
           maxVisible={5}
         />
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button type="button" onClick={openCreate} disabled={!locationId}>
+          <Button type="button" onClick={openCreate} disabled={!locationId || !departmentId}>
             <PlusIcon className="size-4" />
             Thêm ca
           </Button>
@@ -239,58 +263,59 @@ export function ShiftsPanel() {
 
       {!locationId ? (
         <p className="text-sm text-muted-foreground">Chọn chi nhánh trước.</p>
+      ) : departments.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Chưa có phòng ban trong chi nhánh này.</p>
+      ) : !departmentId ? (
+        <p className="text-sm text-muted-foreground">Chọn phòng ban để xem ca làm việc.</p>
       ) : isError ? (
         <p className="text-sm text-destructive">Không tải được danh sách ca.</p>
       ) : (
-        <Table>
+        <Table className="table-fixed">
           <TableHeader>
-            <TableRow>
-              <TableHead>Tên ca</TableHead>
-              {showAllDepartments ? <TableHead>Phòng ban</TableHead> : null}
-              <TableHead>Giờ</TableHead>
-              <TableHead>Vai trò</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead className="w-[140px]" />
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="w-[30%]">Tên ca</TableHead>
+              <TableHead className="w-[28%]">Giờ</TableHead>
+              <TableHead className="w-[12%] text-center">Số lượng</TableHead>
+              <TableHead className="w-[20%]">Trạng thái</TableHead>
+              <TableHead className="w-[72px] text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell
-                  colSpan={showAllDepartments ? 6 : 5}
-                  className="text-muted-foreground"
-                >
+                <TableCell colSpan={5} className="text-muted-foreground">
                   Đang tải…
                 </TableCell>
               </TableRow>
-            ) : shifts.length === 0 ? (
+            ) : sortedShifts.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={showAllDepartments ? 6 : 5}
-                  className="text-muted-foreground"
-                >
-                  Chưa có ca làm việc tại chi nhánh này.
+                <TableCell colSpan={5} className="text-muted-foreground">
+                  Chưa có ca làm việc cho phòng ban này.
                 </TableCell>
               </TableRow>
             ) : (
-              shifts.map((row) => (
-                <TableRow key={row.id}>
+              sortedShifts.map((row) => {
+                const eligibleCount = getShiftEligibleEmployees(row, departmentEmployees).length;
+
+                return (
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer hover:bg-muted/40"
+                  onClick={() => setEmployeesDialogShift(row)}
+                >
                   <TableCell className="font-medium">
-                    <span
-                      className="mr-2 inline-block size-2.5 rounded-full"
-                      style={{ backgroundColor: row.color }}
-                    />
-                    {row.name}
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        className="inline-block size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: row.color }}
+                      />
+                      {row.name}
+                    </span>
                   </TableCell>
-                  {showAllDepartments ? (
-                    <TableCell className="text-muted-foreground">
-                      {shiftDepartmentLabel(row.departmentId, departments)}
-                    </TableCell>
-                  ) : null}
-                  <TableCell>
+                  <TableCell className="text-muted-foreground">
                     {toTimeInput(row.startTime)} – {toTimeInput(row.endTime)}
                   </TableCell>
-                  <TableCell>{row.requiredRole}</TableCell>
+                  <TableCell className="text-center tabular-nums">{eligibleCount}</TableCell>
 
                   <TableCell>
                     {row.isActive ? (
@@ -299,29 +324,29 @@ export function ShiftsPanel() {
                       <Badge variant="outline">Ngưng</Badge>
                     )}
                   </TableCell>
-                  <TableCell className="space-x-1">
-                    <Button type="button" variant="ghost" size="sm" onClick={() => openEdit(row)}>
-                      <PencilIcon className="size-4" />
-                      Sửa
-                    </Button>
-                    {row.isActive ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeactivateId(row.id)}
-                      >
-                        <Trash2Icon className="size-4" />
-                        Ngưng
-                      </Button>
-                    ) : null}
+                  <TableCell className="text-right">
+                    <ShiftRowActions
+                      shift={row}
+                      onEdit={() => openEdit(row)}
+                      onDeactivate={() => setDeactivateId(row.id)}
+                    />
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
       )}
+
+      <ShiftEmployeesDialog
+        open={employeesDialogShift != null}
+        onOpenChange={(next) => {
+          if (!next) setEmployeesDialogShift(null);
+        }}
+        shift={employeesDialogShift}
+        employees={departmentEmployees}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -335,17 +360,6 @@ export function ShiftsPanel() {
                 <Input id="shift-name" {...form.register("name")} />
                 <FieldError errors={[form.formState.errors.name]} />
               </Field>
-              {!editing ? (
-                <Field>
-                  <FieldLabel>Phòng ban (tuỳ chọn)</FieldLabel>
-                  <DepartmentSelect
-                    locationId={locationId}
-                    value={selectedFormDepartmentId || null}
-                    onChange={(id) => form.setValue("departmentId", id ?? "")}
-                    allowEmpty
-                  />
-                </Field>
-              ) : null}
               <div className="grid grid-cols-2 gap-3">
                 <Field>
                   <FieldLabel htmlFor="shift-start">Bắt đầu</FieldLabel>

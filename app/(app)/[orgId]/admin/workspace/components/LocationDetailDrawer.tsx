@@ -7,7 +7,6 @@ import { z } from "zod";
 import {
   Building2Icon,
   MapPinIcon,
-  SlidersHorizontalIcon,
   UserCogIcon,
   UsersIcon,
 } from "lucide-react";
@@ -16,7 +15,6 @@ import {
   type EmployeeProfileSection,
 } from "@/app/(app)/[orgId]/admin/workspace/components/EmployeeProfileDialog";
 import { LocationManagersSection } from "@/app/(app)/[orgId]/admin/workspace/components/LocationManagersSection";
-import { LocationPolicyDialog } from "@/app/(app)/[orgId]/admin/workspace/components/policy/LocationPolicyDialog";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -43,7 +41,7 @@ const locationSchema = z.object({
 });
 
 type LocationFormValues = z.infer<typeof locationSchema>;
-type LocationSection = "general" | "scheduling" | "managers" | "employees";
+type LocationSection = "general" | "managers" | "employees";
 
 type LocationDetailDrawerProps = {
   location: LocationResponse | null;
@@ -73,7 +71,6 @@ export function LocationDetailDrawer({
   const createMutation = useCreateLocationMutation();
   const updateMutation = useUpdateLocationMutation();
   const [activeSection, setActiveSection] = useState<LocationSection>("general");
-  const [policyOpen, setPolicyOpen] = useState(false);
   const [profileEmployee, setProfileEmployee] = useState<EmployeeResponse | null>(null);
   const [profileSection, setProfileSection] = useState<EmployeeProfileSection>("profile");
 
@@ -155,9 +152,6 @@ export function LocationDetailDrawer({
     const items: SettingsDialogNavItem<LocationSection>[] = [
       { id: "general", label: "Thông tin chung", icon: MapPinIcon },
     ];
-    if (canWrite && location) {
-      items.push({ id: "scheduling", label: "Luật xếp lịch", icon: SlidersHorizontalIcon });
-    }
     if (location) {
       items.push({ id: "managers", label: "Manager", icon: UserCogIcon });
       items.push({
@@ -168,7 +162,7 @@ export function LocationDetailDrawer({
       });
     }
     return items;
-  }, [canWrite, location, employeeCount]);
+  }, [location, employeeCount]);
 
   const saveFooter = canSave ? (
     <div className="flex justify-end gap-2">
@@ -301,27 +295,6 @@ export function LocationDetailDrawer({
           </div>
         ) : null}
 
-        {activeSection === "scheduling" && location && canWrite ? (
-          <div className={PANEL_PADDING}>
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold">Luật xếp lịch</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Cấu hình luật solver gợi ý lịch cho chi nhánh {location.name}.
-              </p>
-            </div>
-            <div className="rounded-xl border border-dashed bg-muted/30 p-6">
-              <p className="text-sm text-muted-foreground">
-                Luật chi nhánh mở trong trình chỉnh riêng — gồm tìm kiếm, nhóm luật và lưu theo từng
-                mục bắt buộc.
-              </p>
-              <Button type="button" className="mt-4" onClick={() => setPolicyOpen(true)}>
-                <SlidersHorizontalIcon data-icon="inline-start" aria-hidden="true" />
-                Mở trình chỉnh luật
-              </Button>
-            </div>
-          </div>
-        ) : null}
-
         {activeSection === "managers" && location ? (
           <div className={PANEL_PADDING}>
             <div className="mb-5">
@@ -359,15 +332,6 @@ export function LocationDetailDrawer({
         ) : null}
       </SettingsDialogLayout>
 
-      {location ? (
-        <LocationPolicyDialog
-          key={location.id}
-          location={location}
-          open={policyOpen}
-          onOpenChange={setPolicyOpen}
-          canWrite={canWrite}
-        />
-      ) : null}
       {profileEmployee ? (
         <EmployeeProfileDialog
           employee={profileEmployee}

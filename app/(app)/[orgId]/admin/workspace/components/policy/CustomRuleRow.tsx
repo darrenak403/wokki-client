@@ -17,8 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   getValueUnit,
   VALUE_TYPE_LABELS,
-} from "@/lib/support/schedule/location-scheduling-rules";
-import type { LocationSchedulingRule } from "@/types/foundation";
+} from "@/lib/support/schedule/org-scheduling-rules";
+import type { SchedulingRule } from "@/types/foundation";
 
 export function CustomRuleRow({
   rule,
@@ -27,10 +27,10 @@ export function CustomRuleRow({
   onUpdate,
   onRemove,
 }: {
-  rule: LocationSchedulingRule;
+  rule: SchedulingRule;
   canWrite: boolean;
   showCategoryTag: boolean;
-  onUpdate: (patch: Partial<LocationSchedulingRule>) => void;
+  onUpdate: (patch: Partial<SchedulingRule>) => void;
   onRemove: () => void;
 }) {
   const unit = getValueUnit(rule);
@@ -48,7 +48,7 @@ export function CustomRuleRow({
               </Badge>
             ) : (
               <Badge variant="secondary" className="text-[10px]">
-                Luật riêng
+                Ghi chú — solver không áp dụng
               </Badge>
             )}
           </div>
@@ -141,7 +141,7 @@ export function CustomRuleRow({
               value={rule.valueType}
               onValueChange={(valueType) =>
                 onUpdate({
-                  valueType: valueType as LocationSchedulingRule["valueType"],
+                  valueType: valueType as SchedulingRule["valueType"],
                   value: valueType === "boolean" ? false : valueType === "number" ? 0 : "",
                 })
               }
@@ -150,7 +150,7 @@ export function CustomRuleRow({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(VALUE_TYPE_LABELS) as LocationSchedulingRule["valueType"][]).map(
+                {(Object.keys(VALUE_TYPE_LABELS) as SchedulingRule["valueType"][]).map(
                   (type) => (
                     <SelectItem key={type} value={type}>
                       {VALUE_TYPE_LABELS[type]}

@@ -92,6 +92,9 @@ export const managerKeys = {
 export const foundationKeys = {
   all: ["foundation"] as const,
   locations: () => [...foundationKeys.all, "locations"] as const,
+  schedulingCatalog: () => [...foundationKeys.all, "schedulingCatalog"] as const,
+  orgSchedulingPolicy: () => [...foundationKeys.all, "orgSchedulingPolicy"] as const,
+  /** @deprecated location policy removed — use orgSchedulingPolicy */
   locationPolicy: (locationId: string) =>
     [...foundationKeys.all, "locationPolicy", locationId] as const,
   departments: (locationId?: string | null) =>

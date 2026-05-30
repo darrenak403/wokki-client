@@ -36,6 +36,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { isAppRole, ROLE_ADMIN } from "@/lib/types/roles";
 import { mapSuggestReason } from "@/lib/support/schedule/suggest-reasons";
 import { weekDayDates } from "@/lib/support/schedule/week";
+import { OrgSchedulingPolicySummary } from "@/components/shared/org-scheduling-policy-summary";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import type { CSSProperties } from "react";
@@ -288,6 +289,9 @@ export function SuggestionsSheet({
 
             <ScrollArea className="min-h-0 flex-1">
               <div className="p-5">
+                <div className="mb-5">
+                  <OrgSchedulingPolicySummary canOpenFull />
+                </div>
                 <div className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   {preflightItems.map((item) => (
                     <div
@@ -693,13 +697,10 @@ function buildPreflightItems(
   const blocked = hasGenerated ? reason : null;
   return [
     {
-      key: "location-policy",
-      label: "Luật chi nhánh",
-      ok: blocked !== "missing_location_rules",
-      description:
-        blocked === "missing_location_rules"
-          ? "Chi nhánh chưa có rule catalog bắt buộc."
-          : "Solver dùng luật chi nhánh làm điều kiện nền.",
+      key: "org-policy",
+      label: "Luật tổ chức",
+      ok: true,
+      description: "Solver dùng luật org (catalog mặc định nếu chưa lưu).",
     },
     {
       key: "employees",
@@ -734,7 +735,6 @@ function buildPreflightItems(
 function setupTargetForReason(
   reason: string | null,
 ): "locations" | "employees" | "shifts" | "preferences" | null {
-  if (reason === "missing_location_rules") return "locations";
   if (reason === "no_employees" || reason === "missing_department_memberships") return "employees";
   if (reason === "no_shifts") return "shifts";
   if (reason === "missing_preferences") return "preferences";
