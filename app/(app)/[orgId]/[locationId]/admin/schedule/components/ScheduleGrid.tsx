@@ -194,10 +194,30 @@ export function ScheduleGrid({
                             ) : editable ? (
                               <button
                                 type="button"
+                                aria-label="Thêm nhân viên"
                                 className={cn(
-                                  "flex min-h-9 w-full items-center justify-center gap-1 rounded-lg border border-dashed border-neutral-200 bg-neutral-50/50 px-2 text-xs font-medium text-muted-foreground",
-                                  "hover:border-brand-medium/50 hover:bg-brand-mist/40 hover:text-foreground"
+                                  "group flex min-h-[72px] w-full items-center justify-center rounded-lg border border-transparent transition-colors",
+                                  "hover:border-dashed hover:border-neutral-200 hover:bg-neutral-50/80 dark:hover:bg-neutral-900/50",
                                 )}
+                                onClick={() =>
+                                  setDialog({
+                                    shiftDefinitionId: shift.id,
+                                    shiftName: shift.name,
+                                    date,
+                                  })
+                                }
+                              >
+                                <PlusIcon className="size-4 text-muted-foreground/30 transition-colors group-hover:text-muted-foreground" />
+                              </button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+
+                            {hasAssignments && editable ? (
+                              <button
+                                type="button"
+                                aria-label="Thêm nhân viên"
+                                className="flex size-6 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-neutral-100 hover:text-brand-blue dark:hover:bg-neutral-800"
                                 onClick={() =>
                                   setDialog({
                                     shiftDefinitionId: shift.id,
@@ -207,29 +227,6 @@ export function ScheduleGrid({
                                 }
                               >
                                 <PlusIcon className="size-3.5" />
-                                Thêm nhân viên
-                              </button>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-
-                            {hasAssignments && editable ? (
-                              <button
-                                type="button"
-                                className={cn(
-                                  "flex min-h-7 w-full items-center justify-center gap-1 rounded-lg border border-dashed border-neutral-200 px-2 text-xs font-medium text-muted-foreground",
-                                  "hover:border-brand-medium/50 hover:text-brand-blue"
-                                )}
-                                onClick={() =>
-                                  setDialog({
-                                    shiftDefinitionId: shift.id,
-                                    shiftName: shift.name,
-                                    date,
-                                  })
-                                }
-                              >
-                                <PlusIcon className="size-3" />
-                                Thêm
                               </button>
                             ) : null}
                           </div>

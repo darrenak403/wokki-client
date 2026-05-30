@@ -25,10 +25,16 @@ export function MySchedulePanel() {
         <TabsTrigger value="published">Lịch đã công bố</TabsTrigger>
         <TabsTrigger value="preferences">Đăng ký ca</TabsTrigger>
       </TabsList>
-      <TabsContent value="published" className="mt-4">
+      <TabsContent value="published" className="mt-4 space-y-2">
+        <p className="text-sm text-muted-foreground">
+          Lịch chính thức sau khi quản lý công bố.
+        </p>
         <MyPublishedScheduleView />
       </TabsContent>
-      <TabsContent value="preferences" className="mt-4">
+      <TabsContent value="preferences" className="mt-4 space-y-2">
+        <p className="text-sm text-muted-foreground">
+          Chọn ca bạn muốn làm — quản lý quyết định lịch cuối cùng.
+        </p>
         <MyPreferencesTab />
       </TabsContent>
     </Tabs>

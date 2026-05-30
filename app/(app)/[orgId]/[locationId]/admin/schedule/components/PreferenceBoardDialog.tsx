@@ -142,6 +142,13 @@ export function PreferenceBoardDialog({
               ) : null}
             </div>
           </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-medium">Chú thích:</span>
+            <PreferenceTypeCell type="Preferred" compact showFullLabel />
+            <PreferenceTypeCell type="Available" compact showFullLabel />
+            <PreferenceTypeCell type="Unavailable" compact showFullLabel />
+            <PreferenceTypeCell type={null} compact showFullLabel />
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs font-medium text-muted-foreground">Tuần</span>
@@ -193,7 +200,15 @@ export function PreferenceBoardDialog({
           ) : isError ? (
             <p className="text-sm text-destructive">Không tải được bảng đăng ký.</p>
           ) : !board ? null : (
-            <ScrollArea className="h-full w-full rounded-md border">
+            <div className="flex h-full flex-col gap-3">
+              {board.submittedCount === 0 ? (
+                <div className="rounded-lg border border-dashed bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                  Chưa ai gửi đăng ký ca tuần này. Nhắc nhân viên mở{" "}
+                  <strong>Lịch của tôi → Đăng ký ca</strong>, chọn ca và bấm{" "}
+                  <strong>Gửi đăng ký</strong>.
+                </div>
+              ) : null}
+            <ScrollArea className="min-h-0 flex-1 w-full rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -278,6 +293,7 @@ export function PreferenceBoardDialog({
               </Table>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
+            </div>
           )}
         </div>
 

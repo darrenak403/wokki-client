@@ -127,10 +127,10 @@ export function MyPreferencesTab() {
   );
 
   const guidanceText = scheduleIsPublished
-    ? "Đây là đăng ký ca của bạn cho tuần này. Lịch làm việc chính thức nằm ở tab Lịch đã công bố và do admin/manager quyết định cuối cùng."
-    : "Nhấn từng ô để chọn mức mong muốn làm ca đó: Ưu tiên, Có thể làm, hoặc Trống nếu không đăng ký ca này. Lưu nháp trước khi gửi." +
+    ? "Lịch tuần này đã công bố — đăng ký ca chỉ xem. Lịch làm việc chính thức nằm ở tab Lịch đã công bố."
+    : "Nhấn từng ô để chọn: Ưu tiên → Có thể → Trống. Lưu nháp trước khi gửi." +
       (submitted && !editingSubmitted
-        ? " Đã gửi - bấm Chỉnh sửa đăng ký để thay đổi và gửi lại."
+        ? " Đã gửi — bấm Chỉnh sửa đăng ký để thay đổi và gửi lại."
         : "");
 
   const lineMap = useMemo(() => {
@@ -216,8 +216,8 @@ export function MyPreferencesTab() {
         {weekControls}
         <div className="rounded-lg border border-dashed bg-background p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Chưa có lịch cho tuần {format(parseISO(weekStartDate), "dd/MM/yyyy")}. Trưởng ca cần
-            tạo lịch tuần trước khi bạn đăng ký ca.
+            Quản lý cần tạo lịch tuần trước khi bạn đăng ký ca (tuần{" "}
+            {format(parseISO(weekStartDate), "dd/MM/yyyy")}).
           </p>
         </div>
       </div>
@@ -227,6 +227,12 @@ export function MyPreferencesTab() {
   return (
     <div className="space-y-6">
       {weekControls}
+
+      {scheduleIsPublished ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
+          Lịch đã công bố — xem ca chính thức ở tab <strong>Lịch đã công bố</strong>.
+        </div>
+      ) : null}
 
       <p className="text-sm text-muted-foreground">{guidanceText}</p>
 
@@ -263,10 +269,16 @@ export function MyPreferencesTab() {
                         <button
                           type="button"
                           disabled={readOnly}
-                          className="inline-flex rounded-md disabled:opacity-60"
+                          aria-pressed={type !== null}
+                          className="inline-flex rounded-md disabled:cursor-not-allowed disabled:opacity-60"
                           onClick={() => toggleCell(shift.shiftDefinitionId, date)}
                         >
-                          <PreferenceTypeCell type={type} compact showFullLabel />
+                          <PreferenceTypeCell
+                            type={type}
+                            compact
+                            showFullLabel
+                            interactive={!readOnly}
+                          />
                         </button>
                       </TableCell>
                     );
@@ -280,9 +292,9 @@ export function MyPreferencesTab() {
       )}
 
       {scheduleIsPublished ? null : submitted && !editingSubmitted ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center gap-2 border-t bg-background/95 px-1 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <Button
-            variant="outline"
+            className="bg-brand-blue text-white hover:bg-brand-navy"
             onClick={() =>
               setPatch({
                 revision,
@@ -296,7 +308,7 @@ export function MyPreferencesTab() {
           </Button>
         </div>
       ) : !readOnly ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center gap-2 border-t bg-background/95 px-1 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <Button
             variant="outline"
             disabled={!dirty || saveMutation.isPending}
@@ -314,11 +326,13 @@ export function MyPreferencesTab() {
             </Button>
           ) : null}
           <Button
+            className="bg-brand-blue text-white hover:bg-brand-navy"
             disabled={
               submitMutation.isPending ||
               saveMutation.isPending ||
               lines.length === 0
             }
+            title={lines.length === 0 ? "Chọn ít nhất một ca trước khi gửi" : undefined}
             onClick={() => void handleSubmit()}
           >
             {submitMutation.isPending

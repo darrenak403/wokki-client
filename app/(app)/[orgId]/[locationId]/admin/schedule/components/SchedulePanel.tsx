@@ -3,11 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  CheckCircle2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  SparklesIcon,
-  Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +20,8 @@ import {
 import { CopyWeekDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/CopyWeekDialog";
 import { PreferenceBoardDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/PreferenceBoardDialog";
 import { ScheduleGrid } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/ScheduleGrid";
+import { ScheduleWorkspaceBar } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/ScheduleWorkspaceBar";
+import { isScheduleBoardVisible } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/ScheduleWorkflowStepper";
 import { SuggestionsSheet } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/SuggestionsSheet";
 import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
 import { Label } from "@/components/ui/label";
@@ -37,6 +36,7 @@ import {
   useScheduleListQuery,
   useUnpublishScheduleMutation,
 } from "@/hooks/useSchedule";
+import { usePreferenceBoardQuery } from "@/hooks/usePreferenceBoard";
 import {
   isScheduleDraft,
   isScheduleEditable,
@@ -88,16 +88,21 @@ export function SchedulePanel() {
 
   const schedule = detail?.schedule ?? listData?.items[0];
   const draftSchedule = listData?.items.find((item) => isScheduleDraft(item.status)) ?? null;
-  const currentWeekStartDate = useMemo(() => toMondayISO(new Date()), []);
-  const canViewAnySchedulePreferenceBoard = weekStartDate <= currentWeekStartDate;
-  const preferenceBoardSchedule = canViewAnySchedulePreferenceBoard ? schedule : draftSchedule;
+  const preferenceBoardSchedule = schedule ?? draftSchedule;
+  const showPreferenceBoard = isScheduleBoardVisible(schedule?.status);
   const assignments = detail?.assignments ?? [];
   const status = schedule?.status ?? SCHEDULE_STATUS.Draft;
   const editable = isScheduleEditable(status);
   const isDraft = isScheduleDraft(status);
   const isPublished = status === SCHEDULE_STATUS.Published;
+  const currentWeekStartDate = useMemo(() => toMondayISO(new Date()), []);
   const canDeleteDraftSchedule =
     Boolean(scheduleId && schedule) && isDraft && schedule!.weekStartDate > currentWeekStartDate;
+
+  const { data: preferenceBoard } = usePreferenceBoardQuery(
+    showPreferenceBoard ? scheduleId : null,
+    Boolean(showPreferenceBoard && scheduleId),
+  );
 
   const weekRangeLabel = useMemo(() => {
     const start = parseISO(weekStartDate);
@@ -145,8 +150,7 @@ export function SchedulePanel() {
           allowAll={false}
           maxVisible={5}
         />
-        <div className="flex flex-wrap items-end gap-4 justify-between">
-        <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Tuần</Label>
             <div className="flex h-9 items-center rounded-lg border border-input bg-background shadow-xs">
@@ -175,22 +179,18 @@ export function SchedulePanel() {
               </Button>
             </div>
           </div>
-        </div>
-        {schedule ? (
-          <div
-            className={cn(
-              "flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold",
-              isPublished
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-                : isDraft
-                  ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
-                  : "border-neutral-200 bg-neutral-50 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
-            )}
-          >
-            {isPublished ? <CheckCircle2Icon className="size-4 shrink-0" /> : null}
-            {scheduleStatusLabel(schedule.status)}
-          </div>
-        ) : null}
+          {schedule ? (
+            <div className="flex items-center gap-1.5 pt-5 text-sm text-muted-foreground">
+              <span
+                className={cn(
+                  "size-1.5 shrink-0 rounded-full",
+                  isPublished ? "bg-emerald-500" : isDraft ? "bg-amber-500" : "bg-neutral-400",
+                )}
+                aria-hidden
+              />
+              {scheduleStatusLabel(schedule.status)}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -216,49 +216,26 @@ export function SchedulePanel() {
           </Button>
         </div>
       ) : schedule && locationId ? (
-        <>
-          <div className="flex flex-wrap gap-2">
-            {preferenceBoardSchedule ? (
-              <Button className={primaryActionClass} onClick={() => setBoardOpen(true)}>
-                Bảng đăng ký ca
-              </Button>
-            ) : null}
-            {editable ? (
-              <Button variant="outline" onClick={() => setSuggestOpen(true)}>
-                <SparklesIcon />
-                Gợi ý phân ca
-              </Button>
-            ) : null}
-            {isDraft ? (
-              <Button className={primaryActionClass} onClick={() => setPublishOpen(true)}>
-                Công bố lịch
-              </Button>
-            ) : null}
-            {isPublished ? (
-              <Button
-                variant="outline"
-                className="border-brand-blue text-brand-blue hover:bg-brand-mist/60 dark:border-brand-medium dark:text-brand-light"
-                disabled={unpublishMutation.isPending}
-                onClick={() => void unpublishMutation.mutateAsync()}
-              >
-                Huỷ công bố
-              </Button>
-            ) : null}
-            <Button className={primaryActionClass} onClick={() => setCopyOpen(true)}>
-              Sao chép tuần
-            </Button>
-            {canDeleteDraftSchedule ? (
-              <Button
-                variant="outline"
-                className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                disabled={deleteMutation.isPending}
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2Icon />
-                Xoá lịch nháp
-              </Button>
-            ) : null}
-          </div>
+        <div className="space-y-4">
+          <ScheduleWorkspaceBar
+            hasSchedule={Boolean(scheduleId)}
+            status={status}
+            submittedCount={preferenceBoard?.submittedCount ?? 0}
+            employeeCount={preferenceBoard?.employeeCount ?? 0}
+            assignmentCount={assignments.length}
+            showPreferenceBoard={showPreferenceBoard}
+            editable={editable}
+            isDraft={isDraft}
+            isPublished={isPublished}
+            canDeleteDraftSchedule={canDeleteDraftSchedule}
+            unpublishPending={unpublishMutation.isPending}
+            onOpenBoard={() => setBoardOpen(true)}
+            onOpenSuggest={() => setSuggestOpen(true)}
+            onOpenPublish={() => setPublishOpen(true)}
+            onOpenCopy={() => setCopyOpen(true)}
+            onOpenDelete={() => setDeleteOpen(true)}
+            onUnpublish={() => void unpublishMutation.mutateAsync()}
+          />
 
           <ScheduleGrid
             scheduleId={schedule.id}
@@ -340,7 +317,7 @@ export function SchedulePanel() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </>
+        </div>
       ) : null}
     </div>
   );
