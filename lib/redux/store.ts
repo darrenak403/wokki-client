@@ -9,8 +9,8 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
-import storage from "redux-persist/lib/storage";
 import authSlice from "./slices/authSlice";
+import { persistStorage } from "./storage";
 import { injectStore } from "@/lib/api/core";
 
 const rootReducer = combineReducers({
@@ -20,7 +20,7 @@ const rootReducer = combineReducers({
 const persistConfig = {
   key: "root",
   version: 1,
-  storage,
+  storage: persistStorage,
   whitelist: ["auth"],
 };
 

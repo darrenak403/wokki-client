@@ -183,6 +183,26 @@ export interface UpdateShiftRequest {
   isActive: boolean;
 }
 
+export interface CopyShiftDefinitionsRequest {
+  locationId: string;
+  sourceDepartmentId: string;
+  targetDepartmentIds: string[];
+  shiftIds?: string[];
+}
+
+export interface CopyShiftSkippedItem {
+  targetDepartmentId: string;
+  name: string;
+  reason: string;
+}
+
+export interface CopyShiftDefinitionsResponse {
+  copiedCount: number;
+  skippedCount: number;
+  createdShiftIds: string[];
+  skipped: CopyShiftSkippedItem[];
+}
+
 export interface UserResponse {
   id: string;
   email: string;

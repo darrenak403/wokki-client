@@ -11,6 +11,11 @@ export const injectStore = (_store: any) => {
   store = _store;
 };
 
+/** Cancel in-flight refresh queue — call after a fresh login. */
+export function resetAuthRefreshState(): void {
+  apiService.resetAuthRefreshState();
+}
+
 /** Login/register must surface 401 credentials errors — not trigger refresh flow. */
 function shouldSkipTokenRefresh(url?: string): boolean {
   if (!url) return false;
@@ -47,6 +52,11 @@ class ApiService {
     this.failedQueue = [];
   }
 
+  resetAuthRefreshState() {
+    this.isRefreshing = false;
+    this.failedQueue = [];
+  }
+
   private setupInterceptors() {
     this.client.interceptors.request.use(
       (config) => {
@@ -77,9 +87,10 @@ class ApiService {
 
           originalRequest._retry = true;
           this.isRefreshing = true;
+          const refreshTokenAtStart = store?.getState()?.auth?.refreshToken;
 
           try {
-            const refreshToken = store?.getState()?.auth?.refreshToken;
+            const refreshToken = refreshTokenAtStart;
             if (!refreshToken) throw new Error("No refresh token");
 
             const accessToken = store?.getState()?.auth?.token;
@@ -129,16 +140,20 @@ class ApiService {
             this.isRefreshing = false;
             this.processQueue(refreshError, null);
 
-            if (store) {
+            const sessionChanged =
+              refreshTokenAtStart &&
+              store?.getState()?.auth?.refreshToken !== refreshTokenAtStart;
+
+            if (!sessionChanged && store) {
               import("@/lib/redux/slices/authSlice").then(({ logout }) => {
                 store.dispatch(logout());
               });
-            }
-            const { clearSessionCookies } = await import("@/lib/support/auth/session-cookies");
-            clearSessionCookies();
+              const { clearSessionCookies } = await import("@/lib/support/auth/session-cookies");
+              clearSessionCookies();
 
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new Event("logout"));
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("logout"));
+              }
             }
 
             return Promise.reject({

@@ -9,7 +9,12 @@ import {
   appendShiftDefinitionId,
   removeShiftDefinitionId,
 } from "@/lib/support/foundation/session-context";
-import type { CreateShiftRequest, ShiftListParams, UpdateShiftRequest } from "@/types/foundation";
+import type {
+  CopyShiftDefinitionsRequest,
+  CreateShiftRequest,
+  ShiftListParams,
+  UpdateShiftRequest,
+} from "@/types/foundation";
 
 const STALE_MS = 2 * 60 * 1000;
 
@@ -66,6 +71,26 @@ export function useDeactivateShiftMutation(params: ShiftListParams | null) {
         void queryClient.invalidateQueries({ queryKey: foundationKeys.shifts(params) });
       }
       toast.success("Đã ngưng ca làm việc.");
+    },
+    onError: (error) => toast.error(mapFoundationError(error)),
+  });
+}
+
+export function useCopyShiftsMutation(params: ShiftListParams | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CopyShiftDefinitionsRequest) => fetchShifts.copy(data),
+    onSuccess: (result) => {
+      for (const id of result.createdShiftIds) {
+        appendShiftDefinitionId(id);
+      }
+      if (params) {
+        void queryClient.invalidateQueries({ queryKey: foundationKeys.shifts(params) });
+      }
+      void queryClient.invalidateQueries({ queryKey: foundationKeys.all });
+      const skippedPart =
+        result.skippedCount > 0 ? ` (bỏ qua ${result.skippedCount} trùng)` : "";
+      toast.success(`Đã sao chép ${result.copiedCount} ca${skippedPart}.`);
     },
     onError: (error) => toast.error(mapFoundationError(error)),
   });

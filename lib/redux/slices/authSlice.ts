@@ -136,6 +136,7 @@ export const loginAsync = createAsyncThunk(
       }
 
       await persistSession(accessToken, refreshToken, user.role);
+      void import("@/lib/api/core").then(({ resetAuthRefreshState }) => resetAuthRefreshState());
       setupAutoRefresh(accessToken, dispatch as AppDispatch);
 
       return { token: accessToken, refreshToken, user, mustChangePassword: mustChangePassword ?? false };
@@ -171,6 +172,7 @@ export const registerAsync = createAsyncThunk(
       }
 
       await persistSession(accessToken, refreshToken, user.role);
+      void import("@/lib/api/core").then(({ resetAuthRefreshState }) => resetAuthRefreshState());
       setupAutoRefresh(accessToken, dispatch as AppDispatch);
 
       return {

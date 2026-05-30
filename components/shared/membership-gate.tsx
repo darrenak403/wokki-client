@@ -12,6 +12,7 @@ import {
 } from "@/lib/redux/slices/authSlice";
 import { ROLE_USER } from "@/lib/types/roles";
 import { useMyLocationMembership } from "@/hooks/useLocationMembership";
+import { usePersistBootstrapped } from "@/hooks/usePersistBootstrapped";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import type { ApiError } from "@/types/api";
@@ -28,6 +29,7 @@ function isApiError(e: unknown): e is ApiError {
 export function MembershipGate({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { logout } = useAuth();
+  const isPersistBootstrapped = usePersistBootstrapped();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isAuthLoading = useAppSelector(selectAuthLoading);
   const role = useAppSelector(selectAppRole);
@@ -41,8 +43,17 @@ export function MembershipGate({ children }: { children: ReactNode }) {
   const isNoEmployee = isError && isApiError(error) && error.httpStatus === 404;
 
   useEffect(() => {
+    if (!isPersistBootstrapped) return;
     if (!isAuthenticated && !isAuthLoading) router.replace("/login");
-  }, [isAuthenticated, isAuthLoading, router]);
+  }, [isPersistBootstrapped, isAuthenticated, isAuthLoading, router]);
+
+  if (!isPersistBootstrapped) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+        Đang tải phiên đăng nhập…
+      </div>
+    );
+  }
 
   if (!isAuthenticated) return null;
 

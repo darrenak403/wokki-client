@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CheckIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { toast } from "sonner";
+import { CheckIcon, CopyIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DepartmentSelect } from "@/components/shared/department-select";
+import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
+import { CopyShiftsDialog } from "./CopyShiftsDialog";
+import { useDepartmentsQuery } from "@/hooks/useDepartments";
 
 import {
   useCreateShiftMutation,
@@ -46,7 +50,15 @@ import {
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { ROLE_USER } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
-import type { ShiftDefinitionResponse } from "@/types/foundation";
+import type { DepartmentResponse, ShiftDefinitionResponse } from "@/types/foundation";
+
+function shiftDepartmentLabel(
+  departmentId: string | null | undefined,
+  departments: DepartmentResponse[]
+): string {
+  if (!departmentId) return "Chung chi nhánh";
+  return departments.find((dept) => dept.id === departmentId)?.name ?? "—";
+}
 
 function toTimeInput(value: string): string {
   return value?.slice(0, 5) ?? "";
@@ -86,9 +98,10 @@ const SHIFT_COLOR_OPTIONS = [
 ] as const;
 
 export function ShiftsPanel() {
-  const { session } = useFoundationSession();
+  const { session, setDepartmentId } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const departmentId = session.selectedDepartmentId;
+  const showAllDepartments = !departmentId;
 
   const listParams = useMemo(
     () => (locationId ? { locationId, departmentId: departmentId ?? undefined } : null),
@@ -96,13 +109,19 @@ export function ShiftsPanel() {
   );
 
   const { data: shifts = [], isLoading, isError } = useShiftsQuery(listParams);
+  const { data: departments = [] } = useDepartmentsQuery(locationId);
   const createMutation = useCreateShiftMutation(listParams);
   const updateMutation = useUpdateShiftMutation(listParams);
   const deactivateMutation = useDeactivateShiftMutation(listParams);
 
   const [open, setOpen] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
   const [editing, setEditing] = useState<ShiftDefinitionResponse | null>(null);
   const [deactivateId, setDeactivateId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCopyOpen(false);
+  }, [departmentId]);
 
   const form = useForm<ShiftFormValues>({
     resolver: zodResolver(shiftSchema),
@@ -180,13 +199,42 @@ export function ShiftsPanel() {
   const pending =
     createMutation.isPending || updateMutation.isPending || deactivateMutation.isPending;
 
+  const sourceDepartmentName =
+    departments.find((dept) => dept.id === departmentId)?.name ?? "Phòng ban hiện tại";
+
+  const openCopy = () => {
+    if (!departmentId) {
+      toast.error("Chọn phòng ban nguồn trước khi sao chép ca.");
+      return;
+    }
+    setCopyOpen(true);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-4">
-        <Button type="button" onClick={openCreate} disabled={!locationId}>
-          <PlusIcon className="size-4" />
-          Thêm ca
-        </Button>
+      <div className="space-y-4 border-b pb-4">
+        <DepartmentScopeChips
+          locationId={locationId}
+          value={departmentId}
+          onChange={setDepartmentId}
+          allowAll
+          maxVisible={5}
+        />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button type="button" onClick={openCreate} disabled={!locationId}>
+            <PlusIcon className="size-4" />
+            Thêm ca
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={openCopy}
+            disabled={!locationId || !departmentId}
+          >
+            <CopyIcon className="size-4" />
+            Sao chép ca
+          </Button>
+        </div>
       </div>
 
       {!locationId ? (
@@ -198,6 +246,7 @@ export function ShiftsPanel() {
           <TableHeader>
             <TableRow>
               <TableHead>Tên ca</TableHead>
+              {showAllDepartments ? <TableHead>Phòng ban</TableHead> : null}
               <TableHead>Giờ</TableHead>
               <TableHead>Vai trò</TableHead>
               <TableHead>Trạng thái</TableHead>
@@ -207,13 +256,19 @@ export function ShiftsPanel() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground">
+                <TableCell
+                  colSpan={showAllDepartments ? 6 : 5}
+                  className="text-muted-foreground"
+                >
                   Đang tải…
                 </TableCell>
               </TableRow>
             ) : shifts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground">
+                <TableCell
+                  colSpan={showAllDepartments ? 6 : 5}
+                  className="text-muted-foreground"
+                >
                   Chưa có ca làm việc tại chi nhánh này.
                 </TableCell>
               </TableRow>
@@ -227,6 +282,11 @@ export function ShiftsPanel() {
                     />
                     {row.name}
                   </TableCell>
+                  {showAllDepartments ? (
+                    <TableCell className="text-muted-foreground">
+                      {shiftDepartmentLabel(row.departmentId, departments)}
+                    </TableCell>
+                  ) : null}
                   <TableCell>
                     {toTimeInput(row.startTime)} – {toTimeInput(row.endTime)}
                   </TableCell>
@@ -380,6 +440,18 @@ export function ShiftsPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {locationId && departmentId && listParams ? (
+        <CopyShiftsDialog
+          open={copyOpen}
+          onOpenChange={setCopyOpen}
+          locationId={locationId}
+          sourceDepartmentId={departmentId}
+          sourceDepartmentName={sourceDepartmentName}
+          activeShifts={shifts}
+          listParams={listParams}
+        />
+      ) : null}
     </div>
   );
 }

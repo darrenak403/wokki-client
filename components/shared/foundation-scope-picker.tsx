@@ -16,7 +16,7 @@ import { useTenantNavigation } from "@/hooks/useTenantNavigation";
 import { writeFoundationSession } from "@/lib/support/foundation/session-context";
 import { ROLE_MANAGER } from "@/lib/types/roles";
 import { useAuth } from "@/hooks/useAuth";
-import { DepartmentSelect } from "@/components/shared/department-select";
+import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
 
 type FoundationScopePickerProps = {
   /** Branch comes from URL — only show department select. */
@@ -83,7 +83,7 @@ export function FoundationScopePicker({ hideLocationSelect = false }: Foundation
         </>
       ) : null}
 
-      <DepartmentSelect
+      <DepartmentScopeChips
         locationId={effectiveLocationId ?? null}
         value={session.selectedDepartmentId}
         onChange={(departmentId) => {
@@ -93,7 +93,9 @@ export function FoundationScopePicker({ hideLocationSelect = false }: Foundation
             selectedDepartmentId: departmentId,
           });
         }}
-        className="w-[min(100%,220px)]"
+        allowAll
+        maxVisible={5}
+        className="w-full"
       />
     </div>
   );

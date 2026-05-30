@@ -22,6 +22,7 @@ import { renderNavIcon } from "./app-shell-utils";
 import { ShellSidebarContent } from "./app-shell-sidebar";
 import { FoundationScopePicker } from "@/components/shared/foundation-scope-picker";
 import { SubscriptionRemainingWidget } from "@/components/app/subscription-remaining-widget";
+import { HeaderWorkspaceScope } from "@/components/app/header-workspace-scope";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -43,6 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [settingsInitialSection, setSettingsInitialSection] =
     useState<AccountSettingsSection>("profile");
   const isAdminRoute = pathname.includes("/admin/") || pathname.startsWith("/admin");
+  const isShiftsRoute = /\/(admin|manager)\/shifts(\/|$)/.test(pathname);
   const isWorkspaceRoute = Boolean(
     parsed?.featurePath === "workspace" || parsed?.featurePath.startsWith("workspace/")
   );
@@ -145,10 +147,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="hidden size-10 items-center justify-center rounded-2xl bg-[#EEF6FB] text-[#1D4D8F] ring-1 ring-[#BCE8F5] sm:flex dark:bg-[#0B1E3D] dark:text-[#BCE8F5] dark:ring-[#4C88C6]/40">
                   {renderNavIcon(activeItem, "size-5")}
                 </div>
-                <div className="min-w-0">
-                  <h1 className="truncate text-xl font-extrabold tracking-tight text-neutral-950 md:text-2xl dark:text-white">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                  <h1 className="shrink-0 text-xl font-extrabold tracking-tight text-neutral-950 md:text-2xl dark:text-white">
                     {activeItem?.label ?? "Dashboard"}
                   </h1>
+                  <HeaderWorkspaceScope className="mt-0 min-w-0" />
                 </div>
               </div>
             </div>
@@ -197,7 +200,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="mb-4">
                   <FoundationScopePicker />
                 </div>
-              ) : isAdminRoute && !isWorkspaceRoute && effectiveLocationId ? (
+              ) : isAdminRoute && !isWorkspaceRoute && effectiveLocationId && !isShiftsRoute ? (
                 <div className="mb-4">
                   <FoundationScopePicker hideLocationSelect />
                 </div>
