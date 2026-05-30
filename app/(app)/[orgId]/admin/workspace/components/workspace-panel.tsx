@@ -5,9 +5,9 @@ import { useQueries } from "@tanstack/react-query";
 import Link from "next/link";
 import { PlusIcon } from "lucide-react";
 import { DepartmentDetailDrawer } from "@/app/(app)/[orgId]/admin/workspace/components/DepartmentDetailDrawer";
+import { EmployeeProfileDialog, type EmployeeProfileSection } from "@/app/(app)/[orgId]/admin/workspace/components/EmployeeProfileDialog";
 import { LocationDetailDrawer } from "@/app/(app)/[orgId]/admin/workspace/components/LocationDetailDrawer";
 import { OrgGraph } from "@/app/(app)/[orgId]/admin/workspace/components/org-graph";
-import { TransferEmployeeDialog } from "@/app/(app)/[orgId]/admin/workspace/components/TransferEmployeeDialog";
 import { Button } from "@/components/ui/button";
 import { fetchDepartments } from "@/lib/api/services/fetchDepartments";
 import { fetchEmployees } from "@/lib/api/services/fetchEmployees";
@@ -80,7 +80,9 @@ export function WorkspacePanel({
     location: LocationResponse | null;
     isCreate: boolean;
   } | null>(null);
-  const [transferEmployee, setTransferEmployee] = useState<EmployeeResponse | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeResponse | null>(null);
+  const [employeeProfileSection, setEmployeeProfileSection] =
+    useState<EmployeeProfileSection>("profile");
 
   const activeExpandedLocations = useMemo(() => {
     if (!scopeToCurrentLocation || !scopedLocation) return expandedLocations;
@@ -262,13 +264,34 @@ export function WorkspacePanel({
     [scopeToCurrentLocation],
   );
 
+  const findEmployeeById = useCallback(
+    (employeeId: string) => {
+      for (const list of Object.values(employeesByDepartment)) {
+        const emp = list.find((e) => e.id === employeeId);
+        if (emp) return emp;
+      }
+      return null;
+    },
+    [employeesByDepartment]
+  );
+
+  const openEmployeeProfile = useCallback(
+    (emp: EmployeeResponse, section: EmployeeProfileSection = "profile") => {
+      setEmployeeProfileSection(section);
+      setSelectedEmployee(emp);
+    },
+    []
+  );
+
   const handleNodeSelect = useCallback(
     (node: OrgFlowNode) => {
       const { kind, locationId, departmentId, employeeId } = node.data;
 
       if (kind === "employee" && employeeId) {
-        const emp = employeesByDepartment[departmentId ?? ""]?.find((e) => e.id === employeeId);
-        if (emp && canTransferEmployees) setTransferEmployee(emp);
+        const emp =
+          employeesByDepartment[departmentId ?? ""]?.find((e) => e.id === employeeId) ??
+          findEmployeeById(employeeId);
+        if (emp) openEmployeeProfile(emp, "profile");
         return;
       }
 
@@ -296,7 +319,7 @@ export function WorkspacePanel({
         }
       }
     },
-    [locations, departmentsByLocation, employeesByDepartment, canTransferEmployees],
+    [locations, departmentsByLocation, employeesByDepartment, findEmployeeById, openEmployeeProfile],
   );
 
   const createDepartmentLocation =
@@ -391,6 +414,7 @@ export function WorkspacePanel({
         canWrite={canWriteLocations}
         canEdit={canEditLocations || canWriteLocations}
         canAssignManagers={canAssignManagers}
+        canTransferEmployees={canTransferEmployees}
         onOpenChange={(open) => {
           if (!open) setLocationDrawer(null);
         }}
@@ -411,12 +435,14 @@ export function WorkspacePanel({
         onSaved={invalidateGraph}
       />
 
-      {transferEmployee ? (
-        <TransferEmployeeDialog
-          employee={transferEmployee}
-          open={transferEmployee !== null}
-          onOpenChange={(next) => {
-            if (!next) setTransferEmployee(null);
+      {selectedEmployee ? (
+        <EmployeeProfileDialog
+          employee={selectedEmployee}
+          open={selectedEmployee !== null}
+          initialSection={employeeProfileSection}
+          canTransfer={canTransferEmployees}
+          onOpenChange={(open) => {
+            if (!open) setSelectedEmployee(null);
           }}
           onTransferred={invalidateGraph}
         />

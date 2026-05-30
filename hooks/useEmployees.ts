@@ -11,11 +11,12 @@ import type {
   UpdateEmployeeRequest,
 } from "@/types/foundation";
 
-export function useEmployeesQuery(params: EmployeeListParams) {
+export function useEmployeesQuery(params: EmployeeListParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: foundationKeys.employees(params),
     queryFn: () => fetchEmployees.list(params),
     staleTime: 60 * 1000,
+    enabled: (options?.enabled ?? true) && Boolean(params.locationId),
   });
 }
 
