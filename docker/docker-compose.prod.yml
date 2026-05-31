@@ -1,6 +1,8 @@
-# Production — pull image (Dokploy / VPS)
-# Env: DOCKER_USERNAME, IMAGE_TAG (optional), CLIENT_PORT (optional)
-# Deploy BE trước — network wokki-network (external)
+# Usage: docker compose -f docker/docker-compose.prod.yml --env-file docker/.env up -d
+# npm run docker:prod
+#
+# CI/CD: GitHub Actions → Docker Hub → Dokploy pull
+# Deploy BE trước FE — network wokki-network
 
 name: wokki-client-prod
 
@@ -10,20 +12,12 @@ x-logging: &wokki-logging
     max-size: "10m"
     max-file: "3"
 
-x-security: &wokki-security
-  init: true
-  security_opt:
-    - no-new-privileges:true
-
 services:
   wokki_client:
     container_name: wokki_client
-    image: ${DOCKER_USERNAME}/wokki-client:${IMAGE_TAG:-latest}
     pull_policy: always
-    restart: unless-stopped
-    <<: *wokki-security
-    cap_drop:
-      - ALL
+    image: ${DOCKER_USERNAME}/wokki-client:${IMAGE_TAG:-latest}
+    init: true
     logging: *wokki-logging
     ports:
       - "${CLIENT_PORT:-6789}:6789"
@@ -34,15 +28,6 @@ services:
       - NEXT_TELEMETRY_DISABLED=1
       - NODE_OPTIONS=--max-old-space-size=${NODE_MAX_OLD_SPACE:-384}
       - UV_THREADPOOL_SIZE=${UV_THREADPOOL_SIZE:-4}
-    tmpfs:
-      - /tmp:size=64M,mode=1777,noexec,nosuid,nodev
-    deploy:
-      resources:
-        limits:
-          cpus: "${CLIENT_CPU_LIMIT:-1.5}"
-          memory: ${CLIENT_MEMORY_LIMIT:-512M}
-        reservations:
-          memory: 128M
     healthcheck:
       test:
         [
@@ -55,6 +40,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: ${CLIENT_MEMORY_LIMIT:-512M}
+    restart: unless-stopped
     networks:
       - wokki-network
 

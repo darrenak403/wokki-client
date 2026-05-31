@@ -1,17 +1,7 @@
-# Build & push wokki-client to Docker Hub (NEXT_PUBLIC_* baked at build time).
-#
-# Required GitHub repository secrets:
-#   DOCKER_USERNAME — Docker Hub / registry username
-#   DOCKER_PASSWORD — Docker Hub access token or registry password
-#
-# Required GitHub repository variables (Settings → Secrets and variables → Actions → Variables):
-#   NEXT_PUBLIC_API_URL  — https://api.wokki.beyond8.io.vn
-#   NEXT_PUBLIC_APP_URL  — https://wokki.beyond8.io.vn
-# Optional variables:
-#   NEXT_PUBLIC_APP_NAME (default Wokki)
-#   NEXT_PUBLIC_ENV      (default production)
-#
-# Dokploy: registry credentials + DOCKER_USERNAME in app env; pull image only (no runtime NEXT_PUBLIC_*).
+# Build & push wokki-client to Docker Hub.
+# GitHub repo secrets (chỉ 2): DOCKER_USERNAME, DOCKER_PASSWORD
+# GitHub Variables (build-time): NEXT_PUBLIC_API_URL, NEXT_PUBLIC_APP_URL, ...
+# Runtime env khác → Dokploy / docker/.env
 
 name: Docker publish
 
