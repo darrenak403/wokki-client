@@ -22,6 +22,7 @@ function listQuery(params: SwapPostListParams): Record<string, string | number> 
   if (params.scheduleId) q.scheduleId = params.scheduleId;
   if (params.status != null) q.status = params.status;
   if (params.locationId) q.locationId = params.locationId;
+  if (params.departmentId) q.departmentId = params.departmentId;
   if (params.weekStartDate) q.weekStartDate = params.weekStartDate;
   return q;
 }
@@ -98,5 +99,13 @@ export const fetchSwapPosts = {
       listQuery(params),
     );
     return normalizeAuditPage(assertEmployeeSuccess(normalizeApiResponse(response.data)));
+  },
+
+  adminFeed: async (params: SwapPostListParams = {}): Promise<PagedResponse<SwapPostResponse>> => {
+    const response = await apiService.get<ApiEnvelope<PagedResponse<SwapPostResponse>>>(
+      "api/v1/swap-posts/admin/feed",
+      listQuery(params),
+    );
+    return normalizeSwapPostPage(assertEmployeeSuccess(normalizeApiResponse(response.data)));
   },
 };

@@ -41,6 +41,11 @@ export function SwapFeedCard({
               <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", accent.badge)}>
                 {swapPostTypeLabel(post.type)}
               </span>
+              {post.departmentName ? (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {post.departmentName}
+                </span>
+              ) : null}
               <span className="text-xs text-muted-foreground">
                 {formatSwapPostRelativeTime(post.createdAt)}
               </span>

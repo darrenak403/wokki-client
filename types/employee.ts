@@ -47,6 +47,8 @@ export interface SwapPostResponse {
   canAccept: boolean;
   canCancel: boolean;
   isMine: boolean;
+  departmentId?: string | null;
+  departmentName?: string | null;
 }
 
 export interface SwapPostAuditResponse {
@@ -60,6 +62,7 @@ export interface SwapPostAuditResponse {
   scheduleId: string;
   locationId: string;
   departmentId: string;
+  departmentName?: string | null;
 }
 
 export interface CreateSwapPostRequest {
@@ -78,6 +81,7 @@ export interface SwapPostListParams {
   scheduleId?: string;
   status?: SwapPostStatus;
   locationId?: string;
+  departmentId?: string;
   weekStartDate?: string;
 }
 

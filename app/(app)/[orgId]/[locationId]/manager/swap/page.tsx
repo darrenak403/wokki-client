@@ -1,4 +1,4 @@
-import { SwapAuditPanel } from "@/app/(app)/[orgId]/[locationId]/admin/swap/components/SwapAuditPanel";
+import { SwapAdminPanel } from "@/app/(app)/[orgId]/[locationId]/admin/swap/components/SwapAdminPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -8,5 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function ManagerSwapPage() {
-  return <SwapAuditPanel />;
+  return <SwapAdminPanel />;
 }

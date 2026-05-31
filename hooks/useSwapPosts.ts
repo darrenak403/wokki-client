@@ -60,6 +60,15 @@ export function useSwapPostAuditQuery(params: SwapPostListParams, enabled = true
   });
 }
 
+export function useSwapPostAdminFeedQuery(params: SwapPostListParams, enabled = true) {
+  return useQuery({
+    queryKey: swapPostKeys.adminFeed(params),
+    queryFn: () => fetchSwapPosts.adminFeed(params),
+    enabled,
+    staleTime: STALE_MS,
+  });
+}
+
 export function useCreateSwapPostMutation() {
   const queryClient = useQueryClient();
   return useMutation({

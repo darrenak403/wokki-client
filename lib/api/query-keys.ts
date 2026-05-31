@@ -10,6 +10,7 @@ export const swapPostKeys = {
   feed: (scheduleId: string) => [...swapPostKeys.all, "feed", scheduleId] as const,
   mine: (params: object) => [...swapPostKeys.all, "mine", params] as const,
   audit: (params: object) => [...swapPostKeys.all, "audit", params] as const,
+  adminFeed: (params: object) => [...swapPostKeys.all, "adminFeed", params] as const,
 };
 
 export const opsKeys = {
