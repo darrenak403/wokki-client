@@ -1,28 +1,53 @@
-# Chạy từ repo root: npm run docker:prod
-# Env chuẩn: docker/.env (compose cũng dùng file này cho build args)
+# ===========================================
+# Wokki Client - Production (pull image)
+# Dokploy: Compose path docker/docker-compose.prod.yml
+# Env trên Dokploy: DOCKER_USERNAME, IMAGE_TAG (optional)
+# NEXT_PUBLIC_* được bake lúc CI build — KHÔNG override runtime
+# ===========================================
 
 name: wokki-client-prod
 
 services:
-  wokki-client:
-    container_name: wokki-client-prod
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      target: runner
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Wokki}
-        NEXT_PUBLIC_ENV: ${NEXT_PUBLIC_ENV:-production}
-    env_file:
-      - .env
-    ports:
-      - "6789:6789"
+  wokki_client:
+    image: ${DOCKER_USERNAME}/wokki-client:${IMAGE_TAG:-latest}
+    container_name: wokki_client
+    pull_policy: always
     restart: unless-stopped
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    ports:
+      - "${CLIENT_PORT:-6789}:6789"
+
+    environment:
+      - NODE_ENV=production
+      - PORT=6789
+      - HOSTNAME=0.0.0.0
+      - NEXT_TELEMETRY_DISABLED=1
+
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:6789/"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:6789",
+        ]
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 3
       start_period: 40s
+
+    networks:
+      - wokki-network
+
+networks:
+  wokki-network:
+    name: wokki-network
+    external: true

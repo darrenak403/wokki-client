@@ -1,12 +1,12 @@
 # Wokki Client — Product & codebase context
 
-**Business source of truth:** `../wokki-server/docs/business-rules.md` (`BR-xxx`), `../wokki-server/docs/vi/fe-integration-guide.md`.
+**Business source of truth:** `../wokki-server/docs/business-rules.md` (`BR-xxx`), `../wokki-server/docs/fe/self-serve-org-handoff.md`, `../wokki-server/docs/fe/2026-05-29-feat-platform-org-subscription.md`.
 
 ---
 
 ## Product (one paragraph)
 
-**Wokki** helps retail/F&B/service teams run **weekly shift schedules**, **shift swaps**, **attendance**, **payroll prep**, and **internal chat**. Vietnamese-first UI. Managers **publish** the official schedule; employees register **preferences** (advisory) while the week is **Draft**. Auto-scheduling needs branch policy first; Bedrock is optional explanation-only chat.
+**Wokki** helps retail/F&B/service teams run **weekly shift schedules**, **shift swaps**, **attendance**, **payroll prep**, and **internal chat** across organization tenants. Vietnamese-first UI. Managers **publish** the official schedule; employees register **preferences** (advisory) while the week is **Draft**. Auto-scheduling needs branch policy first; Bedrock is optional explanation-only chat.
 
 ---
 
@@ -31,25 +31,33 @@ Wave 1 Auth → Wave 2 Foundation (location, dept, employee, shift)
 
 ### Auth (`app/(auth)/`)
 
-`/login`, `/register` — cookie `authToken`, Redux `authSlice`, redirect via `lib/support/auth/app-routes.ts`.
+`/login`, `/register` — cookie `authToken`, Redux `authSlice`, redirect via tenant routes. Register creates org + Org Admin, but org package starts NotActivated until Wokki admin enables it.
 
 ### App (`app/(app)/`)
 
+Tenant app routes are branch-scoped for business actions: `/{orgId}/{locationId}/{role}/...`. `/{orgId}/{role}/workspace` is a redirect/branch-selection fallback, not an all-branch workspace.
+
+Org staff creation is not a separate "system account" flow. The FE must use `POST /employees` for staff/Manager creation so BE creates both `User` and `Employee` plus active branch membership; same-org legacy Users without Employee are linked through this flow. Do not call `POST /users` to create org staff.
+
 | Module | Admin panel path | Notes |
 |--------|------------------|-------|
-| Dashboard | `admin/dashboard` | |
-| Chi nhánh | `admin/locations` + `LocationPolicyDialog` | Branch scheduling policy v3 |
+| Dashboard | `[orgId]/[locationId]/admin/dashboard` | |
+| Tổ chức | `[orgId]/[locationId]/admin/workspace` + `LocationDetailDrawer` | Selected branch only; separate explicit org view needed for all branches |
 | Phòng ban | `admin/departments` | Chi nhánh → phòng ban → nhân viên (không có vị trí con) |
 | Ca | `admin/shifts` | Shift definitions |
 | Nhân sự | `admin/employees` | Links User ↔ Employee |
 | Tài khoản | `admin/users` | Admin-only |
 | Lịch ca | `admin/schedule` | Grid, assign, publish, suggest, Bedrock insight UI |
-| Đổi ca | `admin/swap` | Manager override |
+| Đổi ca | `admin/swap` | Nhật ký đổi ca (read-only) |
 | Chấm công | `admin/attendance` | `TeamAttendancePanel` |
 | Lương | `admin/payroll` | CSV export |
 | Chat | `admin/chat` | `ChatPanel`, SignalR |
 
 Manager routes mirror under `manager/*` (see `components/app/app-nav.ts`). User: `user/schedule`, `user/swap`, `user/attendance`, `user/chat`.
+
+### Platform (`/platform`)
+
+PlatformOperator only. No org sidebar. Use `GET /platform/stats`, `GET /platform/users`, `GET /platform/organizations`, and `PUT /platform/organizations/{id}/subscription` to activate/disable/renew org packages.
 
 ---
 
@@ -80,7 +88,7 @@ Manager routes mirror under `manager/*` (see `components/app/app-nav.ts`). User:
 | `useSchedule` | `fetchSchedules` |
 | `useSchedulePreferences`, `usePreferenceBoard` | preferences |
 | `useMySchedule` | `fetchSelf` |
-| `useSwapRequests`, `useSwapInboxPendingCount` | swaps |
+| `useSwapPosts` | `fetchSwapPosts`, `fetchSelf.getDraftWeekAssignments` |
 | `useAttendance` | attendance |
 | `usePayroll` | payroll |
 | `useChat`, `useChatHub` | REST + SignalR |
@@ -93,7 +101,8 @@ Manager routes mirror under `manager/*` (see `components/app/app-nav.ts`). User:
 
 - `proxy.ts` — route protection by role
 - `lib/support/auth/jwt-roles.ts`, `session-user.ts`, `app-routes.ts`
-- Post-login paths per role (Admin/Manager/User dashboards)
+- Post-login paths per role: PlatformOperator → `/platform`; org Admin/Manager/User → tenant app only when package is active.
+- Map `ORG_PACKAGE_NOT_ACTIVATED` to "Bạn chưa có gói sử dụng hệ thống." and `ORG_PACKAGE_EXPIRED` to "Bạn phải gia hạn để tiếp tục dùng hệ thống."; clear org session and do not render protected app shell.
 
 ---
 

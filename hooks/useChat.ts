@@ -18,6 +18,7 @@ import type {
   MessageResponse,
   SendMessageRequest,
 } from "@/types/chat";
+import { CHANNEL_TYPE } from "@/types/chat";
 
 const STALE_MS = 30 * 1000;
 const MESSAGE_LIMIT = 50;
@@ -28,7 +29,19 @@ export function flattenChatMessages(
 ): MessageResponse[] {
   if (!data?.pages.length) return [];
   const merged = [...data.pages].reverse().flatMap((page) => page.items);
-  return merged.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const seen = new Set<string>();
+  const unique: MessageResponse[] = [];
+  for (const msg of merged) {
+    const key = msg.id.toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    unique.push(msg);
+  }
+  return unique.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+function messageIdKey(message: MessageResponse): string {
+  return message.id.toLowerCase();
 }
 
 export function appendChatMessageToCache(
@@ -36,6 +49,9 @@ export function appendChatMessageToCache(
   channelId: string,
   message: MessageResponse,
 ): void {
+  const incomingKey = messageIdKey(message);
+  if (!incomingKey) return;
+
   queryClient.setQueryData<InfiniteData<MessageListResponse>>(
     chatKeys.messages(channelId),
     (old) => {
@@ -45,7 +61,9 @@ export function appendChatMessageToCache(
           pageParams: [undefined],
         };
       }
-      const exists = old.pages.some((page) => page.items.some((m) => m.id === message.id));
+      const exists = old.pages.some((page) =>
+        page.items.some((m) => messageIdKey(m) === incomingKey),
+      );
       if (exists) return old;
       const [first, ...rest] = old.pages;
       return {
@@ -92,6 +110,7 @@ export function useSendMessageMutation(channelId: string | null) {
       cacheMyEmployeeId(message.senderId);
       if (channelId) {
         appendChatMessageToCache(queryClient, channelId, message);
+        void queryClient.invalidateQueries({ queryKey: chatKeys.channels() });
       }
     },
     onError: (error) => toast.error(mapChatError(error)),
@@ -115,15 +134,37 @@ export function useDeleteMessageMutation(channelId: string | null) {
   });
 }
 
+export function useOrgMembersQuery(enabled = true) {
+  return useQuery({
+    queryKey: chatKeys.orgMembers(),
+    queryFn: () => fetchChat.listOrgMembers(),
+    enabled,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useCreateDirectChannelMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (peerEmployeeId: string) =>
+      fetchChat.createChannel({
+        type: CHANNEL_TYPE.Direct,
+        memberEmployeeIds: [peerEmployeeId],
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: chatKeys.channels() });
+    },
+    onError: (error) => toast.error(mapChatError(error)),
+  });
+}
+
 export function useCreateChannelMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateChannelRequest) => fetchChat.createChannel(data),
-    onSuccess: (channel) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: chatKeys.channels() });
-      toast.success(
-        channel.type === 0 ? "Đã mở kênh Direct." : "Đã tạo nhóm chat.",
-      );
+      toast.success("Đã mở tin nhắn riêng.");
     },
     onError: (error) => toast.error(mapChatError(error)),
   });

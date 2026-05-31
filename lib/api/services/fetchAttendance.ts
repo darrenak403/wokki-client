@@ -17,6 +17,7 @@ function teamAttendanceQuery(params: TeamAttendanceListParams): Record<string, s
   if (params.employeeId) q.employeeId = params.employeeId;
   if (params.fromDate) q.fromDate = params.fromDate;
   if (params.toDate) q.toDate = params.toDate;
+  if (params.mode != null) q.mode = params.mode;
   return q;
 }
 

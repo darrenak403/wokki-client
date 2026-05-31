@@ -29,6 +29,7 @@ type PreferenceTypeCellProps = {
   type: PreferenceType | null;
   compact?: boolean;
   showFullLabel?: boolean;
+  interactive?: boolean;
   className?: string;
 };
 
@@ -36,6 +37,7 @@ export function PreferenceTypeCell({
   type,
   compact,
   showFullLabel,
+  interactive,
   className,
 }: PreferenceTypeCellProps) {
   const compactClassName = showFullLabel
@@ -48,6 +50,7 @@ export function PreferenceTypeCell({
         className={cn(
           "inline-flex items-center justify-center rounded-md border border-dashed text-muted-foreground",
           compact ? compactClassName : "min-h-8 min-w-10 px-2 text-xs",
+          interactive && "cursor-pointer transition-colors hover:border-brand-blue/50 hover:bg-brand-mist/40",
           className,
         )}
         aria-label="Chưa đăng ký"
@@ -64,6 +67,7 @@ export function PreferenceTypeCell({
         "inline-flex items-center justify-center rounded-md font-medium",
         style.className,
         compact ? compactClassName : "min-h-8 min-w-10 px-2 text-xs",
+        interactive && "cursor-pointer transition-opacity hover:opacity-90",
         className,
       )}
       aria-label={style.label}

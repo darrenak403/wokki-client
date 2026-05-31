@@ -5,10 +5,12 @@ export const overtimeKeys = {
   adminList: (params?: object) => [...overtimeKeys.all, "admin-list", params] as const,
 };
 
-export const swapInboxKeys = {
-  all: ["swapInbox"] as const,
-  lists: () => [...swapInboxKeys.all, "list"] as const,
-  list: (params: object) => [...swapInboxKeys.lists(), params] as const,
+export const swapPostKeys = {
+  all: ["swapPosts"] as const,
+  feed: (scheduleId: string) => [...swapPostKeys.all, "feed", scheduleId] as const,
+  mine: (params: object) => [...swapPostKeys.all, "mine", params] as const,
+  audit: (params: object) => [...swapPostKeys.all, "audit", params] as const,
+  adminFeed: (params: object) => [...swapPostKeys.all, "adminFeed", params] as const,
 };
 
 export const opsKeys = {
@@ -19,6 +21,7 @@ export const opsKeys = {
 export const chatKeys = {
   all: ["chat"] as const,
   channels: () => [...chatKeys.all, "channels"] as const,
+  orgMembers: () => [...chatKeys.all, "orgMembers"] as const,
   messages: (channelId: string) => [...chatKeys.all, "messages", channelId] as const,
 };
 
@@ -27,12 +30,15 @@ export const payrollKeys = {
   summary: (params: object) => [...payrollKeys.all, "summary", params] as const,
   employeeDetail: (employeeId: string, params: object) =>
     [...payrollKeys.all, "detail", employeeId, params] as const,
+  mySummary: (params: object) => [...payrollKeys.all, "mySummary", params] as const,
 };
 
 export const employeeKeys = {
   all: ["employee"] as const,
+  myProfile: () => [...employeeKeys.all, "myProfile"] as const,
   mySchedule: () => [...employeeKeys.all, "mySchedule"] as const,
-  swapTargets: (params: object) => [...employeeKeys.all, "swapTargets", params] as const,
+  draftWeekAssignments: (weekStartDate: string) =>
+    [...employeeKeys.all, "draftWeekAssignments", weekStartDate] as const,
   swaps: () => [...employeeKeys.all, "swaps"] as const,
   attendance: (params: object) => [...employeeKeys.all, "attendance", params] as const,
 };
@@ -50,6 +56,26 @@ export const scheduleKeys = {
     [...scheduleKeys.all, "insightContext", scheduleId] as const,
 };
 
+export const leaveRequestKeys = {
+  all: ["leaveRequests"] as const,
+  mine: (scheduleId?: string) => [...leaveRequestKeys.all, "mine", scheduleId ?? "all"] as const,
+  review: (scheduleId: string, status?: string) =>
+    [...leaveRequestKeys.all, "review", scheduleId, status ?? "all"] as const,
+};
+
+export const statsKeys = {
+  all: ["stats"] as const,
+  org: () => [...statsKeys.all, "org"] as const,
+  platform: () => [...statsKeys.all, "platform"] as const,
+  subscription: () => [...statsKeys.all, "subscription"] as const,
+};
+
+export const platformKeys = {
+  all: ["platform"] as const,
+  users: (params: object) => [...platformKeys.all, "users", params] as const,
+  organizations: (params: object) => [...platformKeys.all, "organizations", params] as const,
+};
+
 export const preferenceKeys = {
   all: ["schedulePreference"] as const,
   draft: (weekStartDate: string) => [...preferenceKeys.all, "draft", weekStartDate] as const,
@@ -64,11 +90,23 @@ export const bedrockKeys = {
 export const membershipKeys = {
   all: ["membership"] as const,
   my: () => [...membershipKeys.all, "my"] as const,
+  pending: () => [...membershipKeys.all, "pending"] as const,
+  byLocation: (locationId: string, status?: string | null) =>
+    [...membershipKeys.all, "location", locationId, { status: status ?? null }] as const,
+};
+
+export const managerKeys = {
+  all: ["locationManagers"] as const,
+  byLocation: (locationId: string) => [...managerKeys.all, "location", locationId] as const,
+  myLocations: () => [...managerKeys.all, "myLocations"] as const,
 };
 
 export const foundationKeys = {
   all: ["foundation"] as const,
   locations: () => [...foundationKeys.all, "locations"] as const,
+  schedulingCatalog: () => [...foundationKeys.all, "schedulingCatalog"] as const,
+  orgSchedulingPolicy: () => [...foundationKeys.all, "orgSchedulingPolicy"] as const,
+  /** @deprecated location policy removed — use orgSchedulingPolicy */
   locationPolicy: (locationId: string) =>
     [...foundationKeys.all, "locationPolicy", locationId] as const,
   departments: (locationId?: string | null) =>

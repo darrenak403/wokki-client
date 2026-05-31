@@ -31,31 +31,90 @@ export interface UpdateLocationRequest {
   isActive: boolean;
 }
 
-export interface LocationSchedulingPolicyResponse {
-  locationId: string;
+export interface OrganizationSchedulingPolicyResponse {
+  organizationId: string;
   schemaVersion: string;
-  rules: LocationSchedulingRule[];
+  rules: SchedulingRule[];
   updatedAt: string;
 }
 
-export type LocationSchedulingRuleValue = number | boolean | string | null;
+export type SchedulingRuleValue = number | boolean | string | null;
 
-export interface LocationSchedulingRule {
+export interface SchedulingRule {
   key: string;
   category: string;
   content: string;
   inputLabel: string;
   valueType: "number" | "boolean" | "text";
-  value: LocationSchedulingRuleValue;
+  value: SchedulingRuleValue;
   enabled: boolean;
   isDefault: boolean;
   isRequired: boolean;
   sortOrder: number;
+  enforcement: "enforced" | "advisory";
 }
 
+export interface UpsertOrganizationSchedulingPolicyRequest {
+  schemaVersion?: string;
+  rules: Array<
+    Partial<SchedulingRule> &
+      Pick<SchedulingRule, "category" | "content" | "inputLabel" | "valueType" | "enabled">
+  >;
+}
+
+export interface SchedulingPolicyWizardRequest {
+  averageEmployees: number;
+  shiftsPerDay: number;
+}
+
+export interface SchedulingPolicyWizardDraftResponse {
+  schemaVersion: string;
+  suggestedRules: SchedulingRule[];
+  summary: string;
+}
+
+export interface SchedulingRuleCatalogCategory {
+  id: string;
+  label: string;
+  hint?: string | null;
+}
+
+export interface SchedulingRuleCatalogEntry {
+  key: string;
+  category: string;
+  content: string;
+  inputLabel: string;
+  valueType: "number" | "boolean" | "text";
+  defaultValue: SchedulingRuleValue;
+  isRequired: boolean;
+  sortOrder: number;
+  enforcement: "enforced" | "advisory";
+}
+
+export interface SchedulingRuleCatalogResponse {
+  schemaVersion: string;
+  categories: SchedulingRuleCatalogCategory[];
+  rules: SchedulingRuleCatalogEntry[];
+}
+
+/** @deprecated Use OrganizationSchedulingPolicyResponse */
+export interface LocationSchedulingPolicyResponse {
+  locationId: string;
+  schemaVersion: string;
+  rules: SchedulingRule[];
+  updatedAt: string;
+}
+
+/** @deprecated Use SchedulingRule */
+export type LocationSchedulingRule = SchedulingRule;
+
+/** @deprecated Use SchedulingRuleValue */
+export type LocationSchedulingRuleValue = SchedulingRuleValue;
+
+/** @deprecated Use UpsertOrganizationSchedulingPolicyRequest */
 export interface UpsertLocationSchedulingPolicyRequest {
   schemaVersion?: string;
-  rules: Array<Partial<LocationSchedulingRule> & Pick<LocationSchedulingRule, "category" | "content" | "inputLabel" | "valueType" | "enabled">>;
+  rules: UpsertOrganizationSchedulingPolicyRequest["rules"];
 }
 
 export interface DepartmentResponse {
@@ -86,10 +145,14 @@ export interface EmployeeResponse {
   phone: string;
   position: string;
   hourlyRate: number;
-  departmentId: string;
-  departmentName: string;
-  locationId: string;
-  locationName: string;
+  departmentId: string | null;
+  departmentName: string | null;
+  locationId: string | null;
+  locationName: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountHolderName?: string | null;
+  bankName?: string | null;
+  paymentQrImageUrl?: string | null;
   employedAt: string;
   terminatedAt: string | null;
   createdAt: string;
@@ -101,6 +164,7 @@ export interface EmployeeListParams {
   departmentId?: string;
   locationId?: string;
   includeTerminated?: boolean;
+  search?: string;
 }
 
 export interface CreateEmployeeRequest {
@@ -108,12 +172,12 @@ export interface CreateEmployeeRequest {
   firstName: string;
   lastName: string;
   phone?: string;
-  position: string;
   hourlyRate: number;
-  departmentId: string;
-  role?: Extract<AppRole, "User" | "Manager">;
+  departmentId?: string;
+  role?: AppRole;
   password?: string | null;
   departmentIds?: string[] | null;
+  locationIds?: string[] | null;
 }
 
 export interface CreateEmployeeResponse {
@@ -127,10 +191,19 @@ export interface UpdateEmployeeRequest {
   firstName: string;
   lastName: string;
   phone: string;
-  position: string;
   hourlyRate: number;
   departmentId: string;
   departmentIds?: string[] | null;
+}
+
+export interface UpdateMyProfileRequest {
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountHolderName?: string | null;
+  bankName?: string | null;
+  removePaymentQr?: boolean;
 }
 
 export interface ShiftDefinitionResponse {
@@ -170,6 +243,26 @@ export interface UpdateShiftRequest {
   isActive: boolean;
 }
 
+export interface CopyShiftDefinitionsRequest {
+  locationId: string;
+  sourceDepartmentId: string;
+  targetDepartmentIds: string[];
+  shiftIds?: string[];
+}
+
+export interface CopyShiftSkippedItem {
+  targetDepartmentId: string;
+  name: string;
+  reason: string;
+}
+
+export interface CopyShiftDefinitionsResponse {
+  copiedCount: number;
+  skippedCount: number;
+  createdShiftIds: string[];
+  skipped: CopyShiftSkippedItem[];
+}
+
 export interface UserResponse {
   id: string;
   email: string;
@@ -181,12 +274,6 @@ export interface UserListParams {
   page?: number;
   pageSize?: number;
   withoutEmployee?: boolean;
-}
-
-export interface CreateUserRequest {
-  email: string;
-  password: string;
-  role?: AppRole;
 }
 
 /** Handoff §7 — persisted for Wave 3. */

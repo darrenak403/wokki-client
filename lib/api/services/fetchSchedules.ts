@@ -1,4 +1,8 @@
 import { assertScheduleSuccess } from "@/lib/support/schedule/assert-success";
+import {
+  normalizeScheduleDetail,
+  normalizeScheduleResponse,
+} from "@/lib/support/schedule/normalize-schedule-payload";
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
@@ -33,7 +37,8 @@ export const fetchSchedules = {
         ...(params.weekStartDate ? { weekStartDate: params.weekStartDate } : {}),
       },
     );
-    return assertScheduleSuccess(normalizeApiResponse(response.data));
+    const page = assertScheduleSuccess(normalizeApiResponse(response.data));
+    return { ...page, items: page.items.map(normalizeScheduleResponse) };
   },
 
   create: async (data: CreateScheduleRequest): Promise<ScheduleResponse> => {
@@ -41,14 +46,14 @@ export const fetchSchedules = {
       "api/v1/schedules",
       data,
     );
-    return assertScheduleSuccess(normalizeApiResponse(response.data));
+    return normalizeScheduleResponse(assertScheduleSuccess(normalizeApiResponse(response.data)));
   },
 
   getById: async (scheduleId: string): Promise<ScheduleDetailResponse> => {
     const response = await apiService.get<ApiEnvelope<ScheduleDetailResponse>>(
       `api/v1/schedules/${scheduleId}`,
     );
-    return assertScheduleSuccess(normalizeApiResponse(response.data));
+    return normalizeScheduleDetail(assertScheduleSuccess(normalizeApiResponse(response.data)));
   },
 
   update: async (scheduleId: string, data: UpdateScheduleRequest): Promise<ScheduleResponse> => {
@@ -56,7 +61,7 @@ export const fetchSchedules = {
       `api/v1/schedules/${scheduleId}`,
       data,
     );
-    return assertScheduleSuccess(normalizeApiResponse(response.data));
+    return normalizeScheduleResponse(assertScheduleSuccess(normalizeApiResponse(response.data)));
   },
 
   delete: async (scheduleId: string): Promise<void> => {
@@ -152,7 +157,7 @@ export const fetchSchedules = {
       `api/v1/schedules/${scheduleId}/publish`,
       {},
     );
-    return assertScheduleSuccess(normalizeApiResponse(response.data));
+    return normalizeScheduleResponse(assertScheduleSuccess(normalizeApiResponse(response.data)));
   },
 
   unpublish: async (scheduleId: string): Promise<ScheduleResponse> => {
@@ -160,7 +165,7 @@ export const fetchSchedules = {
       `api/v1/schedules/${scheduleId}/unpublish`,
       {},
     );
-    return assertScheduleSuccess(normalizeApiResponse(response.data));
+    return normalizeScheduleResponse(assertScheduleSuccess(normalizeApiResponse(response.data)));
   },
 
   copy: async (scheduleId: string, data: CopyScheduleRequest): Promise<ScheduleResponse> => {
@@ -168,6 +173,6 @@ export const fetchSchedules = {
       `api/v1/schedules/${scheduleId}/copy`,
       data,
     );
-    return assertScheduleSuccess(normalizeApiResponse(response.data));
+    return normalizeScheduleResponse(assertScheduleSuccess(normalizeApiResponse(response.data)));
   },
 };

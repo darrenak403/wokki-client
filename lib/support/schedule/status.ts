@@ -8,6 +8,10 @@ export function isScheduleEditable(status: ScheduleStatus): boolean {
   return status === SCHEDULE_STATUS.Draft;
 }
 
+export function isSchedulePublished(status: ScheduleStatus): boolean {
+  return status === SCHEDULE_STATUS.Published;
+}
+
 export function scheduleStatusLabel(status: ScheduleStatus): string {
   switch (status) {
     case SCHEDULE_STATUS.Draft:

@@ -7,13 +7,15 @@ const SCHEDULE_ERROR_MESSAGES: Record<string, string> = {
   AUTH_FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
   SCHEDULE_NOT_DRAFT: "Chỉ có thể sửa lịch ở trạng thái Nháp.",
   SCHEDULE_WEEK_NOT_MONDAY: "Ngày bắt đầu tuần phải là thứ Hai.",
-  SCHEDULE_EMPLOYEE_WRONG_DEPT: "Nhân viên không thuộc phòng ban của lịch.",
+  SCHEDULE_EMPLOYEE_WRONG_LOCATION: "Nhân viên chưa thuộc chi nhánh của lịch này.",
+  SCHEDULE_EMPLOYEE_WRONG_DEPT: "Nhân viên chưa thuộc phòng ban của lịch này.",
   SCHEDULE_SHIFT_WRONG_SCOPE: "Ca không thuộc phạm vi chi nhánh/phòng ban.",
   SCHEDULE_SHIFT_INACTIVE: "ca làm việc không còn hoạt động.",
   SCHEDULE_ALREADY_PUBLISHED: "Lịch đã được công bố.",
   SCHEDULE_NOT_PUBLISHED: "Lịch chưa được công bố.",
   SCHEDULE_SUGGESTIONS_EMPTY: "Không có gợi ý để áp dụng.",
-  SCHEDULE_INSIGHT_CONTEXT_NOT_FOUND: "Chưa có snapshot insight. Hãy tạo snapshot trước khi hỏi trợ lý.",
+  SCHEDULE_INSIGHT_CONTEXT_NOT_FOUND:
+    "Chưa có snapshot insight. Hãy tạo snapshot trước khi hỏi trợ lý.",
   SCHEDULE_INSIGHT_CHAT_UNAVAILABLE:
     "Trợ lý Bedrock tạm không khả dụng. Lịch và gợi ý vẫn dùng bình thường.",
   SCHEDULE_ROSTER_RANGE_INVALID: "Khoảng ngày không hợp lệ (tối đa 28 ngày).",
@@ -69,12 +71,14 @@ export function mapScheduleError(error: unknown): string {
   const body = apiError.data as Record<string, unknown> | undefined;
   const fromBody = extractApiMessage(body?.message);
   const code =
-    apiError.messageCode ?? (typeof fromBody.code === "string" ? fromBody.code : undefined);
+    apiError.messageCode ??
+    (typeof body?.code === "string" ? body.code : undefined) ??
+    fromBody.code;
   const mapped = mapCode(code);
   if (mapped) return mapped;
 
   if (typeof apiError.message === "string" && apiError.message.trim()) {
-    return apiError.message.trim();
+    return mapScheduleFailureMessage(apiError.message, code);
   }
 
   return GENERIC_ERROR;

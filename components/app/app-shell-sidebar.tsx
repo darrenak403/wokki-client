@@ -1,51 +1,38 @@
 "use client";
 
-import Link from "next/link";
 import { LogOutIcon } from "lucide-react";
 import type { AppNavItem } from "@/components/app/app-nav";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { SidebarNavLink } from "./app-shell-nav-link";
+import { BranchSwitcher } from "./branch-switcher";
+import { WokkiSidebarBrand } from "./wokki-sidebar-brand";
 
 export type ShellSidebarContentProps = {
   collapsed: boolean;
-  homeHref: string;
-  isLoading: boolean;
+  homeHref?: string;
   navItems: AppNavItem[];
   onLogout: () => void;
   onNavigate?: () => void;
   pathname: string;
-  role: string | null;
-  swapPendingCount: number;
-  userEmail?: string;
+  isLoading?: boolean;
 };
 
 export function ShellSidebarContent({
   collapsed,
-  homeHref,
-  isLoading,
+  homeHref = "/",
   navItems,
   onLogout,
   onNavigate,
   pathname,
-  swapPendingCount,
+  isLoading = false,
 }: ShellSidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-20 items-center gap-3 px-4">
-        <Link
-          href={homeHref}
-          onClick={onNavigate}
-          className={cn("flex min-w-0 flex-1 items-center gap-3", collapsed && "justify-center")}
-        >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-[#102854] via-[#4C88C6] to-[#1D4D8F] font-black text-white shadow-lg shadow-[#4C88C6]/25">
-            W
-          </span>
-          {!collapsed ? (
-            <span className="truncate text-xl font-extrabold tracking-tight">Wokki</span>
-          ) : null}
-        </Link>
+      <div className="flex flex-col gap-2 px-3 py-4">
+        <WokkiSidebarBrand collapsed={collapsed} href={homeHref} />
+        <BranchSwitcher collapsed={collapsed} />
       </div>
 
       <Separator />
@@ -59,17 +46,11 @@ export function ShellSidebarContent({
       >
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const badge =
-            item.showSwapPendingBadge && swapPendingCount > 0
-              ? swapPendingCount > 99
-                ? "99+"
-                : String(swapPendingCount)
-              : null;
 
           return (
             <SidebarNavLink
-              key={item.href}
-              badge={badge}
+              key={item.navKey}
+              badge={null}
               collapsed={collapsed}
               href={item.href}
               item={item}
@@ -83,7 +64,7 @@ export function ShellSidebarContent({
 
       <Separator />
 
-      <div className={cn("space-y-2 p-3", collapsed && "flex flex-col items-center")}>
+      <div className={cn("p-3", collapsed && "flex flex-col items-center")}>
         <Button
           type="button"
           variant="ghost"
@@ -94,7 +75,7 @@ export function ShellSidebarContent({
           onClick={onLogout}
           disabled={isLoading}
         >
-          <LogOutIcon className="size-4" />
+          <LogOutIcon className="size-4 shrink-0" />
           {!collapsed ? <span>Đăng xuất</span> : <span className="sr-only">Đăng xuất</span>}
         </Button>
       </div>

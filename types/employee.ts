@@ -2,50 +2,87 @@ import type { ShiftAssignmentResponse } from "@/types/schedule";
 
 export type { ShiftAssignmentResponse };
 
-/** BE SwapStatus */
-export type SwapStatus = 0 | 1 | 2 | 3 | 4 | 5;
-
-export const SWAP_STATUS = {
+export const SWAP_POST_STATUS = {
   Pending: 0,
-  PeerAccepted: 1,
-  PeerDeclined: 2,
-  ManagerApproved: 3,
-  ManagerRejected: 4,
-  Cancelled: 5,
-} as const satisfies Record<string, SwapStatus>;
+  Completed: 1,
+  Hidden: 2,
+  Cancelled: 3,
+  Expired: 4,
+} as const;
 
-export interface SwapRequestResponse {
+export const SWAP_POST_TYPE = {
+  Cover: 0,
+  CrossSwap: 1,
+} as const;
+
+export type SwapPostStatus = (typeof SWAP_POST_STATUS)[keyof typeof SWAP_POST_STATUS];
+export type SwapPostType = (typeof SWAP_POST_TYPE)[keyof typeof SWAP_POST_TYPE];
+
+export interface SwapPostAuthorDto {
+  employeeId: string;
+  displayName: string;
+}
+
+export interface SwapPostShiftDto {
+  assignmentId: string;
+  date: string;
+  shiftDefinitionId: string;
+  shiftName: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface SwapPostResponse {
   id: string;
-  requesterAssignmentId: string;
-  targetAssignmentId: string;
-  requesterId: string;
-  targetEmployeeId: string;
-  status: SwapStatus;
-  requesterNote: string | null;
-  targetNote: string | null;
-  managerNote: string | null;
-  reviewedBy: string | null;
-  requesterShiftDate: string;
-  requesterShiftName?: string | null;
-  requesterStartTime?: string | null;
-  requesterEndTime?: string | null;
-  targetShiftDate: string;
-  targetShiftName?: string | null;
-  targetStartTime?: string | null;
-  targetEndTime?: string | null;
-  departmentId: string;
+  scheduleId: string;
+  type: SwapPostType;
+  status: SwapPostStatus;
+  author: SwapPostAuthorDto;
+  offeredShift: SwapPostShiftDto;
+  acceptedShift: SwapPostShiftDto | null;
+  acceptedBy: SwapPostAuthorDto | null;
+  note: string | null;
   createdAt: string;
-  updatedAt: string;
+  completedAt: string | null;
+  canAccept: boolean;
+  canCancel: boolean;
+  isMine: boolean;
+  departmentId?: string | null;
+  departmentName?: string | null;
 }
 
-export interface CreateSwapRequest {
-  requesterAssignmentId: string;
-  targetAssignmentId: string;
-  requesterNote?: string | null;
+export interface SwapPostAuditResponse {
+  id: string;
+  type: SwapPostType;
+  completedAt: string;
+  author: SwapPostAuthorDto;
+  acceptedBy: SwapPostAuthorDto | null;
+  offeredShift: SwapPostShiftDto;
+  acceptedShift: SwapPostShiftDto | null;
+  scheduleId: string;
+  locationId: string;
+  departmentId: string;
+  departmentName?: string | null;
 }
 
-export interface SwapActionRequest {
+export interface CreateSwapPostRequest {
+  authorAssignmentId: string;
+  type: SwapPostType;
   note?: string | null;
+}
+
+export interface AcceptSwapPostRequest {
+  acceptorAssignmentId?: string | null;
+}
+
+export interface SwapPostListParams {
+  page?: number;
+  pageSize?: number;
+  scheduleId?: string;
+  status?: SwapPostStatus;
+  locationId?: string;
+  departmentId?: string;
+  weekStartDate?: string;
 }
 
 export type AttendanceStatus = 0 | 1 | 2 | 3;
@@ -61,6 +98,9 @@ export interface AttendanceResponse {
   id: string;
   employeeId: string;
   assignmentId: string | null;
+  mode: AttendanceMode;
+  payrollEligible: boolean;
+  approvedOvertimeMinutes: number;
   clockIn: string;
   clockOut: string | null;
   workedMinutes: number;
@@ -81,6 +121,14 @@ export interface AttendanceResponse {
   locationName?: string | null;
 }
 
+/** BE AttendanceMode */
+export type AttendanceMode = 0 | 1;
+
+export const ATTENDANCE_MODE = {
+  Assignment: 0,
+  Flexible: 1,
+} as const satisfies Record<string, AttendanceMode>;
+
 export interface ClockInRequest {
   assignmentId?: string;
 }
@@ -98,27 +146,14 @@ export type TeamAttendanceListParams = {
   employeeId?: string;
   fromDate?: string;
   toDate?: string;
+  mode?: AttendanceMode;
 };
 
 /** @deprecated Use SelfAttendanceListParams or TeamAttendanceListParams */
 export type AttendanceListParams = SelfAttendanceListParams;
-
-export type SwapListParams = {
-  page?: number;
-  pageSize?: number;
-  status?: SwapStatus;
-  departmentId?: string;
-  weekStartDate?: string;
-};
 
 export interface AdjustAttendanceRequest {
   clockIn: string;
   clockOut: string;
   adjustmentNote: string;
 }
-
-/** Proposed BE endpoint for peer swap targets (Wave 4 §1A). */
-export type SwapTargetsParams = {
-  fromDate?: string;
-  toDate?: string;
-};

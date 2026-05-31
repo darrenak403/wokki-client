@@ -1,10 +1,12 @@
 import type { ApiResponse } from "@/types/api";
-import type { AppRole } from "@/lib/types/roles";
+import type { SessionRole } from "@/lib/types/roles";
 
 export interface AuthUser {
   id: string;
   email: string;
-  role: AppRole;
+  role: SessionRole;
+  organizationId?: string | null;
+  mustChangePassword?: boolean;
 }
 
 export interface LoginRequest {
@@ -12,9 +14,16 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  organizationName: string;
+}
+
 export interface AuthTokenPair {
   accessToken: string;
   refreshToken: string;
+  mustChangePassword?: boolean;
   expiresAt?: string;
   tokenType?: string;
 }
@@ -27,20 +36,37 @@ export interface RefreshTokenRequest {
 
 export type MeResponse = ApiResponse<AuthUser>;
 
-export type RegisterResponse = ApiResponse<AuthUser>;
+export type RegisterResponse = LoginResponse;
 
-export interface ChangePasswordRequest {
+/** Đổi mật khẩu khi đã đăng nhập */
+export interface ResetPasswordRequest {
   currentPassword: string;
   newPassword: string;
+  confirmNewPassword: string;
 }
 
-export type ChangePasswordResponse = ApiResponse<AuthUser>;
+export type ResetPasswordResponse = ApiResponse<AuthUser>;
 
 export interface ForgotPasswordRequest {
   email: string;
 }
 
-export interface ResetPasswordRequest {
+export interface VerifyForgotPasswordOtpRequest {
+  email: string;
+  otpCode: string;
+}
+
+export interface CompleteForgotPasswordRequest {
   email: string;
   newPassword: string;
+  confirmNewPassword: string;
 }
+
+/** @deprecated use ResetPasswordRequest */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword?: string;
+}
+
+export type ChangePasswordResponse = ResetPasswordResponse;

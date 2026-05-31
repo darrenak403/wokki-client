@@ -3,30 +3,65 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronLeftIcon, ChevronRightIcon, MenuIcon } from "lucide-react";
+import { ChevronLeftIcon, MenuIcon, SettingsIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { getAppNavForRole } from "@/components/app/app-nav";
-import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getAppNavForRole, buildTenantNav } from "@/components/app/app-nav";
+import { useTenantParams } from "@/hooks/useTenantParams";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { selectMustChangePassword, selectOrganizationId } from "@/lib/redux/slices/authSlice";
+import { readFoundationSession } from "@/lib/support/foundation/session-context";
+import { AccountSettingsDialog } from "@/components/auth/account-settings-dialog";
+import type { AccountSettingsSection } from "@/components/auth/account-settings-dialog";
+import { TempAuthWarningBanner } from "@/components/auth/temp-auth-warning-banner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { renderNavIcon, getInitials } from "./app-shell-utils";
+import { renderNavIcon } from "./app-shell-utils";
 import { ShellSidebarContent } from "./app-shell-sidebar";
-import { OrgTreeSidebar } from "./org-tree-sidebar";
-import { FoundationBreadcrumb } from "@/components/shared/foundation-breadcrumb";
+import { FoundationScopePicker } from "@/components/shared/foundation-scope-picker";
+import { SubscriptionRemainingWidget } from "@/components/app/subscription-remaining-widget";
+import { HeaderWorkspaceScope } from "@/components/app/header-workspace-scope";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, role, logout, isLoading } = useAuth();
-  const navItems = role ? getAppNavForRole(role) : [];
-  const swapPendingCount = useSwapInboxPendingCount();
-  const [collapsed, setCollapsed] = useState(true);
+  const jwtOrgId = useAppSelector(selectOrganizationId);
+  const mustChangePassword = useAppSelector(selectMustChangePassword);
+  const { orgId: urlOrgId, locationId: urlLocationId, parsed } = useTenantParams();
+  const sessionBranchId = readFoundationSession().selectedLocationId;
+  const effectiveOrgId = urlOrgId ?? jwtOrgId ?? user?.organizationId ?? null;
+  const effectiveLocationId = urlLocationId ?? sessionBranchId ?? null;
+  const navItems =
+    role && effectiveOrgId
+      ? buildTenantNav(role, effectiveOrgId, effectiveLocationId)
+      : [];
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(true);
-  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/manager");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInitialSection, setSettingsInitialSection] =
+    useState<AccountSettingsSection>("profile");
+  const isAdminRoute = pathname.includes("/admin/") || pathname.startsWith("/admin");
+  const isShiftsRoute = /\/(admin|manager)\/shifts(\/|$)/.test(pathname);
+  const isEmployeesRoute = /\/(admin|manager)\/employees(\/|$)/.test(pathname);
+  const isScheduleRoute = /\/(admin|manager)\/schedule(\/|$)/.test(pathname);
+  const isAttendanceRoute = /\/(admin|manager)\/attendance(\/|$)/.test(pathname);
+  const isPayrollRoute = /\/(admin|manager)\/payroll(\/|$)/.test(pathname);
+  const isChatRoute = /\/(admin|manager|user)\/chat(\/|$)/.test(pathname);
+  const isDepartmentScopedRoute =
+    isShiftsRoute ||
+    isEmployeesRoute ||
+    isScheduleRoute ||
+    isAttendanceRoute ||
+    isPayrollRoute;
+  const isWorkspaceRoute = Boolean(
+    parsed?.featurePath === "workspace" || parsed?.featurePath.startsWith("workspace/")
+  );
+
+  const openAccountSettings = (section: AccountSettingsSection = "profile") => {
+    setSettingsInitialSection(section);
+    setSettingsOpen(true);
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -46,7 +81,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   const homeHref = navItems[0]?.href ?? "/";
+  const activeFeature = parsed?.featurePath.split("/")[0];
   const activeItem =
+    navItems.find((item) => item.navKey === activeFeature) ??
     navItems.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`)) ??
     navItems[0];
 
@@ -63,19 +100,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           <ShellSidebarContent
             collapsed={collapsed}
             homeHref={homeHref}
-            isLoading={isLoading}
             navItems={navItems}
             onLogout={logout}
             pathname={pathname}
-            role={role}
-            swapPendingCount={swapPendingCount}
-            userEmail={user?.email}
+            isLoading={isLoading}
           />
         </aside>
 
         {/* Left sidebar handle tab */}
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => setCollapsed((v) => !v)}
           aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
           className={cn(
@@ -86,39 +122,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <ChevronLeftIcon
             className={cn("size-3 transition-transform duration-500", collapsed && "rotate-180")}
           />
-        </button>
+        </Button>
 
-        {/* Right org tree sidebar — toggle on admin routes */}
-        {isAdminRoute && rightOpen && (
-          <aside className="fixed inset-y-0 right-0 z-40 hidden w-72 overflow-hidden border-l border-neutral-200 bg-white/90 backdrop-blur-xl lg:flex lg:flex-col dark:border-neutral-800 dark:bg-neutral-900/90">
-            <OrgTreeSidebar />
-          </aside>
-        )}
-
-        {/* Right sidebar handle tab */}
-        {isAdminRoute && (
-          <button
-            type="button"
-            onClick={() => setRightOpen((v) => !v)}
-            aria-label={rightOpen ? "Đóng cây tổ chức" : "Mở cây tổ chức"}
-            className={cn(
-              "fixed top-1/2 z-50 hidden h-10 w-4 -translate-y-1/2 items-center justify-center rounded-l-lg border border-r-0 border-neutral-200 bg-white/90 text-neutral-400 shadow-sm backdrop-blur-xl transition-all duration-300 hover:text-neutral-700 lg:flex dark:border-neutral-800 dark:bg-neutral-900/90 dark:hover:text-neutral-200",
-              rightOpen ? "right-72" : "right-0"
-            )}
-          >
-            <ChevronRightIcon
-              className={cn("size-3 transition-transform duration-300", rightOpen && "rotate-180")}
-            />
-          </button>
-        )}
-
-        <div
-          className={cn(
-            "transition-[padding] duration-300 lg:pl-60",
-            collapsed && "lg:pl-20",
-            isAdminRoute && rightOpen && "lg:pr-72"
-          )}
-        >
+        <div className={cn("transition-[padding] duration-300 lg:pl-60", collapsed && "lg:pl-20")}>
           <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-4 border-b border-neutral-200 bg-white/85 px-4 backdrop-blur-xl md:px-6 lg:px-8 dark:border-neutral-800 dark:bg-neutral-900/85">
             <div className="flex min-w-0 items-center gap-3">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -135,14 +141,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <ShellSidebarContent
                     collapsed={false}
                     homeHref={homeHref}
-                    isLoading={isLoading}
                     navItems={navItems}
                     onLogout={logout}
                     onNavigate={() => setMobileOpen(false)}
                     pathname={pathname}
-                    role={role}
-                    swapPendingCount={swapPendingCount}
-                    userEmail={user?.email}
+                    isLoading={isLoading}
                   />
                 </SheetContent>
               </Sheet>
@@ -151,40 +154,66 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="hidden size-10 items-center justify-center rounded-2xl bg-[#EEF6FB] text-[#1D4D8F] ring-1 ring-[#BCE8F5] sm:flex dark:bg-[#0B1E3D] dark:text-[#BCE8F5] dark:ring-[#4C88C6]/40">
                   {renderNavIcon(activeItem, "size-5")}
                 </div>
-                <div className="min-w-0">
-                  <h1 className="truncate text-xl font-extrabold tracking-tight text-neutral-950 md:text-2xl dark:text-white">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                  <h1 className="shrink-0 text-xl font-extrabold tracking-tight text-neutral-950 md:text-2xl dark:text-white">
                     {activeItem?.label ?? "Dashboard"}
                   </h1>
-                  <p className="mt-0.5 hidden truncate text-sm text-neutral-500 md:block dark:text-neutral-400">
-                    Khu làm việc dành cho {role?.toLowerCase() ?? "người dùng"} trong Wokki.
-                  </p>
+                  {!isChatRoute ? <HeaderWorkspaceScope className="mt-0 min-w-0" /> : null}
                 </div>
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-3">
-              <ThemeToggle compact />
-              <div className="hidden items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 md:flex dark:border-neutral-800 dark:bg-neutral-950">
-                <Avatar
-                  size="sm"
-                  className="bg-[#EEF6FB] text-[#1D4D8F] dark:bg-[#0B1E3D] dark:text-[#BCE8F5]"
-                >
-                  <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
-                </Avatar>
-                <span className="max-w-40 truncate text-sm font-semibold">
-                  {user?.email ?? "Wokki user"}
-                </span>
-              </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <SubscriptionRemainingWidget variant="header" />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-9 shrink-0"
+                aria-label="Cài đặt tài khoản"
+                onClick={() => openAccountSettings("profile")}
+              >
+                <SettingsIcon className="size-4" />
+              </Button>
             </div>
           </header>
 
-          <main className="min-h-[calc(100vh-5rem)] p-4 md:p-6 lg:p-8">
-            <div className="mx-auto max-w-7xl">
-              {isAdminRoute && (
-                <div className="mb-4">
-                  <FoundationBreadcrumb />
-                </div>
+          {mustChangePassword ? (
+            <TempAuthWarningBanner onChangePassword={() => openAccountSettings("security")} />
+          ) : null}
+
+          <AccountSettingsDialog
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            userEmail={user?.email}
+            initialSection={settingsInitialSection}
+            onLogout={logout}
+          />
+
+          <main
+            className={cn(
+              isChatRoute || isWorkspaceRoute
+                ? "flex min-h-0 flex-col p-0"
+                : "min-h-[calc(100vh-5rem)] p-4 md:p-6 lg:p-8",
+              isChatRoute && "h-[calc(100vh-5rem)] overflow-hidden"
+            )}
+          >
+            <div
+              className={cn(
+                isChatRoute || isWorkspaceRoute
+                  ? "flex min-h-0 flex-1 flex-col w-full"
+                  : "mx-auto w-full max-w-7xl"
               )}
+            >
+              {isAdminRoute && !isWorkspaceRoute && !isChatRoute && !effectiveLocationId ? (
+                <div className="mb-4">
+                  <FoundationScopePicker />
+                </div>
+              ) : isAdminRoute && !isWorkspaceRoute && !isChatRoute && effectiveLocationId && !isDepartmentScopedRoute ? (
+                <div className="mb-4">
+                  <FoundationScopePicker hideLocationSelect />
+                </div>
+              ) : null}
               {children}
             </div>
           </main>

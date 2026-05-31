@@ -3,6 +3,8 @@ import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
 import type {
+  CopyShiftDefinitionsRequest,
+  CopyShiftDefinitionsResponse,
   CreateShiftRequest,
   ShiftDefinitionResponse,
   ShiftListParams,
@@ -42,5 +44,13 @@ export const fetchShifts = {
       `api/v1/shifts/${id}`,
     );
     assertFoundationSuccess(normalizeApiResponse(response.data));
+  },
+
+  copy: async (data: CopyShiftDefinitionsRequest): Promise<CopyShiftDefinitionsResponse> => {
+    const response = await apiService.post<ApiEnvelope<CopyShiftDefinitionsResponse>>(
+      "api/v1/shifts/copy",
+      data,
+    );
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
   },
 };

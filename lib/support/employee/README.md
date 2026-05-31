@@ -1,9 +1,10 @@
-# `lib/support/employee/` — Wave 4 domain support
+# Employee self-service support
 
-| File | Vai trò |
-|------|---------|
-| `map-errors.ts` | `ME_*`, `SWAP_*`, `ATTENDANCE_*` |
-| `assert-success.ts` | `assertEmployeeSuccess` |
-| `swap-status.ts` | Label `SwapStatus` |
+| File | Role |
+|------|------|
+| `assert-success.ts` | Map API envelope failures |
+| `map-errors.ts` | User-facing messages (`SWAP_POST_*`, attendance, profile) |
+| `swap-post-status.ts` | Labels for `SwapPostType` / `SwapPostStatus`, shift line formatter |
+| `normalize-swap-post.ts` | Map BE string enums (`Cover`, `Pending`, …) → numeric FE constants |
 
-HTTP: `fetchSelf`, `fetchSwapRequests`, `fetchAttendance` · Hooks: `hooks/useMySchedule.ts`, `useSwapRequests.ts`, `useAttendance.ts`
+HTTP: `fetchSelf`, `fetchSwapPosts`, `fetchAttendance` · Hooks: `useMySchedule`, `useSwapPosts`, `useAttendance`

@@ -1,6 +1,6 @@
-import { getAppHomePath } from "@/lib/support/auth/app-routes";
+import { getPostLoginPath as resolvePostLoginPath } from "@/lib/support/auth/post-login-route";
+import { normalizeSessionRole } from "@/lib/support/auth/normalize-role";
 
-/** Sau đăng nhập — vào dashboard quản lý của role. */
 export function getPostLoginPath(role: unknown): string {
-  return getAppHomePath(role);
+  return resolvePostLoginPath(normalizeSessionRole(role));
 }

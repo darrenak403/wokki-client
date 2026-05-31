@@ -1,12 +1,6 @@
-import { buildPageMetadata } from "@/lib/support/seo/metadata";
-import { JoinPage } from "./components/JoinPage";
+import { redirect } from "next/navigation";
 
-export const metadata = buildPageMetadata({
-  title: "Chọn chi nhánh",
-  path: "/join",
-  noindex: true,
-});
-
+/** Join flow removed — employees are provisioned by Org Admin. */
 export default function JoinRoute() {
-  return <JoinPage />;
+  redirect("/login");
 }

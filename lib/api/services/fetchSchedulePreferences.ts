@@ -1,4 +1,5 @@
 import { assertSchedulePreferenceSuccess } from "@/lib/support/schedule-preference/assert-success";
+import { normalizeScheduleStatus } from "@/lib/support/schedule/normalize-status";
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
@@ -13,7 +14,9 @@ export const fetchSchedulePreferences = {
     const response = await apiService.get<ApiEnvelope<EmployeeDraftScheduleResponse | null>>(
       `api/v1/self/schedule-preferences/week/${weekStartDate}`,
     );
-    return assertSchedulePreferenceSuccess(normalizeApiResponse(response.data));
+    const data = assertSchedulePreferenceSuccess(normalizeApiResponse(response.data));
+    if (!data) return null;
+    return { ...data, status: normalizeScheduleStatus(data.status) };
   },
 
   getMine: async (scheduleId: string): Promise<MySchedulePreferenceResponse> => {

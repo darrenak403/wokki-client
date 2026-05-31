@@ -9,6 +9,7 @@ import {
   Clock3Icon,
   LayoutDashboardIcon,
   MessageCircleIcon,
+  NetworkIcon,
   Repeat2Icon,
   UserCogIcon,
   UsersIcon,
@@ -22,6 +23,7 @@ export function renderNavIcon(item: AppNavItem | undefined, className = "size-4 
   const label = item.label.toLowerCase();
 
   if (label.includes("dashboard")) return <LayoutDashboardIcon className={className} />;
+  if (label.includes("tổ chức")) return <NetworkIcon className={className} />;
   if (label.includes("chi nhánh")) return <MapPinIcon className={className} />;
   if (label.includes("phòng ban")) return <Building2Icon className={className} />;
   if (label.includes("ca làm")) return <Clock3Icon className={className} />;
@@ -34,6 +36,8 @@ export function renderNavIcon(item: AppNavItem | undefined, className = "size-4 
   if (label.includes("tin nhắn")) return <MessageCircleIcon className={className} />;
 
   switch (item.module) {
+    case "workspace":
+      return <NetworkIcon className={className} />;
     case "wave2":
       return <BriefcaseBusinessIcon className={className} />;
     case "wave3":
