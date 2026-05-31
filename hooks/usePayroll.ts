@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { payrollKeys } from "@/lib/api/query-keys";
 import { fetchPayroll } from "@/lib/api/services/fetchPayroll";
@@ -31,6 +31,47 @@ export function usePayrollEmployeeDetailQuery(
       enabled &&
       Boolean(employeeId && params?.departmentId && params.startDate && params.endDate),
     staleTime: STALE_MS,
+  });
+}
+
+export function useMyPayrollSummaryQuery(startDate: string, endDate: string, enabled = true) {
+  return useQuery({
+    queryKey: payrollKeys.mySummary({ startDate, endDate }),
+    queryFn: () => fetchPayroll.getMySummary(startDate, endDate),
+    enabled: enabled && Boolean(startDate && endDate),
+    staleTime: STALE_MS,
+  });
+}
+
+export function useLockPayrollPeriodMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payPeriodId: string) => fetchPayroll.lockPeriod(payPeriodId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
+      toast.success("Đã chốt kỳ lương.");
+    },
+    onError: (error) => toast.error(mapPayrollError(error)),
+  });
+}
+
+export function useSetPayrollLinePaidMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      payPeriodId,
+      employeeId,
+      paid,
+    }: {
+      payPeriodId: string;
+      employeeId: string;
+      paid: boolean;
+    }) => fetchPayroll.setLinePaid(payPeriodId, employeeId, paid),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
+      toast.success("Đã cập nhật trạng thái chuyển lương.");
+    },
+    onError: (error) => toast.error(mapPayrollError(error)),
   });
 }
 

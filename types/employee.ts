@@ -98,6 +98,9 @@ export interface AttendanceResponse {
   id: string;
   employeeId: string;
   assignmentId: string | null;
+  mode: AttendanceMode;
+  payrollEligible: boolean;
+  approvedOvertimeMinutes: number;
   clockIn: string;
   clockOut: string | null;
   workedMinutes: number;
@@ -118,6 +121,14 @@ export interface AttendanceResponse {
   locationName?: string | null;
 }
 
+/** BE AttendanceMode */
+export type AttendanceMode = 0 | 1;
+
+export const ATTENDANCE_MODE = {
+  Assignment: 0,
+  Flexible: 1,
+} as const satisfies Record<string, AttendanceMode>;
+
 export interface ClockInRequest {
   assignmentId?: string;
 }
@@ -135,6 +146,7 @@ export type TeamAttendanceListParams = {
   employeeId?: string;
   fromDate?: string;
   toDate?: string;
+  mode?: AttendanceMode;
 };
 
 /** @deprecated Use SelfAttendanceListParams or TeamAttendanceListParams */

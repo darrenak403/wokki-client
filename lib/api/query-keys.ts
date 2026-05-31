@@ -29,6 +29,7 @@ export const payrollKeys = {
   summary: (params: object) => [...payrollKeys.all, "summary", params] as const,
   employeeDetail: (employeeId: string, params: object) =>
     [...payrollKeys.all, "detail", employeeId, params] as const,
+  mySummary: (params: object) => [...payrollKeys.all, "mySummary", params] as const,
 };
 
 export const employeeKeys = {

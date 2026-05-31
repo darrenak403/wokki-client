@@ -8,5 +8,7 @@ export const metadata = buildPageMetadata({
 });
 
 export default function AdminPayrollPage() {
-  return <PayrollPanel canExportCsv />;
+  return (
+    <PayrollPanel canExportCsv canLock canMarkPaid />
+  );
 }

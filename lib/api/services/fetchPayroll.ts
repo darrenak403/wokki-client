@@ -5,17 +5,29 @@ import { mapPayrollError } from "@/lib/support/payroll/map-errors";
 import { parseContentDispositionFilename } from "@/lib/support/payroll/download-csv";
 import type { ApiEnvelope } from "@/types/api";
 import type {
+  MyPayrollSummaryResponse,
   PayrollEmployeeDetailResponse,
   PayrollExportRequest,
+  PayrollLineResponse,
   PayrollSummaryParams,
   PayrollSummaryResponse,
 } from "@/types/payroll";
+
+function summaryQuery(params: PayrollSummaryParams): Record<string, string | boolean> {
+  const q: Record<string, string | boolean> = {
+    departmentId: params.departmentId,
+    startDate: params.startDate,
+    endDate: params.endDate,
+  };
+  if (params.unpaidOnly) q.unpaidOnly = true;
+  return q;
+}
 
 export const fetchPayroll = {
   getSummary: async (params: PayrollSummaryParams): Promise<PayrollSummaryResponse> => {
     const response = await apiService.get<ApiEnvelope<PayrollSummaryResponse>>(
       "api/v1/payroll/summary",
-      params,
+      summaryQuery(params),
     );
     return assertPayrollSuccess(normalizeApiResponse(response.data));
   },
@@ -26,7 +38,35 @@ export const fetchPayroll = {
   ): Promise<PayrollEmployeeDetailResponse> => {
     const response = await apiService.get<ApiEnvelope<PayrollEmployeeDetailResponse>>(
       `api/v1/payroll/summary/${employeeId}`,
-      params,
+      summaryQuery(params),
+    );
+    return assertPayrollSuccess(normalizeApiResponse(response.data));
+  },
+
+  getMySummary: async (startDate: string, endDate: string): Promise<MyPayrollSummaryResponse> => {
+    const response = await apiService.get<ApiEnvelope<MyPayrollSummaryResponse>>(
+      "api/v1/payroll/my-summary",
+      { startDate, endDate },
+    );
+    return assertPayrollSuccess(normalizeApiResponse(response.data));
+  },
+
+  lockPeriod: async (payPeriodId: string): Promise<PayrollSummaryResponse> => {
+    const response = await apiService.post<ApiEnvelope<PayrollSummaryResponse>>(
+      `api/v1/payroll/periods/${payPeriodId}/lock`,
+      {},
+    );
+    return assertPayrollSuccess(normalizeApiResponse(response.data));
+  },
+
+  setLinePaid: async (
+    payPeriodId: string,
+    employeeId: string,
+    paid: boolean,
+  ): Promise<PayrollLineResponse> => {
+    const response = await apiService.patch<ApiEnvelope<PayrollLineResponse>>(
+      `api/v1/payroll/periods/${payPeriodId}/employees/${employeeId}/paid`,
+      { paid },
     );
     return assertPayrollSuccess(normalizeApiResponse(response.data));
   },

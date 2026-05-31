@@ -76,7 +76,6 @@ export function AttendancePanel() {
       r.shiftAssignmentId === currentShift?.id &&
       (r.status === OVERTIME_STATUS.Pending || r.status === OVERTIME_STATUS.PendingApproval)
   );
-  // Find any open OT regardless of which shift/day it belongs to (cross-day OT stays visible)
   const anyOpenOTRequest = myOTRequests.find((r) => r.status === OVERTIME_STATUS.Pending);
   const hasAttendanceForShift =
     !!openRecord || history.some((r) => r.assignmentId === currentShift?.id);

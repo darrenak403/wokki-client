@@ -45,7 +45,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isShiftsRoute = /\/(admin|manager)\/shifts(\/|$)/.test(pathname);
   const isEmployeesRoute = /\/(admin|manager)\/employees(\/|$)/.test(pathname);
   const isScheduleRoute = /\/(admin|manager)\/schedule(\/|$)/.test(pathname);
-  const isDepartmentScopedRoute = isShiftsRoute || isEmployeesRoute || isScheduleRoute;
+  const isAttendanceRoute = /\/(admin|manager)\/attendance(\/|$)/.test(pathname);
+  const isPayrollRoute = /\/(admin|manager)\/payroll(\/|$)/.test(pathname);
+  const isDepartmentScopedRoute =
+    isShiftsRoute ||
+    isEmployeesRoute ||
+    isScheduleRoute ||
+    isAttendanceRoute ||
+    isPayrollRoute;
   const isWorkspaceRoute = Boolean(
     parsed?.featurePath === "workspace" || parsed?.featurePath.startsWith("workspace/")
   );

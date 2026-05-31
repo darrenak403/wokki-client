@@ -2,11 +2,7 @@ import { assertFoundationSuccess } from "@/lib/support/foundation/assert-success
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
-import type {
-  CreateDepartmentRequest,
-  DepartmentResponse,
-  UpdateDepartmentRequest,
-} from "@/types/foundation";
+import type { CreateDepartmentRequest, DepartmentResponse, UpdateDepartmentRequest } from "@/types/foundation";
 
 export const fetchDepartments = {
   list: async (locationId?: string): Promise<DepartmentResponse[]> => {

@@ -123,22 +123,17 @@ export function ShiftClockCard({
               </p>
             </div>
           </div>
-        ) : (
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button
-              size="lg"
-              className="h-12 flex-1 text-base"
-              disabled={!canClockIn || selectedShiftEnded || actionPending}
-              onClick={onClockIn}
-            >
-              <LogInIcon className="size-5" />
-              {clockInPending ? "Đang vào ca…" : "Vào ca"}
-            </Button>
-            <Button type="button" size="lg" variant="outline" className="h-12 sm:w-24" disabled>
-              <TimerIcon className="size-5" />
-            </Button>
-          </div>
-        )}
+        ) : canClockIn ? (
+          <Button
+            size="lg"
+            className="h-12 w-full text-base"
+            disabled={selectedShiftEnded || actionPending}
+            onClick={onClockIn}
+          >
+            <LogInIcon className="size-5" />
+            {clockInPending ? "Đang vào ca…" : "Vào ca"}
+          </Button>
+        ) : null}
       </div>
 
       {canRequestOT ? (

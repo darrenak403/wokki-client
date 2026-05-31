@@ -168,7 +168,13 @@ const USER_NAV: AppNavItemDef[] = [
   {
     href: "/user/attendance",
     label: "Chấm công",
-    description: "Chấm vào hoặc ra khi có ca hôm nay.",
+    description: "Chấm vào hoặc ra — theo ca hoặc linh hoạt (tùy phòng ban).",
+    module: "wave4",
+  },
+  {
+    href: "/user/payroll",
+    label: "Lương",
+    description: "Tổng giờ và lương tháng hiện tại.",
     module: "wave4",
   },
   {

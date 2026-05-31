@@ -26,8 +26,9 @@ import { Label } from "@/components/ui/label";
 import { useAdjustAttendanceMutation, useTeamAttendanceQuery } from "@/hooks/useAttendance";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
+import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";
-import { addWeeksISO, toMondayISO, weekRangeFromMonday } from "@/lib/support/schedule/week";
+import { addMonthsISO, currentMonthISO, monthBounds } from "@/lib/support/payroll/month";
 import type { AttendanceResponse } from "@/types/employee";
 
 function toLocalInputValue(iso: string): string {
@@ -41,16 +42,15 @@ function fromLocalInputValue(value: string): string {
 }
 
 export function TeamAttendancePanel() {
-  const { session } = useFoundationSession();
+  const { session, setDepartmentId } = useFoundationSession();
   const locationId = session.selectedLocationId;
   const departmentId = session.selectedDepartmentId;
-  const [weekStartDate, setWeekStartDate] = useState(() => toMondayISO(new Date()));
+  const [month, setMonth] = useState(() => currentMonthISO());
+  const { startDate, endDate, label } = monthBounds(month);
   const [adjustRow, setAdjustRow] = useState<AttendanceResponse | null>(null);
   const [clockIn, setClockIn] = useState("");
   const [clockOut, setClockOut] = useState("");
   const [adjustmentNote, setAdjustmentNote] = useState("");
-
-  const { startDate, endDate } = weekRangeFromMonday(weekStartDate);
 
   const listParams = useMemo(
     () => (departmentId ? { page: 1, pageSize: 50, fromDate: startDate, toDate: endDate } : null),
@@ -116,31 +116,38 @@ export function TeamAttendancePanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-4 border-b pb-4">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground font-normal">Tuần</Label>
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Tuần trước"
-              onClick={() => setWeekStartDate((w) => addWeeksISO(w, -1))}
-            >
-              <ChevronLeftIcon className="size-4" />
-            </Button>
-            <span className="text-sm tabular-nums">
-              {startDate} – {endDate}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Tuần sau"
-              onClick={() => setWeekStartDate((w) => addWeeksISO(w, 1))}
-            >
-              <ChevronRightIcon className="size-4" />
-            </Button>
+      <div className="space-y-4 border-b pb-4">
+        <DepartmentScopeChips
+          locationId={locationId}
+          value={departmentId}
+          onChange={setDepartmentId}
+          allowAll={false}
+          maxVisible={5}
+        />
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs font-normal text-muted-foreground">Tháng</Label>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Tháng trước"
+                onClick={() => setMonth((m) => addMonthsISO(m, -1))}
+              >
+                <ChevronLeftIcon className="size-4" />
+              </Button>
+              <span className="min-w-[5rem] text-center text-sm tabular-nums">{label}</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Tháng sau"
+                onClick={() => setMonth((m) => addMonthsISO(m, 1))}
+              >
+                <ChevronRightIcon className="size-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -218,23 +225,23 @@ export function TeamAttendancePanel() {
               />
             </Field>
             <Field>
-              <FieldLabel>Ghi chú (bắt buộc)</FieldLabel>
+              <FieldLabel>Lý do</FieldLabel>
               <Input
                 value={adjustmentNote}
                 onChange={(e) => setAdjustmentNote(e.target.value)}
-                placeholder="Lý do chỉnh giờ…"
+                placeholder="Bắt buộc"
               />
             </Field>
           </FieldGroup>
           <DialogFooter>
             <Button variant="outline" onClick={closeAdjust}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               disabled={!adjustmentNote.trim() || !clockOut || adjustMutation.isPending}
               onClick={() => void handleAdjust()}
             >
-              Lưu
+              {adjustMutation.isPending ? "Đang lưu…" : "Lưu"}
             </Button>
           </DialogFooter>
         </DialogContent>
