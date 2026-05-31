@@ -1,49 +1,60 @@
-# ===========================================
-# Wokki Client - Production (pull image)
-# Dokploy: Compose path docker/docker-compose.prod.yml
-# Env trên Dokploy: DOCKER_USERNAME, IMAGE_TAG (optional)
-# NEXT_PUBLIC_* được bake lúc CI build — KHÔNG override runtime
-# ===========================================
+# Production — pull image (Dokploy / VPS)
+# Env: DOCKER_USERNAME, IMAGE_TAG (optional), CLIENT_PORT (optional)
+# Deploy BE trước — network wokki-network (external)
 
 name: wokki-client-prod
 
+x-logging: &wokki-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-security: &wokki-security
+  init: true
+  security_opt:
+    - no-new-privileges:true
+
 services:
   wokki_client:
-    image: ${DOCKER_USERNAME}/wokki-client:${IMAGE_TAG:-latest}
     container_name: wokki_client
+    image: ${DOCKER_USERNAME}/wokki-client:${IMAGE_TAG:-latest}
     pull_policy: always
     restart: unless-stopped
-
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
+    <<: *wokki-security
+    cap_drop:
+      - ALL
+    logging: *wokki-logging
     ports:
       - "${CLIENT_PORT:-6789}:6789"
-
     environment:
       - NODE_ENV=production
       - PORT=6789
       - HOSTNAME=0.0.0.0
       - NEXT_TELEMETRY_DISABLED=1
-
+      - NODE_OPTIONS=--max-old-space-size=${NODE_MAX_OLD_SPACE:-384}
+      - UV_THREADPOOL_SIZE=${UV_THREADPOOL_SIZE:-4}
+    tmpfs:
+      - /tmp:size=64M,mode=1777,noexec,nosuid,nodev
+    deploy:
+      resources:
+        limits:
+          cpus: "${CLIENT_CPU_LIMIT:-1.5}"
+          memory: ${CLIENT_MEMORY_LIMIT:-512M}
+        reservations:
+          memory: 128M
     healthcheck:
       test:
         [
           "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://127.0.0.1:6789",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:6789/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
     networks:
       - wokki-network
 

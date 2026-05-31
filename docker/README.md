@@ -89,7 +89,15 @@ docker/
 | ------- | --------- | ----- |
 | Client | `wokki_client` | `${DOCKER_USERNAME}/wokki-client:latest` |
 
-## Ghi chú
+### Tối ưu (prod compose)
+
+| Hạng mục | Chi tiết |
+| -------- | -------- |
+| **Image** | Multi-stage Alpine, `npm ci --omit=dev`, prune sau build |
+| **Bảo mật** | `cap_drop: ALL`, `no-new-privileges`, `tmpfs /tmp`, log rotation |
+| **Concurrency** | `UV_THREADPOOL_SIZE`, `NODE_OPTIONS=--max-old-space-size` |
+| **Resources** | Limit 512M RAM / 1.5 CPU (tune qua `CLIENT_*` env) |
+| **CI** | GitHub Actions cache + build-args bake `NEXT_PUBLIC_*` |
 
 - `.dockerignore` ở **repo root** bắt buộc.
 - Dev: hot reload, volume mount.
