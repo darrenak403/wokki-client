@@ -1,104 +1,74 @@
-# Docker — Wokki Client
+# Docker — Wokki Client (FE)
 
-Cấu hình container trong `docker/`. Build context = root repo (`..`).
+## GitHub Secrets (chỉ 2 — cả 2 repo BE/FE)
+
+| Secret | Mục đích |
+| ------ | -------- |
+| `DOCKER_USERNAME` | Login + push Docker Hub |
+| `DOCKER_PASSWORD` | Token Docker Hub |
+
+**Mọi biến khác** → env trên **Dokploy** hoặc `docker/.env` / GitHub **Variables** (cho build).
+
+## GitHub Variables (repo FE — lúc CI build image)
+
+| Variable | Giá trị prod |
+| -------- | ------------ |
+| `NEXT_PUBLIC_API_URL` | `https://api.wokki.beyond8.io.vn` |
+| `NEXT_PUBLIC_APP_URL` | `https://wokki.beyond8.io.vn` |
+| `NEXT_PUBLIC_APP_NAME` | Optional — `Wokki` |
+| `NEXT_PUBLIC_ENV` | Optional — `production` |
+
+`NEXT_PUBLIC_*` bake vào image lúc build — **không** set runtime trên Dokploy.
 
 ## CI/CD → Dokploy
 
 ```
-GitHub Actions (push main)
-  → build image + bake NEXT_PUBLIC_*
-  → push Docker Hub: ${DOCKER_USERNAME}/wokki-client:latest
-  → Dokploy pull & redeploy (registry credentials trên Dokploy)
+push main → GitHub Actions build/push
+         → Dokploy pull ${DOCKER_USERNAME}/wokki-client:latest
+         → compose up
 ```
 
-### GitHub (repo wokki-client)
-
-| Loại | Tên | Ghi chú |
-| ---- | --- | ------- |
-| Secret | `DOCKER_USERNAME` | Docker Hub username |
-| Secret | `DOCKER_PASSWORD` | Docker Hub access token |
-| Variable | `NEXT_PUBLIC_API_URL` | `https://api.wokki.beyond8.io.vn` |
-| Variable | `NEXT_PUBLIC_APP_URL` | `https://wokki.beyond8.io.vn` |
-| Variable | `NEXT_PUBLIC_APP_NAME` | Optional, default `Wokki` |
-| Variable | `NEXT_PUBLIC_ENV` | Optional, default `production` |
-
-`NEXT_PUBLIC_*` **chỉ có hiệu lực lúc CI build** — không override được sau khi image đã push.
-
-### Dokploy (app FE)
-
-| Cấu hình | Giá trị |
-| -------- | ------- |
-| Loại | Docker Compose |
-| Compose file | `docker/docker-compose.prod.yml` |
-| Registry | Docker Hub (`DOCKER_USERNAME` + token trong Dokploy) |
-| Env runtime | `DOCKER_USERNAME`, `IMAGE_TAG` (optional), `CLIENT_PORT` (optional) |
-
-**Deploy BE stack trước** — BE tạo network `wokki-network`, FE join (`external: true`).
+Deploy **sau BE** — FE join network `wokki-network` (external).
 
 Cloudflare Tunnel → port **6789**.
 
-## Env files (local / manual)
+## Env files
 
-| File | Commit? | Dùng khi |
-|------|---------|----------|
-| `.env.example` | Có | Mẫu |
-| `.env.local` | Không | `npm run docker:dev` |
-| `.env` | Không | `npm run docker:prod`, `docker:prod:pull` |
+| File | Dùng khi |
+| ---- | -------- |
+| `docker/.env.example` | Template |
+| `docker/.env.local` | `npm run docker:dev` |
+| `docker/.env` | `npm run docker:prod` |
 
-```bash
-cp docker/.env.example docker/.env.local   # dev
-cp docker/.env.example docker/.env         # prod build/pull local
-```
+## Prod compose
 
-## Lệnh (repo root)
-
-```bash
-npm run docker:dev
-npm run docker:dev:down
-
-# Pull & run (VPS / test local)
-npm run docker:prod:pull
-npm run docker:prod
-npm run docker:prod:down
-```
-
-Build image: GitHub Actions (push `main`) hoặc thủ công:
-
-```bash
-docker build -f docker/Dockerfile --target runner \
-  --build-arg NEXT_PUBLIC_API_URL=https://api.example.com/ \
-  --build-arg NEXT_PUBLIC_APP_URL=https://app.example.com \
-  --build-arg NEXT_PUBLIC_APP_NAME=Wokki \
-  --build-arg NEXT_PUBLIC_ENV=production \
-  -t ${DOCKER_USERNAME}/wokki-client:latest .
-docker push ${DOCKER_USERNAME}/wokki-client:latest
-```
-
-## Cấu trúc
-
-```
-docker/
-  Dockerfile
-  docker-compose.dev.yml
-  docker-compose.prod.yml   → pull image (Dokploy / VPS)
-  .env.example
-  README.md
-```
+File: `docker/docker-compose.prod.yml`
 
 | Service | Container | Image |
 | ------- | --------- | ----- |
 | Client | `wokki_client` | `${DOCKER_USERNAME}/wokki-client:latest` |
 
-### Tối ưu (prod compose)
+Env Dokploy: `DOCKER_USERNAME`, `IMAGE_TAG` (optional), `CLIENT_PORT` (optional).
 
-| Hạng mục | Chi tiết |
-| -------- | -------- |
-| **Image** | Multi-stage Alpine, `npm ci --omit=dev`, prune sau build |
-| **Bảo mật** | `cap_drop: ALL`, `no-new-privileges`, `tmpfs /tmp`, log rotation |
-| **Concurrency** | `UV_THREADPOOL_SIZE`, `NODE_OPTIONS=--max-old-space-size` |
-| **Resources** | Limit 512M RAM / 1.5 CPU (tune qua `CLIENT_*` env) |
-| **CI** | GitHub Actions cache + build-args bake `NEXT_PUBLIC_*` |
+```bash
+npm run docker:prod:pull
+npm run docker:prod
+```
 
-- `.dockerignore` ở **repo root** bắt buộc.
-- Dev: hot reload, volume mount.
-- Prod: Next.js `standalone`, healthcheck `GET /`.
+## Dev
+
+```bash
+npm run docker:dev
+npm run docker:dev:down
+```
+
+Hot reload port **6789**.
+
+### Tối ưu (prod)
+
+| | Chi tiết |
+|---|----------|
+| **Image** | Alpine standalone, non-root, npm cache build, GHA cache CI |
+| **Concurrency** | `UV_THREADPOOL_SIZE=4`, `NODE_OPTIONS=--max-old-space-size=384` |
+| **Log** | Giới hạn 10MB × 3 file |
+| **RAM** | Limit 512M — tune `CLIENT_MEMORY_LIMIT` |

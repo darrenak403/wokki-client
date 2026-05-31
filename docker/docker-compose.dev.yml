@@ -2,12 +2,6 @@
 
 name: wokki-client-dev
 
-x-logging: &wokki-dev-logging
-  driver: json-file
-  options:
-    max-size: "5m"
-    max-file: "2"
-
 services:
   wokki_client:
     container_name: wokki_client_dev
@@ -15,8 +9,6 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       target: dev
-      cache_from:
-        - wokki/wokki-client:dev
     image: wokki/wokki-client:dev
     env_file:
       - .env.local
@@ -30,15 +22,7 @@ services:
     environment:
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
-      WATCHPACK_POLLING_INTERVAL: "1000"
-      NODE_OPTIONS: "--max-old-space-size=2048"
-    init: true
     restart: unless-stopped
-    logging: *wokki-dev-logging
-    deploy:
-      resources:
-        limits:
-          memory: 2G
 
 volumes:
   wokki_client_node_modules:
