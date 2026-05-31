@@ -43,6 +43,11 @@ function resolveRequestHomePath(
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname === "/__runtime-env.js") {
+    return NextResponse.next();
+  }
+
   const { token, roleCookie } = readAuthCookies(request);
   const sessionRole = resolveSessionRoleFromRequest(token, roleCookie);
   const appRole = resolveRoleFromRequest(token, roleCookie);
@@ -138,6 +143,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webm|mp4|xml|glb)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|__runtime-env\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webm|mp4|xml|glb)$).*)",
   ],
 };
