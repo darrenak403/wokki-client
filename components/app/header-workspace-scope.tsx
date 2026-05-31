@@ -7,7 +7,7 @@ import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { useMyProfileQuery } from "@/hooks/useMyProfile";
 import { useTenantParams } from "@/hooks/useTenantParams";
 import { useWorkspaceLocations } from "@/hooks/useWorkspaceLocations";
-import { ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
+import { ROLE_ADMIN, ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
 
 type HeaderWorkspaceScopeProps = {
@@ -20,6 +20,21 @@ export function HeaderWorkspaceScope({ className }: HeaderWorkspaceScopeProps) {
   const { locationId: urlLocationId } = useTenantParams();
   const isManagerScope = role === ROLE_MANAGER;
   const isEmployee = role === ROLE_USER;
+  const isOrgAdmin = role === ROLE_ADMIN;
+
+  if (isOrgAdmin) {
+    return (
+      <p
+        className={cn(
+          "flex min-w-0 items-center gap-2 overflow-hidden text-sm text-neutral-500 dark:text-neutral-400",
+          className,
+        )}
+      >
+        <MapPinIcon className="size-3.5 shrink-0 opacity-80" aria-hidden="true" />
+        <span className="truncate">Quản trị viên · Toàn chi nhánh</span>
+      </p>
+    );
+  }
 
   const { data: profile } = useMyProfileQuery({
     enabled: isEmployee || isManagerScope,

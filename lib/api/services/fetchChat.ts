@@ -1,4 +1,5 @@
 import { assertChatSuccess } from "@/lib/support/chat/assert-success";
+import { normalizeChannelList, normalizeChannelResponse } from "@/lib/support/chat/normalize-channel";
 import { normalizeApiResponse } from "@/lib/api/normalize-response";
 import apiService from "@/lib/api/core";
 import type { ApiEnvelope } from "@/types/api";
@@ -8,12 +9,21 @@ import type {
   MessageListParams,
   MessageListResponse,
   MessageResponse,
+  OrgChatMemberResponse,
   SendMessageRequest,
 } from "@/types/chat";
 
 export const fetchChat = {
   listChannels: async (): Promise<ChannelResponse[]> => {
     const response = await apiService.get<ApiEnvelope<ChannelResponse[]>>("api/v1/channels");
+    const channels = assertChatSuccess(normalizeApiResponse(response.data));
+    return normalizeChannelList(channels);
+  },
+
+  listOrgMembers: async (): Promise<OrgChatMemberResponse[]> => {
+    const response = await apiService.get<ApiEnvelope<OrgChatMemberResponse[]>>(
+      "api/v1/channels/org/members",
+    );
     return assertChatSuccess(normalizeApiResponse(response.data));
   },
 
@@ -22,7 +32,8 @@ export const fetchChat = {
       "api/v1/channels",
       data,
     );
-    return assertChatSuccess(normalizeApiResponse(response.data));
+    const channel = assertChatSuccess(normalizeApiResponse(response.data));
+    return normalizeChannelResponse(channel);
   },
 
   listMessages: async (

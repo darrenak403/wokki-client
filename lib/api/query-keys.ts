@@ -21,6 +21,7 @@ export const opsKeys = {
 export const chatKeys = {
   all: ["chat"] as const,
   channels: () => [...chatKeys.all, "channels"] as const,
+  orgMembers: () => [...chatKeys.all, "orgMembers"] as const,
   messages: (channelId: string) => [...chatKeys.all, "messages", channelId] as const,
 };
 

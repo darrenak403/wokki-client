@@ -1,5 +1,7 @@
 import type { ChannelResponse } from "@/types/chat";
 import { CHANNEL_TYPE } from "@/types/chat";
+import type { OrgChatMemberResponse } from "@/types/chat";
+import { ROLE_ADMIN } from "@/lib/types/roles";
 
 const STORAGE_KEY = "wokki_chat_my_employee_id";
 
@@ -43,10 +45,25 @@ export function tryInferMyEmployeeIdFromChannels(channels: ChannelResponse[]): s
   return bestId;
 }
 
+export function memberDisplayName(firstName: string, lastName: string): string {
+  return `${firstName} ${lastName}`.trim();
+}
+
+export function orgChatMemberSubtitle(member: OrgChatMemberResponse): string | null {
+  if (member.isOrgAdmin || member.role?.toLowerCase() === ROLE_ADMIN.toLowerCase()) {
+    return "Quản trị viên · Toàn chi nhánh";
+  }
+  const parts = [member.departmentName, member.locationName].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 export function channelDisplayName(
   channel: ChannelResponse,
   myEmployeeId: string | null,
 ): string {
+  if (channel.type === CHANNEL_TYPE.Organization) {
+    return channel.name?.trim() || "Toàn công ty";
+  }
   if (channel.type === CHANNEL_TYPE.Group && channel.name?.trim()) {
     return channel.name.trim();
   }

@@ -8,5 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function UserChatPage() {
-  return <ChatPanel canCreateChannel={false} canModerateDelete={false} />;
+  return <ChatPanel canModerateDelete={false} />;
 }

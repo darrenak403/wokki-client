@@ -47,6 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isScheduleRoute = /\/(admin|manager)\/schedule(\/|$)/.test(pathname);
   const isAttendanceRoute = /\/(admin|manager)\/attendance(\/|$)/.test(pathname);
   const isPayrollRoute = /\/(admin|manager)\/payroll(\/|$)/.test(pathname);
+  const isChatRoute = /\/(admin|manager|user)\/chat(\/|$)/.test(pathname);
   const isDepartmentScopedRoute =
     isShiftsRoute ||
     isEmployeesRoute ||
@@ -157,7 +158,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <h1 className="shrink-0 text-xl font-extrabold tracking-tight text-neutral-950 md:text-2xl dark:text-white">
                     {activeItem?.label ?? "Dashboard"}
                   </h1>
-                  <HeaderWorkspaceScope className="mt-0 min-w-0" />
+                  {!isChatRoute ? <HeaderWorkspaceScope className="mt-0 min-w-0" /> : null}
                 </div>
               </div>
             </div>
@@ -191,22 +192,24 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <main
             className={cn(
-              "min-h-[calc(100vh-5rem)]",
-              isWorkspaceRoute ? "flex flex-col p-0" : "p-4 md:p-6 lg:p-8"
+              isChatRoute || isWorkspaceRoute
+                ? "flex min-h-0 flex-col p-0"
+                : "min-h-[calc(100vh-5rem)] p-4 md:p-6 lg:p-8",
+              isChatRoute && "h-[calc(100vh-5rem)] overflow-hidden"
             )}
           >
             <div
               className={cn(
-                isWorkspaceRoute
+                isChatRoute || isWorkspaceRoute
                   ? "flex min-h-0 flex-1 flex-col w-full"
                   : "mx-auto w-full max-w-7xl"
               )}
             >
-              {isAdminRoute && !isWorkspaceRoute && !effectiveLocationId ? (
+              {isAdminRoute && !isWorkspaceRoute && !isChatRoute && !effectiveLocationId ? (
                 <div className="mb-4">
                   <FoundationScopePicker />
                 </div>
-              ) : isAdminRoute && !isWorkspaceRoute && effectiveLocationId && !isDepartmentScopedRoute ? (
+              ) : isAdminRoute && !isWorkspaceRoute && !isChatRoute && effectiveLocationId && !isDepartmentScopedRoute ? (
                 <div className="mb-4">
                   <FoundationScopePicker hideLocationSelect />
                 </div>

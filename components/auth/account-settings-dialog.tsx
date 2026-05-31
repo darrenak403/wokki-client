@@ -42,7 +42,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { clearMustChangePassword, selectAppRole } from "@/lib/redux/slices/authSlice";
-import { ROLE_USER } from "@/lib/types/roles";
+import { ROLE_ADMIN, ROLE_USER } from "@/lib/types/roles";
 import { getInitials } from "@/components/app/app-shell-utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -634,14 +634,18 @@ function ProfileSettingsPanel({
           />
 
           <ReadOnlySettingsField label="Email" value={data.email} />
-          <div className="grid gap-2 sm:grid-cols-2">
-            {data.departmentName ? (
-              <ReadOnlySettingsField label="Phòng ban" value={data.departmentName} />
-            ) : null}
-            {data.locationName ? (
-              <ReadOnlySettingsField label="Chi nhánh" value={data.locationName} />
-            ) : null}
-          </div>
+          {data.role === ROLE_ADMIN ? (
+            <ReadOnlySettingsField label="Phạm vi" value="Quản trị viên · Toàn chi nhánh" />
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {data.departmentName ? (
+                <ReadOnlySettingsField label="Phòng ban" value={data.departmentName} />
+              ) : null}
+              {data.locationName ? (
+                <ReadOnlySettingsField label="Chi nhánh" value={data.locationName} />
+              ) : null}
+            </div>
+          )}
           {data.position ? <ReadOnlySettingsField label="Vị trí" value={data.position} /> : null}
 
           <PaymentProfileEntryTile data={data} onOpen={onOpenPaymentProfile} />
