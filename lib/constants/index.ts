@@ -1,12 +1,20 @@
 import { getApiBaseUrl, publicEnv } from "@/lib/env/public";
 import { AUTH_TOKEN_COOKIE } from "@/lib/support/auth/session-cookies";
 
-/** @see publicEnv — values from NEXT_PUBLIC_* (.env.local / Docker build args). */
-export const APP_NAME = publicEnv.appName;
-export const APP_URL = publicEnv.appUrl;
-export const API_URL = publicEnv.apiUrl;
+/** @see publicEnv — NEXT_PUBLIC_* at runtime (Dokploy) or .env.local in dev. */
+export function getAppName(): string {
+  return publicEnv.appName;
+}
+export function getAppUrl(): string {
+  return publicEnv.appUrl;
+}
+export function getApiUrl(): string {
+  return publicEnv.apiUrl;
+}
 /** Same as `getApiBaseUrl()` — includes trailing slash for HTTP clients. */
-export const API_BASE_URL = getApiBaseUrl();
+export function getApiBaseUrlConstant(): string {
+  return getApiBaseUrl();
+}
 
 /** Cookie name for JWT — must match `session-cookies.ts`. */
 export const AUTH_TOKEN_KEY = AUTH_TOKEN_COOKIE;

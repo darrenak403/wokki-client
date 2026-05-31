@@ -7,25 +7,26 @@
 | `DOCKER_USERNAME` | Login + push Docker Hub |
 | `DOCKER_PASSWORD` | Token Docker Hub |
 
-**Mọi biến khác** → env trên **Dokploy** hoặc `docker/.env` / GitHub **Variables** (cho build).
+**Mọi biến khác** → env trên **Dokploy** hoặc `docker/.env`.
 
-## GitHub Variables (repo FE — lúc CI build image)
+## Env trên Dokploy (runtime — bắt buộc cho prod)
 
 | Variable | Giá trị prod |
 | -------- | ------------ |
+| `DOCKER_USERNAME` | Docker Hub username |
 | `NEXT_PUBLIC_API_URL` | `https://api.wokki.beyond8.io.vn` |
 | `NEXT_PUBLIC_APP_URL` | `https://wokki.beyond8.io.vn` |
 | `NEXT_PUBLIC_APP_NAME` | Optional — `Wokki` |
-| `NEXT_PUBLIC_ENV` | Optional — `production` |
+| `NEXT_PUBLIC_ENV` | `production` |
 
-`NEXT_PUBLIC_*` bake vào image lúc build — **không** set runtime trên Dokploy.
+Container start ghi `public/__runtime-env.js` từ các biến trên — **không cần** GitHub Variables.
 
 ## CI/CD → Dokploy
 
 ```
-push main → GitHub Actions build/push
+push main → GitHub Actions build/push (chỉ image, không bake URL)
          → Dokploy pull ${DOCKER_USERNAME}/wokki-client:latest
-         → compose up
+         → compose up + env NEXT_PUBLIC_*
 ```
 
 Deploy **sau BE** — FE join network `wokki-network` (external).
@@ -48,7 +49,7 @@ File: `docker/docker-compose.prod.yml`
 | ------- | --------- | ----- |
 | Client | `wokki_client` | `${DOCKER_USERNAME}/wokki-client:latest` |
 
-Env Dokploy: `DOCKER_USERNAME`, `IMAGE_TAG` (optional), `CLIENT_PORT` (optional).
+Env Dokploy: `DOCKER_USERNAME`, `NEXT_PUBLIC_*`, `CLIENT_PORT` (optional).
 
 ```bash
 npm run docker:prod:pull
@@ -69,6 +70,7 @@ Hot reload port **6789**.
 | | Chi tiết |
 |---|----------|
 | **Image** | Alpine standalone, non-root, npm cache build, GHA cache CI |
+| **Runtime env** | `entrypoint.js` → `/__runtime-env.js` |
 | **Concurrency** | `UV_THREADPOOL_SIZE=4`, `NODE_OPTIONS=--max-old-space-size=384` |
 | **Log** | Giới hạn 10MB × 3 file |
 | **RAM** | Limit 512M — tune `CLIENT_MEMORY_LIMIT` |

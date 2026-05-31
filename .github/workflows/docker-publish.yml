@@ -1,7 +1,6 @@
 # Build & push wokki-client to Docker Hub.
 # GitHub repo secrets (chỉ 2): DOCKER_USERNAME, DOCKER_PASSWORD
-# GitHub Variables (build-time): NEXT_PUBLIC_API_URL, NEXT_PUBLIC_APP_URL, ...
-# Runtime env khác → Dokploy / docker/.env
+# Runtime env (NEXT_PUBLIC_*, ports, …) → Dokploy / docker/.env
 
 name: Docker publish
 
@@ -59,10 +58,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
-            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}
-            NEXT_PUBLIC_APP_NAME=${{ vars.NEXT_PUBLIC_APP_NAME || 'Wokki' }}
-            NEXT_PUBLIC_ENV=${{ vars.NEXT_PUBLIC_ENV || 'production' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

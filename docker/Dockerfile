@@ -26,17 +26,6 @@ FROM base AS builder
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_APP_URL
-ARG NEXT_PUBLIC_APP_NAME
-ARG NEXT_PUBLIC_ENV=production
-
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
-    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
-    NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME \
-    NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
-
 RUN npm run build
 
 # --- Production: run ---
@@ -54,6 +43,7 @@ RUN addgroup -S wokki \
 COPY --from=builder --chown=wokki:wokki /app/public ./public
 COPY --from=builder --chown=wokki:wokki /app/.next/standalone ./
 COPY --from=builder --chown=wokki:wokki /app/.next/static ./.next/static
+COPY --chown=wokki:wokki docker/entrypoint.js ./entrypoint.js
 
 USER wokki
 EXPOSE 6789
@@ -61,4 +51,4 @@ EXPOSE 6789
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD node -e "fetch('http://127.0.0.1:6789/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "server.js"]
+CMD ["node", "entrypoint.js"]
