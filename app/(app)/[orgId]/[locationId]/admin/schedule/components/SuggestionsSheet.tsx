@@ -26,7 +26,11 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   CalendarEmptySlot,
   WeekShiftCalendar,
+  type WeekShiftCalendarShift,
 } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/WeekShiftCalendar";
+import { SuggestionDiffView } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/SuggestionDiffView";
+import { useEmployeesQuery } from "@/hooks/useEmployees";
+import { buildSuggestionCompare } from "@/lib/support/schedule/suggestion-compare";
 import {
   useApplySuggestionsMutation,
   useScheduleInsightChatMutation,
@@ -43,7 +47,7 @@ import { shiftAccentColor, shiftChipStyle } from "@/lib/support/schedule/shift-c
 import { weekDayDates } from "@/lib/support/schedule/week";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import type { ScheduleSuggestion } from "@/types/schedule";
+import type { ScheduleSuggestion, ShiftAssignmentResponse } from "@/types/schedule";
 
 function timeToMinutes(value: string) {
   const [hours = "0", minutes = "0"] = value.slice(0, 5).split(":");
@@ -57,6 +61,7 @@ type SuggestionsSheetProps = {
   locationId: string;
   listParams: { departmentId: string; weekStartDate: string };
   conflictCount?: number;
+  currentAssignments?: ShiftAssignmentResponse[];
 };
 
 type ChatMessage = {
@@ -72,6 +77,7 @@ export function SuggestionsSheet({
   locationId,
   listParams,
   conflictCount = 0,
+  currentAssignments = [],
 }: SuggestionsSheetProps) {
   const router = useRouter();
   const { branchPath, orgPath, parsed } = useTenantNavigation();
@@ -88,6 +94,7 @@ export function SuggestionsSheet({
   const [hasGenerated, setHasGenerated] = useState(false);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const resetSheetState = () => {
     setSuggestions([]);
@@ -97,6 +104,7 @@ export function SuggestionsSheet({
     setHasGenerated(false);
     setQuestion("");
     setMessages([]);
+    setAssistantOpen(false);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -129,6 +137,18 @@ export function SuggestionsSheet({
 
   const selectAll = () => setSelected(new Set(suggestions.map((s) => s.id)));
   const selectNone = () => setSelected(new Set());
+  const selectChangesOnly = () => {
+    setSelected(
+      new Set(
+        suggestions
+          .filter((s) => {
+            const diff = compare.diffBySuggestionId.get(s.id);
+            return diff === "changed" || diff === "new";
+          })
+          .map((s) => s.id),
+      ),
+    );
+  };
 
   const handleApply = async () => {
     const picked = suggestions.filter((s) => selected.has(s.id));
@@ -140,8 +160,37 @@ export function SuggestionsSheet({
         date: s.date,
         note: null,
       })),
+      clearOrphanAssignments: compare.stats.hasCurrentSchedule,
     });
     handleOpenChange(false);
+  };
+
+  const renderSuggestedCell = (shift: WeekShiftCalendarShift, date: string) => {
+    const color = shiftAccentColor(shift.color);
+    const cell = suggestionsByKey.get(`${shift.id}|${date}`) ?? [];
+
+    if (cell.length === 0) {
+      return <CalendarEmptySlot label="Trống" />;
+    }
+
+    return cell.map((s) => (
+      <label
+        key={s.id}
+        className={cn(
+          "flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 transition-all",
+          !selected.has(s.id) && "opacity-40 saturate-50",
+        )}
+        style={shiftChipStyle(color)}
+      >
+        <Checkbox
+          checked={selected.has(s.id)}
+          onCheckedChange={(c) => toggle(s.id, c === true)}
+          aria-label={`Chọn ${s.employeeName}`}
+          className="size-3.5 shrink-0 border-current/40 data-[state=checked]:border-current"
+        />
+        <span className="truncate text-xs font-semibold">{s.employeeName}</span>
+      </label>
+    ));
   };
 
   const handleAsk = async () => {
@@ -197,6 +246,27 @@ export function SuggestionsSheet({
     }
     return map;
   }, [suggestions]);
+
+  const { data: employeesPage } = useEmployeesQuery({
+    departmentId: listParams.departmentId,
+    pageSize: 100,
+  });
+  const employeeNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const employee of employeesPage?.items ?? []) {
+      map.set(employee.id, `${employee.firstName} ${employee.lastName}`.trim());
+    }
+    return map;
+  }, [employeesPage?.items]);
+
+  const compare = useMemo(
+    () => buildSuggestionCompare(currentAssignments, suggestions, employeeNameById, activeShifts, days),
+    [currentAssignments, suggestions, employeeNameById, activeShifts, days],
+  );
+
+  const inCompareMode =
+    compare.stats.hasCurrentSchedule && hasGenerated && suggestions.length > 0;
+  const showAssistant = !inCompareMode || assistantOpen;
 
   const contextGeneratedAt = contextQuery.data?.generatedAt
     ? format(parseISO(contextQuery.data.generatedAt), "dd/MM HH:mm")
@@ -256,6 +326,18 @@ export function SuggestionsSheet({
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
+            {inCompareMode ? (
+              <Button
+                type="button"
+                variant={assistantOpen ? "secondary" : "outline"}
+                size="sm"
+                className="hidden sm:inline-flex"
+                onClick={() => setAssistantOpen((open) => !open)}
+              >
+                <Bot className="size-4" aria-hidden />
+                Trợ lý
+              </Button>
+            ) : null}
             {fallbackUsed ? (
               <Badge variant="outline" className="hidden sm:inline-flex">
                 Một phần
@@ -288,7 +370,11 @@ export function SuggestionsSheet({
               }
               onClick={() => void handleApply()}
             >
-              {applyMutation.isPending ? "Áp dụng…" : `Áp dụng (${selected.size})`}
+              {applyMutation.isPending
+                ? "Đang áp dụng…"
+                : compare.stats.hasCurrentSchedule
+                  ? `Đè lịch cũ (${selected.size})`
+                  : `Áp dụng (${selected.size})`}
             </Button>
             <Button
               type="button"
@@ -310,7 +396,12 @@ export function SuggestionsSheet({
         ) : null}
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <section className="flex min-h-0 min-w-0 flex-[3] flex-col border-b lg:border-r lg:border-b-0">
+          <section
+            className={cn(
+              "flex min-h-0 min-w-0 flex-col border-b lg:border-b-0",
+              showAssistant ? "flex-[3] lg:border-r" : "flex-1",
+            )}
+          >
             {readinessLine ? (
               <div className="flex shrink-0 items-start gap-2 border-b border-amber-200/60 bg-amber-50/80 px-4 py-2.5 text-xs dark:bg-amber-950/20 sm:px-5">
                 <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-amber-600" aria-hidden />
@@ -329,11 +420,9 @@ export function SuggestionsSheet({
               </div>
             ) : null}
 
-            {hasGenerated && suggestions.length > 0 ? (
+            {hasGenerated && suggestions.length > 0 && !inCompareMode ? (
               <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 py-2 sm:px-5">
-                <p className="text-xs text-muted-foreground">
-                  Chọn gợi ý cần áp dụng vào lịch nháp
-                </p>
+                <p className="text-xs text-muted-foreground">Chọn gợi ý cần áp dụng vào lịch nháp</p>
                 <div className="flex gap-1">
                   <Button type="button" variant="ghost" size="sm" className="h-8 text-xs" onClick={selectAll}>
                     <CheckCheck className="size-3.5" aria-hidden />
@@ -347,43 +436,30 @@ export function SuggestionsSheet({
               </div>
             ) : null}
 
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5">
               {hasGenerated && !loading && !empty && suggestions.length > 0 ? (
-                <div className="flex min-h-0 flex-1 flex-col overflow-x-auto p-4 sm:p-5">
-                  <WeekShiftCalendar
-                    fillHeight
-                    className="min-w-[880px]"
+                inCompareMode ? (
+                  <SuggestionDiffView
                     days={days}
                     shifts={activeShifts}
-                    renderCell={(shift, date) => {
-                      const color = shiftAccentColor(shift.color);
-                      const cell = suggestionsByKey.get(`${shift.id}|${date}`) ?? [];
-
-                      if (cell.length === 0) {
-                        return <CalendarEmptySlot />;
-                      }
-
-                      return cell.map((s) => (
-                        <label
-                          key={s.id}
-                          className={cn(
-                            "flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 transition-all",
-                            !selected.has(s.id) && "opacity-40 saturate-50",
-                          )}
-                          style={shiftChipStyle(color)}
-                        >
-                          <Checkbox
-                            checked={selected.has(s.id)}
-                            onCheckedChange={(c) => toggle(s.id, c === true)}
-                            aria-label={`Chọn ${s.employeeName}`}
-                            className="size-3.5 shrink-0 border-current/40 data-[state=checked]:border-current"
-                          />
-                          <span className="truncate text-xs font-semibold">{s.employeeName}</span>
-                        </label>
-                      ));
-                    }}
+                    slotEntries={compare.slotEntries}
+                    stats={compare.stats}
+                    selected={selected}
+                    onToggle={toggle}
+                    onSelectChangesOnly={selectChangesOnly}
+                    onSelectAll={selectAll}
                   />
-                </div>
+                ) : (
+                  <div className="min-h-0 flex-1 overflow-x-auto">
+                    <WeekShiftCalendar
+                      fillHeight
+                      className="min-w-[880px]"
+                      days={days}
+                      shifts={activeShifts}
+                      renderCell={renderSuggestedCell}
+                    />
+                  </div>
+                )
               ) : (
                 <ScrollArea className="min-h-0 flex-1">
                   <div className="p-4 sm:p-5">
@@ -423,6 +499,7 @@ export function SuggestionsSheet({
             </div>
           </section>
 
+          {showAssistant ? (
           <aside className="flex min-h-[280px] min-w-0 flex-1 flex-col bg-muted/15 lg:max-w-[25%] lg:min-w-[280px] lg:flex-[1]">
             <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
               <Bot className="size-4 text-primary" aria-hidden />
@@ -519,6 +596,7 @@ export function SuggestionsSheet({
               </div>
             </div>
           </aside>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

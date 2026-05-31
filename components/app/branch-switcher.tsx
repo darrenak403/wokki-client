@@ -17,7 +17,7 @@ import { useWorkspaceLocations } from "@/hooks/useWorkspaceLocations";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { useTenantNavigation } from "@/hooks/useTenantNavigation";
 import { useAuth } from "@/hooks/useAuth";
-import { buildOrgScopedPath } from "@/lib/support/routing/tenant-routes";
+import { buildBranchScopedPath } from "@/lib/support/routing/tenant-routes";
 import { ROLE_ADMIN, ROLE_MANAGER } from "@/lib/types/roles";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +38,15 @@ export function BranchSwitcher({ collapsed = false }: BranchSwitcherProps) {
     () => locations.find((l) => l.id === effectiveLocationId) ?? null,
     [locations, effectiveLocationId]
   );
+
+  const createBranchHref = useMemo(() => {
+    const query = "?createLocation=1";
+    const targetLoc = locationId ?? effectiveLocationId ?? locations[0]?.id;
+    if (orgId && targetLoc) {
+      return `${buildBranchScopedPath(orgId, targetLoc, ROLE_ADMIN, "workspace")}${query}`;
+    }
+    return `${orgPath("workspace", ROLE_ADMIN)}${query}`;
+  }, [effectiveLocationId, locationId, locations, orgId, orgPath]);
 
   const canCreate = role === ROLE_ADMIN;
 
@@ -94,10 +103,7 @@ export function BranchSwitcher({ collapsed = false }: BranchSwitcherProps) {
             <DropdownMenuGroup>
               <DropdownMenuItem
                 render={
-                  <Link
-                    href={orgPath("onboarding", ROLE_ADMIN)}
-                    className="flex w-full items-center gap-2"
-                  />
+                  <Link href={createBranchHref} className="flex w-full items-center gap-2" />
                 }
               >
                 <PlusIcon className="size-4" />

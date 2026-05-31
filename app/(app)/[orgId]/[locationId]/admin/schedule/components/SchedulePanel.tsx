@@ -303,6 +303,7 @@ export function SchedulePanel() {
             locationId={locationId}
             listParams={listParams!}
             conflictCount={rebalanceHints.conflictCount}
+            currentAssignments={assignments}
           />
 
           <LeaveRequestsDialog

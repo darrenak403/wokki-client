@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQueries } from "@tanstack/react-query";
 import Link from "next/link";
 import { PlusIcon, SlidersHorizontalIcon } from "lucide-react";
@@ -51,6 +52,9 @@ export function WorkspacePanel({
   scopeToCurrentLocation = false,
 }: WorkspacePanelProps) {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { orgId, locationId } = useTenantParams();
   const locationsQuery = useWorkspaceLocations(isManagerScope);
   const allLocations = useMemo(() => locationsQuery.data ?? [], [locationsQuery.data]);
@@ -85,6 +89,15 @@ export function WorkspacePanel({
   const [employeeProfileSection, setEmployeeProfileSection] =
     useState<EmployeeProfileSection>("profile");
   const [orgPolicyOpen, setOrgPolicyOpen] = useState(false);
+
+  useEffect(() => {
+    if (!canWriteLocations || searchParams.get("createLocation") !== "1") return;
+    setLocationDrawer({ location: null, isCreate: true });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("createLocation");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [canWriteLocations, pathname, router, searchParams]);
 
   const activeExpandedLocations = useMemo(() => {
     if (!scopeToCurrentLocation || !scopedLocation) return expandedLocations;
@@ -339,7 +352,7 @@ export function WorkspacePanel({
               Luật xếp lịch
             </Button>
           ) : null}
-          {canWriteLocations && !scopeToCurrentLocation ? (
+          {canWriteLocations ? (
             <Button
               type="button"
               onClick={() => setLocationDrawer({ location: null, isCreate: true })}

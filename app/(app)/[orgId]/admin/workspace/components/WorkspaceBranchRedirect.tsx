@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { useTenantParams } from "@/hooks/useTenantParams";
@@ -22,6 +22,7 @@ type WorkspaceBranchRedirectProps = {
 
 export function WorkspaceBranchRedirect({ role }: WorkspaceBranchRedirectProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { orgId } = useTenantParams();
   const { session, setLocationId } = useFoundationSession();
   const isManagerScope = role === ROLE_MANAGER;
@@ -40,8 +41,10 @@ export function WorkspaceBranchRedirect({ role }: WorkspaceBranchRedirectProps) 
     if (!orgId || !targetLocation) return;
     setBranchIdCookie(targetLocation.id);
     setLocationId(targetLocation.id);
-    router.replace(buildBranchScopedPath(orgId, targetLocation.id, role, "workspace"));
-  }, [orgId, role, router, setLocationId, targetLocation]);
+    const base = buildBranchScopedPath(orgId, targetLocation.id, role, "workspace");
+    const qs = searchParams.toString();
+    router.replace(qs ? `${base}?${qs}` : base);
+  }, [orgId, role, router, searchParams, setLocationId, targetLocation]);
 
   if (locationsQuery.isLoading) {
     return (

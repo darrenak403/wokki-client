@@ -115,6 +115,8 @@ export interface ApplySuggestionItem {
 
 export interface ApplySuggestionsRequest {
   suggestions: ApplySuggestionItem[];
+  /** Xóa phân ca cũ ở các ô không có trong gợi ý (gợi ý lại / đè lịch). */
+  clearOrphanAssignments?: boolean;
 }
 
 export interface ScheduleInsightSuggestionInput {
