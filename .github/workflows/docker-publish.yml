@@ -1,0 +1,73 @@
+# Build & push wokki-client to Docker Hub (NEXT_PUBLIC_* baked at build time).
+#
+# Required GitHub repository secrets:
+#   DOCKER_USERNAME — Docker Hub / registry username
+#   DOCKER_PASSWORD — Docker Hub access token or registry password
+#
+# Required GitHub repository variables (Settings → Secrets and variables → Actions → Variables):
+#   NEXT_PUBLIC_API_URL  — https://api.wokki.beyond8.io.vn
+#   NEXT_PUBLIC_APP_URL  — https://wokki.beyond8.io.vn
+# Optional variables:
+#   NEXT_PUBLIC_APP_NAME (default Wokki)
+#   NEXT_PUBLIC_ENV      (default production)
+#
+# Dokploy: registry credentials + DOCKER_USERNAME in app env; pull image only (no runtime NEXT_PUBLIC_*).
+
+name: Docker publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "components/**"
+      - "hooks/**"
+      - "lib/**"
+      - "public/**"
+      - "types/**"
+      - "docker/Dockerfile"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.*"
+      - ".github/workflows/docker-publish.yml"
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: wokki-client
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: runner
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_APP_NAME=${{ vars.NEXT_PUBLIC_APP_NAME || 'Wokki' }}
+            NEXT_PUBLIC_ENV=${{ vars.NEXT_PUBLIC_ENV || 'production' }}

@@ -14,9 +14,9 @@
     "validate": "npm run format:check && npm run lint && npm run type-check",
     "docker:dev": "docker compose -f docker/docker-compose.dev.yml up --build",
     "docker:dev:down": "docker compose -f docker/docker-compose.dev.yml down",
-    "docker:prod": "docker compose -f docker/docker-compose.prod.yml up --build -d",
-    "docker:prod:down": "docker compose -f docker/docker-compose.prod.yml down",
-    "docker:prod:build": "docker compose -f docker/docker-compose.prod.yml build"
+    "docker:prod": "docker compose -f docker/docker-compose.prod.yml --env-file docker/.env up -d",
+    "docker:prod:down": "docker compose -f docker/docker-compose.prod.yml --env-file docker/.env down",
+    "docker:prod:pull": "docker compose -f docker/docker-compose.prod.yml --env-file docker/.env pull",
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
