@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
+import { RuntimeEnvScript } from "@/components/providers/runtime-env-script";
 import { Toaster } from "@/components/ui/sonner";
 import { RootJsonLd } from "@/lib/support/seo/root-json-ld";
 import { getSiteUrl, SITE } from "@/lib/support/seo/site";
@@ -53,8 +53,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
+      <head>
+        <RuntimeEnvScript />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-full`}>
-        <Script src="/__runtime-env.js" strategy="beforeInteractive" />
         <RootJsonLd />
         <AppProviders>
           {children}
