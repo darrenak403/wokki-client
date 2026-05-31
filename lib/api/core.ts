@@ -29,20 +29,23 @@ function shouldSkipTokenRefresh(url?: string): boolean {
 }
 
 class ApiService {
-  private client: AxiosInstance;
+  private client: AxiosInstance | null = null;
   private isRefreshing = false;
   private failedQueue: Array<{
     resolve: (token: string) => void;
     reject: (error: any) => void;
   }> = [];
 
-  constructor(baseURL: string, timeout = 600000) {
-    this.client = axios.create({
-      baseURL,
-      timeout,
-      headers: { "Content-Type": "application/json" },
-    });
-    this.setupInterceptors();
+  private getClient(): AxiosInstance {
+    if (!this.client) {
+      this.client = axios.create({
+        baseURL: getApiBaseUrl(),
+        timeout: 600000,
+        headers: { "Content-Type": "application/json" },
+      });
+      this.setupInterceptors(this.client);
+    }
+    return this.client;
   }
 
   private processQueue(error: any, token: string | null = null) {
@@ -58,8 +61,8 @@ class ApiService {
     this.failedQueue = [];
   }
 
-  private setupInterceptors() {
-    this.client.interceptors.request.use(
+  private setupInterceptors(client: AxiosInstance) {
+    client.interceptors.request.use(
       (config) => {
         const token = store?.getState()?.auth?.token;
         if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -69,7 +72,7 @@ class ApiService {
       (error) => Promise.reject(error)
     );
 
-    this.client.interceptors.response.use(
+    client.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
@@ -81,7 +84,7 @@ class ApiService {
             })
               .then((token) => {
                 originalRequest.headers["Authorization"] = "Bearer " + token;
-                return this.client(originalRequest);
+                return this.getClient()(originalRequest);
               })
               .catch((err) => Promise.reject(err));
           }
@@ -133,7 +136,7 @@ class ApiService {
               this.isRefreshing = false;
 
               originalRequest.headers["Authorization"] = "Bearer " + newAccessToken;
-              return this.client(originalRequest);
+              return this.getClient()(originalRequest);
             }
 
             throw new Error("Invalid refresh response");
@@ -185,15 +188,16 @@ class ApiService {
   }
 
   setAuthToken(token: string | null) {
+    const client = this.getClient();
     if (token) {
-      this.client.defaults.headers.common.Authorization = `Bearer ${token}`;
+      client.defaults.headers.common.Authorization = `Bearer ${token}`;
     } else {
-      delete this.client.defaults.headers.common.Authorization;
+      delete client.defaults.headers.common.Authorization;
     }
   }
 
   async request<T>(config: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.client.request<T>(config);
+    return this.getClient().request<T>(config);
   }
 
   async get<T>(url: string, params?: Record<string, any>): Promise<AxiosResponse<T>> {
@@ -234,7 +238,7 @@ class ApiService {
   }
 }
 
-const apiService = new ApiService(getApiBaseUrl());
+const apiService = new ApiService();
 
 export default apiService;
 export type { ApiError, RequestParams };
