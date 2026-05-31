@@ -5,10 +5,11 @@ export const overtimeKeys = {
   adminList: (params?: object) => [...overtimeKeys.all, "admin-list", params] as const,
 };
 
-export const swapInboxKeys = {
-  all: ["swapInbox"] as const,
-  lists: () => [...swapInboxKeys.all, "list"] as const,
-  list: (params: object) => [...swapInboxKeys.lists(), params] as const,
+export const swapPostKeys = {
+  all: ["swapPosts"] as const,
+  feed: (scheduleId: string) => [...swapPostKeys.all, "feed", scheduleId] as const,
+  mine: (params: object) => [...swapPostKeys.all, "mine", params] as const,
+  audit: (params: object) => [...swapPostKeys.all, "audit", params] as const,
 };
 
 export const opsKeys = {
@@ -33,7 +34,8 @@ export const employeeKeys = {
   all: ["employee"] as const,
   myProfile: () => [...employeeKeys.all, "myProfile"] as const,
   mySchedule: () => [...employeeKeys.all, "mySchedule"] as const,
-  swapTargets: (params: object) => [...employeeKeys.all, "swapTargets", params] as const,
+  draftWeekAssignments: (weekStartDate: string) =>
+    [...employeeKeys.all, "draftWeekAssignments", weekStartDate] as const,
   swaps: () => [...employeeKeys.all, "swaps"] as const,
   attendance: (params: object) => [...employeeKeys.all, "attendance", params] as const,
 };

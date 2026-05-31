@@ -31,6 +31,18 @@ const EMPLOYEE_ERROR_MESSAGES: Record<string, string> = {
   ATTENDANCE_NOTE_REQUIRED: "Ghi chú điều chỉnh là bắt buộc.",
   ATTENDANCE_PERIOD_LOCKED: "Kỳ lương đã khóa — không thể chỉnh chấm công.",
   ATTENDANCE_NOT_FOUND: "Không tìm thấy bản ghi chấm công.",
+  SWAP_POST_COVER_ACCEPTOR_ASSIGNMENT_NOT_ALLOWED: "Nhường ca không cần chọn ca của bạn — chỉ đổi chéo mới chọn ca trả.",
+  SWAP_POST_COVER_NO_OPEN_SLOT: "Bạn không còn chỗ trống trong lịch để nhận ca này (trùng ca, nghỉ giữa ca, hoặc vượt giới hạn ca).",
+  SWAP_POST_ALREADY_TAKEN: "Bài đăng đã được người khác nhận. Vui lòng làm mới bảng tin.",
+  SWAP_POST_OPEN_EXISTS: "Ca này đã có bài đăng đang mở.",
+  SWAP_POST_SCHEDULE_NOT_DRAFT: "Chỉ đổi ca khi lịch còn Nháp (Draft).",
+  SWAP_POST_POLICY_ROLE_MISMATCH: "Không đủ vai trò cho ca này theo chính sách tổ chức.",
+  SWAP_POST_POLICY_REST_CONFLICT: "Vi phạm quy tắc nghỉ giữa các ca.",
+  SWAP_POST_POLICY_WEEKLY_CAP: "Vượt giới hạn số ca trong tuần.",
+  SWAP_POST_POLICY_DAILY_CAP: "Vượt giới hạn số ca trong ngày.",
+  SWAP_POST_POLICY_OVERLAP: "Trùng ca hoặc chồng lấn thời gian.",
+  SWAP_POST_SELF_ACCEPT: "Bạn không thể nhận bài đăng của chính mình.",
+  SWAP_POST_ACCEPTOR_ASSIGNMENT_REQUIRED: "Cần chọn ca của bạn để đổi chéo.",
   INTERNAL_ERROR: "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
 };
 

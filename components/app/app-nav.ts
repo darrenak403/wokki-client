@@ -54,9 +54,8 @@ const ADMIN_NAV: AppNavItemDef[] = [
   {
     href: "/admin/swap",
     label: "Đổi ca",
-    description: "Duyệt hoặc từ chối yêu cầu đổi ca đang chờ.",
+    description: "Nhật ký các ca đã đổi trên lịch Draft.",
     module: "wave5",
-    showSwapPendingBadge: true,
   },
   {
     href: "/admin/attendance",
@@ -118,9 +117,8 @@ const MANAGER_NAV: AppNavItemDef[] = [
   {
     href: "/manager/swap",
     label: "Đổi ca",
-    description: "Duyệt hoặc từ chối yêu cầu đổi ca đang chờ.",
+    description: "Nhật ký các ca đã đổi trên lịch Draft.",
     module: "wave5",
-    showSwapPendingBadge: true,
   },
   {
     href: "/manager/attendance",
@@ -164,7 +162,7 @@ const USER_NAV: AppNavItemDef[] = [
   {
     href: "/user/swap",
     label: "Đổi ca",
-    description: "Gửi yêu cầu đổi ca hoặc phản hồi yêu cầu từ đồng nghiệp.",
+    description: "Bảng tin nhường ca và đổi chéo khi lịch còn Draft.",
     module: "wave4",
   },
   {

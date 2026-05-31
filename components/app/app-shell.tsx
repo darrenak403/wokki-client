@@ -10,7 +10,6 @@ import { useTenantParams } from "@/hooks/useTenantParams";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { selectMustChangePassword, selectOrganizationId } from "@/lib/redux/slices/authSlice";
 import { readFoundationSession } from "@/lib/support/foundation/session-context";
-import { useSwapInboxPendingCount } from "@/hooks/useSwapInboxPendingCount";
 import { AccountSettingsDialog } from "@/components/auth/account-settings-dialog";
 import type { AccountSettingsSection } from "@/components/auth/account-settings-dialog";
 import { TempAuthWarningBanner } from "@/components/auth/temp-auth-warning-banner";
@@ -37,7 +36,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     role && effectiveOrgId
       ? buildTenantNav(role, effectiveOrgId, effectiveLocationId)
       : [];
-  const swapPendingCount = useSwapInboxPendingCount();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -97,7 +95,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             navItems={navItems}
             onLogout={logout}
             pathname={pathname}
-            swapPendingCount={swapPendingCount}
             isLoading={isLoading}
           />
         </aside>
@@ -140,7 +137,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                     onLogout={logout}
                     onNavigate={() => setMobileOpen(false)}
                     pathname={pathname}
-                    swapPendingCount={swapPendingCount}
                     isLoading={isLoading}
                   />
                 </SheetContent>

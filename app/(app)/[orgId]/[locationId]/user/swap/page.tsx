@@ -1,4 +1,4 @@
-import { SwapPanel } from "@/app/(app)/[orgId]/[locationId]/user/swap/components/SwapPanel";
+import { SwapMarketplacePanel } from "@/app/(app)/[orgId]/[locationId]/user/swap/components/SwapMarketplacePanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -8,5 +8,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function UserSwapPage() {
-  return <SwapPanel />;
+  return <SwapMarketplacePanel />;
 }

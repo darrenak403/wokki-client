@@ -5,10 +5,8 @@ import type { ApiEnvelope } from "@/types/api";
 import type {
   SelfAttendanceListParams,
   AttendanceResponse,
-  ShiftAssignmentResponse,
-  SwapRequestResponse,
-  SwapTargetsParams,
 } from "@/types/employee";
+import type { ShiftAssignmentResponse } from "@/types/schedule";
 import type { EmployeeResponse, UpdateMyProfileRequest } from "@/types/foundation";
 
 export const fetchSelf = {
@@ -19,21 +17,9 @@ export const fetchSelf = {
     return assertEmployeeSuccess(normalizeApiResponse(response.data));
   },
 
-  /** Peer assignments for swap target picker — BE contract TBD (§1A handoff). */
-  getSwapTargets: async (params: SwapTargetsParams = {}): Promise<ShiftAssignmentResponse[]> => {
+  getDraftWeekAssignments: async (weekStartDate: string): Promise<ShiftAssignmentResponse[]> => {
     const response = await apiService.get<ApiEnvelope<ShiftAssignmentResponse[]>>(
-      "api/v1/self/swap-targets",
-      {
-        ...(params.fromDate ? { fromDate: params.fromDate } : {}),
-        ...(params.toDate ? { toDate: params.toDate } : {}),
-      },
-    );
-    return assertEmployeeSuccess(normalizeApiResponse(response.data));
-  },
-
-  listSwapRequests: async (): Promise<SwapRequestResponse[]> => {
-    const response = await apiService.get<ApiEnvelope<SwapRequestResponse[]>>(
-      "api/v1/self/swap-requests",
+      `api/v1/self/schedule/draft/${weekStartDate}/assignments`,
     );
     return assertEmployeeSuccess(normalizeApiResponse(response.data));
   },

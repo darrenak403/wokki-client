@@ -16,7 +16,6 @@ export type ShellSidebarContentProps = {
   onLogout: () => void;
   onNavigate?: () => void;
   pathname: string;
-  swapPendingCount: number;
   isLoading?: boolean;
 };
 
@@ -27,7 +26,6 @@ export function ShellSidebarContent({
   onLogout,
   onNavigate,
   pathname,
-  swapPendingCount,
   isLoading = false,
 }: ShellSidebarContentProps) {
   return (
@@ -48,17 +46,11 @@ export function ShellSidebarContent({
       >
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const badge =
-            item.showSwapPendingBadge && swapPendingCount > 0
-              ? swapPendingCount > 99
-                ? "99+"
-                : String(swapPendingCount)
-              : null;
 
           return (
             <SidebarNavLink
               key={item.navKey}
-              badge={badge}
+              badge={null}
               collapsed={collapsed}
               href={item.href}
               item={item}

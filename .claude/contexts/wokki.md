@@ -48,7 +48,7 @@ Org staff creation is not a separate "system account" flow. The FE must use `POS
 | Nhân sự | `admin/employees` | Links User ↔ Employee |
 | Tài khoản | `admin/users` | Admin-only |
 | Lịch ca | `admin/schedule` | Grid, assign, publish, suggest, Bedrock insight UI |
-| Đổi ca | `admin/swap` | Manager override |
+| Đổi ca | `admin/swap` | Nhật ký đổi ca (read-only) |
 | Chấm công | `admin/attendance` | `TeamAttendancePanel` |
 | Lương | `admin/payroll` | CSV export |
 | Chat | `admin/chat` | `ChatPanel`, SignalR |
@@ -88,7 +88,7 @@ PlatformOperator only. No org sidebar. Use `GET /platform/stats`, `GET /platform
 | `useSchedule` | `fetchSchedules` |
 | `useSchedulePreferences`, `usePreferenceBoard` | preferences |
 | `useMySchedule` | `fetchSelf` |
-| `useSwapRequests`, `useSwapInboxPendingCount` | swaps |
+| `useSwapPosts` | `fetchSwapPosts`, `fetchSelf.getDraftWeekAssignments` |
 | `useAttendance` | attendance |
 | `usePayroll` | payroll |
 | `useChat`, `useChatHub` | REST + SignalR |
