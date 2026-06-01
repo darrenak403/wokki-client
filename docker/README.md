@@ -14,13 +14,12 @@
 | Variable | Giá trị prod |
 | -------- | ------------ |
 | `DOCKER_USERNAME` | Docker Hub username |
-| `NEXT_PUBLIC_API_URL` | `https://wokki-api.beyond8.io.vn` |
-| `NEXT_PUBLIC_APP_URL` | `https://wokki.beyond8.io.vn` |
+| `NEXT_PUBLIC_API_URL` | `https://api.wokki.io.vn` |
+| `NEXT_PUBLIC_APP_URL` | `https://wokki.io.vn` |
 | `NEXT_PUBLIC_APP_NAME` | Optional — `Wokki` |
 | `NEXT_PUBLIC_ENV` | `production` |
 
-> **Cloudflare:** API public dùng `wokki-api.beyond8.io.vn` (một cấp subdomain).
-> Không dùng `api.wokki.beyond8.io.vn` — cert free không cover subdomain hai cấp.
+> **Cookie (optional):** `NEXT_PUBLIC_COOKIE_DOMAIN=.wokki.io.vn` nếu cần cookie auth chia subdomain.
 
 Container start ghi `public/__runtime-env.js` từ các biến trên — **không cần** GitHub Variables.
 
