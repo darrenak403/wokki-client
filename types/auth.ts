@@ -20,6 +20,14 @@ export interface RegisterRequest {
   organizationName: string;
 }
 
+export interface RegisterEmployeeRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+}
+
 export interface AuthTokenPair {
   accessToken: string;
   refreshToken: string;

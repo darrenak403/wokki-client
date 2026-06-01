@@ -21,10 +21,22 @@ import {
   isUuidSegment,
   legacyPathToBranchScoped,
 } from "@/lib/support/routing/tenant-routes";
-import { isAppRole, ROLE_PLATFORM_OPERATOR, type SessionRole } from "@/lib/types/roles";
+import {
+  isAppRole,
+  ROLE_PLATFORM_OPERATOR,
+  ROLE_USER,
+  type SessionRole,
+} from "@/lib/types/roles";
 import { MARKETING_PATHS } from "@/components/shared/site-nav";
 
 const AUTH_ROUTES = ["/login", "/register"];
+
+/** Shell cho nhân viên tự đăng ký (chưa có organization_id trong JWT). */
+const ORG_LESS_SHELL_PATHS = ["/discover", "/join-request"] as const;
+
+function isOrgLessShellPath(pathname: string): boolean {
+  return ORG_LESS_SHELL_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 function resolveRequestHomePath(
   sessionRole: SessionRole | null,
@@ -137,7 +149,15 @@ export function proxy(request: NextRequest) {
 
   if (isPublicRoute) return NextResponse.next();
 
+  if (isOrgLessShellPath(pathname)) {
+    if (sessionRole === ROLE_USER && !orgId) return NextResponse.next();
+    return NextResponse.redirect(
+      new URL(resolveRequestHomePath(sessionRole, orgId, branchId), request.url)
+    );
+  }
+
   const home = resolveRequestHomePath(sessionRole, orgId, branchId);
+  if (pathname === home) return NextResponse.next();
   return NextResponse.redirect(new URL(home, request.url));
 }
 

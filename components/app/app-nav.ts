@@ -16,6 +16,8 @@ export type AppNavItem = {
   module?: string;
   /** Hiển thị badge pending swap (Wave 5) */
   showSwapPendingBadge?: boolean;
+  /** Badge số yêu cầu tham gia chờ duyệt (org join) */
+  showJoinRequestPendingBadge?: boolean;
 };
 
 type AppNavItemDef = Omit<AppNavItem, "navKey">;
@@ -44,6 +46,13 @@ const ADMIN_NAV: AppNavItemDef[] = [
     label: "Nhân sự",
     description: "Tạo nhân viên kèm tài khoản đăng nhập, phòng ban và vai trò.",
     module: "wave2",
+  },
+  {
+    href: "/admin/join-requests",
+    label: "Yêu cầu tham gia",
+    description: "Duyệt nhân viên tự đăng ký tham gia tổ chức.",
+    module: "org-join",
+    showJoinRequestPendingBadge: true,
   },
   {
     href: "/admin/schedule",
@@ -216,7 +225,7 @@ function featureSuffix(legacyHref: string, role: AppRole): string {
 }
 
 const ORG_ONLY_SUFFIX: Partial<Record<AppRole, Set<string>>> = {
-  [ROLE_ADMIN]: new Set(["onboarding"]),
+  [ROLE_ADMIN]: new Set(["onboarding", "join-requests"]),
 };
 
 /** Nav links with /{orgId}/{locationId}/… or /{orgId}/… for org-only routes. */

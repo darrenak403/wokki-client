@@ -9,8 +9,8 @@ import { z } from "zod";
 import { OrgPackageNoticeDialog } from "@/components/auth/org-package-notice-dialog";
 import { ForgotPasswordPanel } from "@/components/auth/forgot-auth-panel";
 import { useAuth } from "@/hooks/useAuth";
-import { getPostLoginPath } from "@/lib/support/auth/post-login-route";
 import { readFoundationSession } from "@/lib/support/foundation/session-context";
+import { resolvePostAuthPath } from "@/lib/support/auth/resolve-post-auth-path";
 import {
   isOrgPackageCode,
   orgPackageReasonFromCode,
@@ -42,7 +42,7 @@ export function LoginForm() {
   useEffect(() => {
     if (!isAuthenticated || !role || packageReason) return;
     const branchId = readFoundationSession().selectedLocationId;
-    router.replace(getPostLoginPath(role, organizationId, branchId));
+    void resolvePostAuthPath(role, organizationId, branchId).then((path) => router.replace(path));
   }, [isAuthenticated, role, organizationId, router, packageReason]);
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -119,7 +119,7 @@ export function LoginForm() {
             href="/register"
             className="font-semibold text-brand-blue underline-offset-4 hover:underline"
           >
-            Tạo tổ chức mới
+            Đăng ký
           </Link>
         </p>
       </form>

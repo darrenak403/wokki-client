@@ -21,6 +21,7 @@ export function getPostLoginPath(
   if (!role) return "/login";
   if (role === ROLE_PLATFORM_OPERATOR) return PLATFORM_HOME_PATH;
   if (!orgId || !isAppRole(role)) {
+    if (role === ROLE_USER && !orgId) return "/discover";
     return locationId && orgId
       ? buildBranchScopedPath(orgId, locationId, ROLE_USER, "dashboard")
       : "/login";

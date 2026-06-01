@@ -23,6 +23,7 @@ function shouldSkipTokenRefresh(url?: string): boolean {
   return (
     path.endsWith("api/v1/auth/login") ||
     path.endsWith("api/v1/auth/register") ||
+    path.endsWith("api/v1/auth/register-employee") ||
     path.endsWith("api/v1/auth/refresh-token") ||
     path.includes("api/v1/auth/forgot-password")
   );

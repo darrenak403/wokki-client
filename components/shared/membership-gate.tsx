@@ -9,6 +9,7 @@ import {
   selectAppRole,
   selectAuthLoading,
   selectIsAuthenticated,
+  selectIsOrgLessUser,
 } from "@/lib/redux/slices/authSlice";
 import { ROLE_USER } from "@/lib/types/roles";
 import { useMyLocationMembership } from "@/hooks/useLocationMembership";
@@ -33,8 +34,9 @@ export function MembershipGate({ children }: { children: ReactNode }) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isAuthLoading = useAppSelector(selectAuthLoading);
   const role = useAppSelector(selectAppRole);
+  const isOrgLess = useAppSelector(selectIsOrgLessUser);
 
-  const shouldCheck = isAuthenticated && role === ROLE_USER;
+  const shouldCheck = isAuthenticated && role === ROLE_USER && !isOrgLess;
 
   const { isFetched, isError, error } = useMyLocationMembership({
     enabled: shouldCheck,

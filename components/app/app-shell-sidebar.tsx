@@ -13,6 +13,7 @@ export type ShellSidebarContentProps = {
   collapsed: boolean;
   homeHref?: string;
   navItems: AppNavItem[];
+  navBadges?: Partial<Record<string, string>>;
   onLogout: () => void;
   onNavigate?: () => void;
   pathname: string;
@@ -23,6 +24,7 @@ export function ShellSidebarContent({
   collapsed,
   homeHref = "/",
   navItems,
+  navBadges = {},
   onLogout,
   onNavigate,
   pathname,
@@ -50,7 +52,7 @@ export function ShellSidebarContent({
           return (
             <SidebarNavLink
               key={item.navKey}
-              badge={null}
+              badge={navBadges[item.navKey] ?? null}
               collapsed={collapsed}
               href={item.href}
               item={item}
