@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronLeftIcon, MenuIcon, SettingsIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { usePendingOrgJoinRequestsQuery } from "@/hooks/useOrgJoin";
 import { getAppNavForRole, buildTenantNav } from "@/components/app/app-nav";
+import { ROLE_ADMIN } from "@/lib/types/roles";
 import { useTenantParams } from "@/hooks/useTenantParams";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { selectMustChangePassword, selectOrganizationId } from "@/lib/redux/slices/authSlice";
@@ -36,6 +38,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     role && effectiveOrgId
       ? buildTenantNav(role, effectiveOrgId, effectiveLocationId)
       : [];
+
+  const { data: pendingJoinData } = usePendingOrgJoinRequestsQuery(
+    role === ROLE_ADMIN && Boolean(effectiveOrgId)
+  );
+  const pendingJoinCount =
+    pendingJoinData?.success && pendingJoinData.data?.length
+      ? String(pendingJoinData.data.length)
+      : undefined;
+  const navBadges =
+    pendingJoinCount && pendingJoinCount !== "0"
+      ? { "join-requests": pendingJoinCount }
+      : {};
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -48,6 +62,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isAttendanceRoute = /\/(admin|manager)\/attendance(\/|$)/.test(pathname);
   const isPayrollRoute = /\/(admin|manager)\/payroll(\/|$)/.test(pathname);
   const isChatRoute = /\/(admin|manager|user)\/chat(\/|$)/.test(pathname);
+  /** Org-level admin — không lọc chi nhánh/phòng ban (gán lúc duyệt join request). */
+  const isOrgOnlyAdminRoute = /\/admin\/(onboarding|join-requests)(\/|$)/.test(pathname);
   const isDepartmentScopedRoute =
     isShiftsRoute ||
     isEmployeesRoute ||
@@ -101,6 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             collapsed={collapsed}
             homeHref={homeHref}
             navItems={navItems}
+            navBadges={navBadges}
             onLogout={logout}
             pathname={pathname}
             isLoading={isLoading}
@@ -142,6 +159,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     collapsed={false}
                     homeHref={homeHref}
                     navItems={navItems}
+                    navBadges={navBadges}
                     onLogout={logout}
                     onNavigate={() => setMobileOpen(false)}
                     pathname={pathname}
@@ -205,11 +223,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                   : "mx-auto w-full max-w-7xl"
               )}
             >
-              {isAdminRoute && !isWorkspaceRoute && !isChatRoute && !effectiveLocationId ? (
+              {isAdminRoute &&
+              !isWorkspaceRoute &&
+              !isChatRoute &&
+              !isOrgOnlyAdminRoute &&
+              !effectiveLocationId ? (
                 <div className="mb-4">
                   <FoundationScopePicker />
                 </div>
-              ) : isAdminRoute && !isWorkspaceRoute && !isChatRoute && effectiveLocationId && !isDepartmentScopedRoute ? (
+              ) : isAdminRoute &&
+                !isWorkspaceRoute &&
+                !isChatRoute &&
+                !isOrgOnlyAdminRoute &&
+                effectiveLocationId &&
+                !isDepartmentScopedRoute ? (
                 <div className="mb-4">
                   <FoundationScopePicker hideLocationSelect />
                 </div>

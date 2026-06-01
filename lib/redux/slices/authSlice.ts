@@ -17,7 +17,7 @@ import {
   writeCachedOrganizationName,
 } from "@/lib/support/auth/org-name-storage";
 import { clearCachedMyEmployeeId } from "@/lib/support/chat/my-employee-id";
-import type { AuthUser, LoginRequest, RegisterRequest } from "@/types/auth";
+import type { AuthUser, LoginRequest, RegisterEmployeeRequest, RegisterRequest } from "@/types/auth";
 import {
   isAppRole,
   isPlatformOperator,
@@ -146,6 +146,35 @@ export const loginAsync = createAsyncThunk(
       if (code === "ORG_PACKAGE_NOT_ACTIVATED" || code === "ORG_PACKAGE_EXPIRED") {
         return rejectWithValue(code);
       }
+      return rejectWithValue(mapAuthError(error));
+    }
+  }
+);
+
+export const registerEmployeeAsync = createAsyncThunk(
+  "auth/registerEmployee",
+  async (credentials: RegisterEmployeeRequest, { rejectWithValue, dispatch }) => {
+    try {
+      const response = await fetchAuth.registerEmployee(credentials);
+
+      if (!response.success || !response.data?.accessToken) {
+        return rejectWithValue(mapAuthResponseFailure(response) || "Đăng ký thất bại");
+      }
+
+      const { accessToken, refreshToken } = response.data;
+      const user = sessionUserFromAccessToken(accessToken);
+
+      if (!user) {
+        clearSessionCookies();
+        return rejectWithValue("Token đăng ký không hợp lệ hoặc thiếu role.");
+      }
+
+      await persistSession(accessToken, refreshToken, user.role);
+      void import("@/lib/api/core").then(({ resetAuthRefreshState }) => resetAuthRefreshState());
+      setupAutoRefresh(accessToken, dispatch as AppDispatch);
+
+      return { token: accessToken, refreshToken, user };
+    } catch (error: unknown) {
       return rejectWithValue(mapAuthError(error));
     }
   }
@@ -352,6 +381,25 @@ const authSlice = createSlice({
       });
 
     builder
+      .addCase(registerEmployeeAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(registerEmployeeAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        applySessionToState(
+          state,
+          action.payload.token,
+          action.payload.refreshToken ?? null,
+          action.payload.user
+        );
+      })
+      .addCase(registerEmployeeAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
       .addCase(hydrateUserFromTokenAsync.pending, (state) => {
         state.isLoading = true;
       })
@@ -419,5 +467,10 @@ export const selectIsPlatformOperator = (state: RootState): boolean =>
 
 export const selectHasOrgContext = (state: RootState): boolean =>
   Boolean(state.auth.organizationId);
+
+export const selectIsOrgLessUser = (state: RootState): boolean => {
+  const role = state.auth.user?.role;
+  return role === "User" && !state.auth.organizationId;
+};
 
 export default authSlice.reducer;

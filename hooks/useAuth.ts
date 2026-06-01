@@ -8,6 +8,7 @@ import {
   loginAsync,
   logoutAsync,
   registerAsync,
+  registerEmployeeAsync,
   selectAppRole,
   selectAuth,
   selectAuthError,
@@ -19,28 +20,16 @@ import {
   selectUser,
   setupAutoRefresh,
 } from "@/lib/redux/slices/authSlice";
-import { fetchStats } from "@/lib/api/services/fetchStats";
-import { readFoundationSession, writeFoundationSession } from "@/lib/support/foundation/session-context";
-import { clearBranchIdCookie, setBranchIdCookie } from "@/lib/support/routing/branch-cookie";
-import { fetchLocationMembership } from "@/lib/api/services/fetchLocationMembership";
+import { readFoundationSession } from "@/lib/support/foundation/session-context";
+import { clearBranchIdCookie } from "@/lib/support/routing/branch-cookie";
+import { resolveAppLandingPath } from "@/lib/support/auth/resolve-app-landing-path";
 import {
-  getOrgAdminLandingPath,
-  getPostLoginPath,
-} from "@/lib/support/auth/post-login-route";
-import {
-  isAppRole,
   ROLE_ADMIN,
   ROLE_MANAGER,
   ROLE_PLATFORM_OPERATOR,
-  ROLE_USER,
 } from "@/lib/types/roles";
-import {
-  isOrgPackageCode,
-  orgPackagePath,
-  orgPackageReasonFromCode,
-} from "@/lib/support/auth/org-package";
-import type { ApiError } from "@/types/api";
-import type { AuthUser, LoginRequest, RegisterRequest } from "@/types/auth";
+import { isOrgPackageCode } from "@/lib/support/auth/org-package";
+import type { AuthUser, LoginRequest, RegisterEmployeeRequest, RegisterRequest } from "@/types/auth";
 
 export function useAuth() {
   const dispatch = useAppDispatch();
@@ -61,44 +50,9 @@ export function useAuth() {
 
   const resolveLandingPath = async (loginUser?: AuthUser | null) => {
     const effectiveRole = loginUser?.role ?? sessionRole;
-    const effectiveAppRole = isAppRole(effectiveRole) ? effectiveRole : null;
     const orgId = loginUser?.organizationId ?? organizationId ?? user?.organizationId ?? null;
     const branchId = readFoundationSession().selectedLocationId;
-
-    if (effectiveRole === ROLE_PLATFORM_OPERATOR) {
-      return getPostLoginPath(ROLE_PLATFORM_OPERATOR);
-    }
-
-    if (!orgId) return getPostLoginPath(effectiveRole);
-
-    if (effectiveAppRole === ROLE_ADMIN) {
-      try {
-        const stats = await fetchStats.org();
-        return getOrgAdminLandingPath(orgId, stats.locationCount, branchId);
-      } catch (error: unknown) {
-        const code = (error as ApiError)?.messageCode;
-        if (isOrgPackageCode(code)) {
-          return orgPackagePath(orgPackageReasonFromCode(code));
-        }
-        return getPostLoginPath(ROLE_ADMIN, orgId, branchId);
-      }
-    }
-
-    if (effectiveAppRole === ROLE_USER && !branchId) {
-      try {
-        const membership = await fetchLocationMembership.getMy();
-        if (membership?.locationId) {
-          setBranchIdCookie(membership.locationId);
-          writeFoundationSession({ selectedLocationId: membership.locationId });
-          return getPostLoginPath(ROLE_USER, orgId, membership.locationId);
-        }
-      } catch {
-        // no employee profile
-      }
-    }
-
-    if (branchId) setBranchIdCookie(branchId);
-    return getPostLoginPath(effectiveRole, orgId, branchId);
+    return resolveAppLandingPath(effectiveRole, orgId, branchId);
   };
 
   const login = async (credentials: LoginRequest) => {
@@ -119,6 +73,26 @@ export function useAuth() {
         throw message;
       }
       const text = typeof message === "string" ? message : "Đăng nhập thất bại";
+      toast.error(text);
+      throw message;
+    }
+  };
+
+  const registerEmployee = async (credentials: RegisterEmployeeRequest) => {
+    dispatch(clearError());
+    try {
+      const result = await dispatch(registerEmployeeAsync(credentials)).unwrap();
+
+      if (result.token) {
+        setupAutoRefresh(result.token, dispatch);
+      }
+
+      toast.success("Đăng ký thành công");
+      router.replace(await resolveAppLandingPath(result.user.role, result.user.organizationId));
+
+      return result;
+    } catch (message: unknown) {
+      const text = typeof message === "string" ? message : "Đăng ký thất bại";
       toast.error(text);
       throw message;
     }
@@ -177,6 +151,7 @@ export function useAuth() {
     isAuthenticated,
     login,
     register,
+    registerEmployee,
     logout,
     clearError: () => dispatch(clearError()),
   };

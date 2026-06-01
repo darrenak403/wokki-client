@@ -118,3 +118,10 @@ export const foundationKeys = {
   users: (params: object) => [...foundationKeys.all, "users", params] as const,
   user: (id: string) => [...foundationKeys.all, "user", id] as const,
 };
+
+export const orgJoinKeys = {
+  all: ["orgJoin"] as const,
+  directory: (params: object) => [...orgJoinKeys.all, "directory", params] as const,
+  me: () => [...orgJoinKeys.all, "me"] as const,
+  pending: () => [...orgJoinKeys.all, "pending"] as const,
+};

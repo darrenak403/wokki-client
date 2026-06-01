@@ -7,6 +7,7 @@ import type {
   LoginResponse,
   MeResponse,
   RefreshTokenRequest,
+  RegisterEmployeeRequest,
   RegisterRequest,
   RegisterResponse,
   ResetPasswordRequest,
@@ -43,6 +44,14 @@ export const fetchAuth = {
   register: async (data: RegisterRequest): Promise<RegisterResponse> => {
     const response = await apiService.post<ApiEnvelope<AuthTokenPair>>(
       "api/v1/auth/register",
+      data
+    );
+    return normalizeApiResponse(response.data);
+  },
+
+  registerEmployee: async (data: RegisterEmployeeRequest): Promise<RegisterResponse> => {
+    const response = await apiService.post<ApiEnvelope<AuthTokenPair>>(
+      "api/v1/auth/register-employee",
       data
     );
     return normalizeApiResponse(response.data);
