@@ -76,3 +76,9 @@ Hot reload port **6789**.
 | **Concurrency** | `UV_THREADPOOL_SIZE=4`, `NODE_OPTIONS=--max-old-space-size=384` |
 | **Log** | Giới hạn 10MB × 3 file |
 | **RAM** | Limit 512M — tune `CLIENT_MEMORY_LIMIT` |
+
+### CI reliability notes
+
+- `docker-publish.yml` dùng retry 2 lần cho build/push để giảm lỗi mạng Docker Hub.
+- Workflow verify lại `latest` bằng pull ngay sau publish; nếu pull thất bại nhiều lần sẽ fail sớm.
+- Prod compose hỗ trợ `DOCKER_PLATFORM` (mặc định `linux/amd64`) để tránh lệch kiến trúc.
