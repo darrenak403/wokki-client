@@ -1,11 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import {
+  ActivityIcon,
+  Building2Icon,
+  FileClockIcon,
+  HeartPulseIcon,
+  LayoutDashboardIcon,
+  LifeBuoyIcon,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { PlatformDashboardPanel } from "@/app/(platform)/platform/components/PlatformDashboardPanel";
+import { PlatformHealthPanel } from "@/app/(platform)/platform/components/PlatformHealthPanel";
 import { PlatformOrganizationsPanel } from "@/app/(platform)/platform/components/PlatformOrganizationsPanel";
+import { PlatformSubscriptionLedgerPanel } from "@/app/(platform)/platform/components/PlatformSubscriptionLedgerPanel";
+import { PlatformSupportPanel } from "@/app/(platform)/platform/components/PlatformSupportPanel";
+import { PlatformUsageAnalyticsPanel } from "@/app/(platform)/platform/components/PlatformUsageAnalyticsPanel";
 import { PlatformAuthGuard } from "@/components/shared/platform-auth-guard";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { PlatformOrganizationResponse } from "@/types/platform";
 
 export function PlatformShell({ children }: { children: React.ReactNode }) {
   const { logout, user } = useAuth();
@@ -37,10 +52,82 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
 }
 
 export function PlatformHome() {
+  const [tab, setTab] = useState("overview");
+  const [ledgerOrg, setLedgerOrg] = useState<PlatformOrganizationResponse | null>(null);
+
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-10 px-4 py-8 md:px-6">
-      <PlatformDashboardPanel />
-      <PlatformOrganizationsPanel />
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 md:px-6">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-5">
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="h-9">
+            <TabsTrigger value="overview">
+              <LayoutDashboardIcon className="size-4" />
+              Tổng quan
+            </TabsTrigger>
+            <TabsTrigger value="organizations">
+              <Building2Icon className="size-4" />
+              Tổ chức
+            </TabsTrigger>
+            <TabsTrigger value="ledger">
+              <FileClockIcon className="size-4" />
+              Ledger gói
+            </TabsTrigger>
+            <TabsTrigger value="support">
+              <LifeBuoyIcon className="size-4" />
+              Support
+            </TabsTrigger>
+            <TabsTrigger value="health">
+              <HeartPulseIcon className="size-4" />
+              Health
+            </TabsTrigger>
+            <TabsTrigger value="usage">
+              <ActivityIcon className="size-4" />
+              Usage
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="overview" className="space-y-6">
+          {tab === "overview" ? (
+            <>
+              <PlatformDashboardPanel />
+              <PlatformOrganizationsPanel
+                onOpenLedger={(org) => {
+                  setLedgerOrg(org);
+                  setTab("ledger");
+                }}
+              />
+            </>
+          ) : null}
+        </TabsContent>
+        <TabsContent value="organizations">
+          {tab === "organizations" ? (
+            <PlatformOrganizationsPanel
+              onOpenLedger={(org) => {
+                setLedgerOrg(org);
+                setTab("ledger");
+              }}
+            />
+          ) : null}
+        </TabsContent>
+        <TabsContent value="ledger">
+          {tab === "ledger" ? (
+            <PlatformSubscriptionLedgerPanel
+              scopedOrganization={ledgerOrg}
+              onClearScopedOrganization={() => setLedgerOrg(null)}
+            />
+          ) : null}
+        </TabsContent>
+        <TabsContent value="support">
+          {tab === "support" ? <PlatformSupportPanel /> : null}
+        </TabsContent>
+        <TabsContent value="health">
+          {tab === "health" ? <PlatformHealthPanel /> : null}
+        </TabsContent>
+        <TabsContent value="usage">
+          {tab === "usage" ? <PlatformUsageAnalyticsPanel /> : null}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

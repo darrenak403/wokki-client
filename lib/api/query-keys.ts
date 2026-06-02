@@ -74,6 +74,14 @@ export const platformKeys = {
   all: ["platform"] as const,
   users: (params: object) => [...platformKeys.all, "users", params] as const,
   organizations: (params: object) => [...platformKeys.all, "organizations", params] as const,
+  ledger: (params: object) => [...platformKeys.all, "subscriptionLedger", params] as const,
+  organizationLedger: (organizationId: string, params: object) =>
+    [...platformKeys.all, "organizations", organizationId, "subscriptionLedger", params] as const,
+  supportSearch: (params: object) => [...platformKeys.all, "support", "search", params] as const,
+  supportContext: (organizationId: string) =>
+    [...platformKeys.all, "support", "organization", organizationId] as const,
+  health: () => [...platformKeys.all, "health"] as const,
+  usage: (params: object) => [...platformKeys.all, "usage", params] as const,
 };
 
 export const preferenceKeys = {
