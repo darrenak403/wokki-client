@@ -46,8 +46,13 @@ export function PlatformOrgSubscriptionDialog({
   const handleSave = async () => {
     if (!org) return;
 
-    const days = Number.parseInt(durationDays, 10);
-    if (enabled && (Number.isNaN(days) || days < 1 || days > 3650)) {
+    const trimmedDuration = durationDays.trim();
+    const days = trimmedDuration ? Number.parseInt(trimmedDuration, 10) : null;
+    if (enabled && days == null && org.subscriptionDurationDays < 1) {
+      toast.error("Org chưa có thời hạn lưu sẵn. Nhập số ngày để kích hoạt.");
+      return;
+    }
+    if (enabled && days != null && (Number.isNaN(days) || days < 1 || days > 3650)) {
       toast.error("Nhập số ngày từ 1 đến 3650.");
       return;
     }
@@ -57,7 +62,11 @@ export function PlatformOrgSubscriptionDialog({
         organizationId: org.id,
         body: enabled ? { enabled: true, durationDays: days } : { enabled: false },
       });
-      toast.success(enabled ? `Đã bật gói ${days} ngày cho ${org.name}` : `Đã tắt gói ${org.name}`);
+      toast.success(
+        enabled
+          ? `Đã cập nhật gói cho ${org.name}`
+          : `Đã tắt gói ${org.name}`
+      );
       onOpenChange(false);
     } catch (error: unknown) {
       toast.error(mapAuthError(error));
@@ -75,8 +84,7 @@ export function PlatformOrgSubscriptionDialog({
         <DialogHeader>
           <DialogTitle>Gói sử dụng — {org?.name ?? ""}</DialogTitle>
           <DialogDescription>
-            Wokki admin chọn số ngày org được dùng hệ thống. Hết hạn → mọi tài khoản trong org
-            không đăng nhập được cho đến khi gia hạn.
+            Wokki admin chọn thời hạn sử dụng cho org. Cập nhật thành công sẽ ghi ledger và audit.
           </DialogDescription>
         </DialogHeader>
 
@@ -99,7 +107,7 @@ export function PlatformOrgSubscriptionDialog({
                 placeholder="vd. 50"
               />
               <p className="text-xs text-muted-foreground">
-                Hạn mới = thời điểm bật/gia hạn + số ngày (vd. 50 ngày).
+                Để trống để dùng lại thời hạn đang lưu nếu backend cho phép.
               </p>
             </div>
           ) : null}
