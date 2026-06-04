@@ -48,4 +48,6 @@ export interface LocationManagerResponse {
   userEmail: string;
   assignedById: string;
   assignedAt: string;
+  /** Linked Employee row — required for role-transition demote from org graph. */
+  employeeId?: string | null;
 }

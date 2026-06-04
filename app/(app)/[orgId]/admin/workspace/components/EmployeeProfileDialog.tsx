@@ -7,8 +7,14 @@ import {
   ArrowRightLeftIcon,
   LandmarkIcon,
   MapPinIcon,
+  ShieldIcon,
   UserRoundIcon,
 } from "lucide-react";
+import {
+  EmployeeRoleTransitionPanel,
+  type DemoteManagerConfirmRequest,
+  type PromoteManagerConfirmRequest,
+} from "@/app/(app)/[orgId]/admin/workspace/components/EmployeeRoleTransitionPanel";
 import { employeeRoleLabel } from "@/app/(app)/[orgId]/[locationId]/admin/employees/components/EmployeeRowActions";
 import { EmployeeTransferPanel, employeeDisplayName } from "@/app/(app)/[orgId]/admin/workspace/components/EmployeeTransferPanel";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,7 +31,7 @@ import {
 import { useEmployeeQuery } from "@/hooks/useEmployees";
 import type { EmployeeResponse } from "@/types/foundation";
 
-export type EmployeeProfileSection = "profile" | "payment" | "transfer";
+export type EmployeeProfileSection = "profile" | "payment" | "transfer" | "role";
 
 type EmployeeProfileDialogProps = {
   employee: EmployeeResponse | null;
@@ -33,7 +39,10 @@ type EmployeeProfileDialogProps = {
   onOpenChange: (open: boolean) => void;
   initialSection?: EmployeeProfileSection;
   canTransfer?: boolean;
+  canTransitionRole?: boolean;
   onTransferred?: () => void;
+  onRequestPromoteConfirm?: (request: PromoteManagerConfirmRequest) => void;
+  onRequestDemoteConfirm?: (request: DemoteManagerConfirmRequest) => void;
 };
 
 const PANEL_PADDING = "px-6 py-5";
@@ -66,7 +75,10 @@ export function EmployeeProfileDialog({
   onOpenChange,
   initialSection = "profile",
   canTransfer = false,
+  canTransitionRole = false,
   onTransferred,
+  onRequestPromoteConfirm,
+  onRequestDemoteConfirm,
 }: EmployeeProfileDialogProps) {
   const [activeSection, setActiveSection] = useState<EmployeeProfileSection>(initialSection);
 
@@ -88,8 +100,11 @@ export function EmployeeProfileDialog({
     if (showTransfer) {
       items.push({ id: "transfer", label: "Điều chuyển", icon: ArrowRightLeftIcon });
     }
+    if (canTransitionRole && !isTerminated) {
+      items.push({ id: "role", label: "Vai trò", icon: ShieldIcon });
+    }
     return items;
-  }, [showTransfer]);
+  }, [showTransfer, canTransitionRole, isTerminated]);
 
   if (!effectiveEmployee) return null;
 
@@ -235,6 +250,24 @@ export function EmployeeProfileDialog({
             key={effectiveEmployee.id}
             employee={effectiveEmployee}
             onTransferred={handleTransferred}
+          />
+        </div>
+      ) : null}
+
+      {activeSection === "role" && canTransitionRole && !isTerminated ? (
+        <div className={PANEL_PADDING}>
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold">Vai trò & phạm vi</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Chuyển giữa nhân viên (phòng ban) và quản lý chi nhánh.
+            </p>
+          </div>
+          <EmployeeRoleTransitionPanel
+            key={effectiveEmployee.id}
+            employee={effectiveEmployee}
+            onCompleted={handleTransferred}
+            onRequestPromoteConfirm={onRequestPromoteConfirm}
+            onRequestDemoteConfirm={onRequestDemoteConfirm}
           />
         </div>
       ) : null}

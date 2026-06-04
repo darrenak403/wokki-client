@@ -10,6 +10,8 @@ export type BuildOrgGraphInput = {
   locations: LocationResponse[];
   pending: LocationMembershipResponse[];
   managersByLocation: Record<string, LocationManagerResponse[]>;
+  /** userId → employeeId for demote drag on manager nodes */
+  employeeIdByUserId?: Record<string, string>;
   departmentsByLocation: Record<string, DepartmentResponse[]>;
   employeesByDepartment: Record<string, EmployeeResponse[]>;
   expandedLocations: Set<string>;
@@ -61,6 +63,7 @@ export function buildOrgGraph(input: BuildOrgGraphInput): BuildOrgGraphResult {
             subtitle: "Manager",
             locationId: loc.id,
             userId: mgr.userId,
+            employeeId: mgr.employeeId ?? input.employeeIdByUserId?.[mgr.userId],
           },
         });
         edges.push({ id: `${locId}->${mgrId}`, source: locId, target: mgrId });

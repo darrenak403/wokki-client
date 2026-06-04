@@ -22,6 +22,14 @@ export function HeaderWorkspaceScope({ className }: HeaderWorkspaceScopeProps) {
   const isEmployee = role === ROLE_USER;
   const isOrgAdmin = role === ROLE_ADMIN;
 
+  const { data: profile } = useMyProfileQuery({
+    enabled: !isOrgAdmin && (isEmployee || isManagerScope),
+  });
+  const { data: locations = [] } = useWorkspaceLocations(isManagerScope);
+  const effectiveLocationId = urlLocationId ?? session.selectedLocationId ?? profile?.locationId ?? null;
+  const departmentId = session.selectedDepartmentId ?? profile?.departmentId ?? null;
+  const { data: departments = [] } = useDepartmentsQuery(isOrgAdmin ? null : effectiveLocationId);
+
   if (isOrgAdmin) {
     return (
       <p
@@ -35,14 +43,6 @@ export function HeaderWorkspaceScope({ className }: HeaderWorkspaceScopeProps) {
       </p>
     );
   }
-
-  const { data: profile } = useMyProfileQuery({
-    enabled: isEmployee || isManagerScope,
-  });
-  const { data: locations = [] } = useWorkspaceLocations(isManagerScope);
-  const effectiveLocationId = urlLocationId ?? session.selectedLocationId ?? profile?.locationId ?? null;
-  const departmentId = session.selectedDepartmentId ?? profile?.departmentId ?? null;
-  const { data: departments = [] } = useDepartmentsQuery(effectiveLocationId);
 
   const locationName =
     locations.find((location) => location.id === effectiveLocationId)?.name ??
