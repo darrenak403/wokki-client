@@ -196,6 +196,13 @@ export interface UpdateEmployeeRequest {
   departmentIds?: string[] | null;
 }
 
+export interface EmployeeRoleTransitionRequest {
+  targetRole: AppRole;
+  locationId?: string | null;
+  departmentId?: string | null;
+  hourlyRate?: number | null;
+}
+
 export interface UpdateMyProfileRequest {
   firstName: string;
   lastName: string;

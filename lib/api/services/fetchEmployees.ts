@@ -9,6 +9,7 @@ import type {
   EmployeeResponse,
   PagedResponse,
   UpdateEmployeeRequest,
+  EmployeeRoleTransitionRequest,
 } from "@/types/foundation";
 
 export const fetchEmployees = {
@@ -45,6 +46,17 @@ export const fetchEmployees = {
   update: async (id: string, data: UpdateEmployeeRequest): Promise<EmployeeResponse> => {
     const response = await apiService.put<ApiEnvelope<EmployeeResponse>>(
       `api/v1/employees/${id}`,
+      data,
+    );
+    return assertFoundationSuccess(normalizeApiResponse(response.data));
+  },
+
+  roleTransition: async (
+    id: string,
+    data: EmployeeRoleTransitionRequest,
+  ): Promise<EmployeeResponse> => {
+    const response = await apiService.post<ApiEnvelope<EmployeeResponse>>(
+      `api/v1/employees/${id}/role-transition`,
       data,
     );
     return assertFoundationSuccess(normalizeApiResponse(response.data));

@@ -28,6 +28,13 @@ const MEMBERSHIP_ERROR_MESSAGES: Record<string, string> = {
   EMPLOYEE_NOT_FOUND: "Không tìm thấy nhân viên.",
   EMPLOYEE_ALREADY_TERMINATED: "Nhân viên đã được chấm dứt hợp đồng.",
   EMPLOYEE_DEPARTMENT_NOT_FOUND: "Phòng ban không hợp lệ.",
+  EMPLOYEE_INVALID_ROLE_TRANSITION: "Không thể chuyển vai trò với trạng thái hiện tại.",
+  EMPLOYEE_DEPARTMENT_OR_LOCATION_REQUIRED:
+    "Cần chọn chi nhánh hoặc nhân viên phải đang thuộc phòng ban.",
+  EMPLOYEE_ALREADY_MANAGER_AT_LOCATION: "Đã là quản lý chi nhánh này.",
+  EMPLOYEE_ALREADY_USER_IN_DEPARTMENT: "Đã là nhân viên phòng ban này.",
+  WS_ROLE_TRANSITION_USE_EMPLOYEE_ENDPOINT:
+    "Dùng chức năng chuyển vai trò trên hồ sơ nhân viên hoặc sơ đồ tổ chức.",
   INTERNAL_ERROR: "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
 };
 
@@ -77,7 +84,18 @@ export function mapMembershipError(error: unknown): string {
   if (mapped) return mapped;
 
   if (typeof apiError.message === "string" && apiError.message) {
-    return mapMembershipFailureMessage(apiError.message, code);
+    const raw = apiError.message;
+    if (
+      apiError.httpStatus === 404 &&
+      /request failed with status code 404/i.test(raw)
+    ) {
+      return "Không tìm thấy API hoặc nhân viên. Khởi động lại API (`task run`) nếu vừa cập nhật backend.";
+    }
+    return mapMembershipFailureMessage(raw, code);
+  }
+
+  if (apiError.httpStatus === 404) {
+    return "Không tìm thấy API hoặc nhân viên. Khởi động lại API (`task run`) nếu vừa cập nhật backend.";
   }
 
   return GENERIC_ERROR;

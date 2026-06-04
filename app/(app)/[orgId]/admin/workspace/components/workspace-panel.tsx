@@ -10,6 +10,8 @@ import { EmployeeProfileDialog, type EmployeeProfileSection } from "@/app/(app)/
 import { LocationDetailDrawer } from "@/app/(app)/[orgId]/admin/workspace/components/LocationDetailDrawer";
 import { OrgSchedulingPolicyDialog } from "@/app/(app)/[orgId]/admin/workspace/components/policy/OrgSchedulingPolicyDialog";
 import { OrgGraph } from "@/app/(app)/[orgId]/admin/workspace/components/org-graph";
+import { DemoteManagerConfirmDialog } from "@/app/(app)/[orgId]/admin/workspace/components/DemoteManagerConfirmDialog";
+import { PromoteManagerConfirmDialog } from "@/app/(app)/[orgId]/admin/workspace/components/PromoteManagerConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { fetchDepartments } from "@/lib/api/services/fetchDepartments";
 import { fetchEmployees } from "@/lib/api/services/fetchEmployees";
@@ -22,7 +24,9 @@ import { writeFoundationSession } from "@/lib/support/foundation/session-context
 import type { DepartmentResponse, EmployeeResponse, LocationResponse } from "@/types/foundation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useEmployeeRoleTransitionMutation } from "@/hooks/useEmployeeRoleTransition";
 import { useTransferDepartmentMutation } from "@/hooks/useWorkspaceTransfer";
+import { ROLE_MANAGER, ROLE_USER } from "@/lib/types/roles";
 import { useTenantParams } from "@/hooks/useTenantParams";
 import { buildOrgScopedPath } from "@/lib/support/routing/tenant-routes";
 import { ROLE_ADMIN } from "@/lib/types/roles";
@@ -89,6 +93,16 @@ export function WorkspacePanel({
   const [employeeProfileSection, setEmployeeProfileSection] =
     useState<EmployeeProfileSection>("profile");
   const [orgPolicyOpen, setOrgPolicyOpen] = useState(false);
+  const [promoteConfirm, setPromoteConfirm] = useState<{
+    employee: EmployeeResponse;
+    locationId: string;
+    branchName: string;
+  } | null>(null);
+  const [demoteConfirm, setDemoteConfirm] = useState<{
+    employee: EmployeeResponse;
+    locationId: string;
+    departmentId: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!canWriteLocations || searchParams.get("createLocation") !== "1") return;
@@ -123,6 +137,23 @@ export function WorkspacePanel({
       queryFn: () => fetchLocationManagers.list(locationId),
       staleTime: 300_000,
       enabled: canAssignManagers,
+    })),
+  });
+
+  const canTransitionRoles = canAssignManagers && !isManagerScope;
+
+  const locationEmployeeQueries = useQueries({
+    queries: expandedLocationIds.map((locationId) => ({
+      queryKey: foundationKeys.employees({ locationId, page: 1, pageSize: 100 }),
+      queryFn: () =>
+        fetchEmployees.list({
+          locationId,
+          page: 1,
+          pageSize: 100,
+          includeTerminated: false,
+        }),
+      enabled: canTransitionRoles,
+      staleTime: 60_000,
     })),
   });
 
@@ -170,6 +201,21 @@ export function WorkspacePanel({
     return map;
   }, [expandedLocationIds, managerQueries, canAssignManagers]);
 
+  const employeeIdByUserId = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const query of locationEmployeeQueries) {
+      for (const emp of query.data?.items ?? []) {
+        map[emp.userId] = emp.id;
+      }
+    }
+    for (const managers of Object.values(managersByLocation)) {
+      for (const mgr of managers) {
+        if (mgr.employeeId) map[mgr.userId] = mgr.employeeId;
+      }
+    }
+    return map;
+  }, [locationEmployeeQueries, managersByLocation]);
+
   const employeesByDepartment = useMemo(() => {
     const map: Record<string, EmployeeResponse[]> = {};
     expandedDepartmentIds.forEach((deptId, index) => {
@@ -190,6 +236,7 @@ export function WorkspacePanel({
         expandedDepartments,
         showManagers: canAssignManagers,
         lockLocationExpansion: scopeToCurrentLocation,
+        employeeIdByUserId: canTransitionRoles ? employeeIdByUserId : undefined,
       }),
     [
       locations,
@@ -200,23 +247,31 @@ export function WorkspacePanel({
       expandedDepartments,
       canAssignManagers,
       scopeToCurrentLocation,
+      canTransitionRoles,
+      employeeIdByUserId,
     ],
   );
 
   const flowNodes = useMemo(
     () =>
-      graphNodes.map((node) => ({
-        ...node,
-        draggable: canTransferEmployees && node.type === "employee",
-        data: {
-          ...node.data,
-          isDraggable: canTransferEmployees && node.type === "employee",
-        },
-      })),
-    [graphNodes, canTransferEmployees],
+      graphNodes.map((node) => {
+        const draggable =
+          (canTransferEmployees && node.type === "employee") ||
+          (canTransitionRoles && node.type === "manager");
+        return {
+          ...node,
+          draggable,
+          data: {
+            ...node.data,
+            isDraggable: draggable,
+          },
+        };
+      }),
+    [graphNodes, canTransferEmployees, canTransitionRoles],
   );
 
   const transferDepartmentMutation = useTransferDepartmentMutation();
+  const roleTransitionMutation = useEmployeeRoleTransitionMutation();
 
   const invalidateGraph = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: foundationKeys.locations() });
@@ -225,9 +280,26 @@ export function WorkspacePanel({
     void locationsQuery.refetch();
   }, [queryClient, locationsQuery]);
 
+  const findEmployeeById = useCallback(
+    (employeeId: string) => {
+      for (const list of Object.values(employeesByDepartment)) {
+        const emp = list.find((e) => e.id === employeeId);
+        if (emp) return emp;
+      }
+      for (const query of locationEmployeeQueries) {
+        const emp = query.data?.items.find((e) => e.id === employeeId);
+        if (emp) return emp;
+      }
+      return null;
+    },
+    [employeesByDepartment, locationEmployeeQueries],
+  );
+
   const handleEmployeeDropOnDepartment = useCallback(
     async (employeeId: string, fromDepartmentId: string, toDepartmentId: string) => {
-      const fromEmp = employeesByDepartment[fromDepartmentId]?.find((e) => e.id === employeeId);
+      const fromEmp =
+        employeesByDepartment[fromDepartmentId]?.find((e) => e.id === employeeId) ??
+        findEmployeeById(employeeId);
       const targetDept = Object.values(departmentsByLocation)
         .flat()
         .find((d) => d.id === toDepartmentId);
@@ -236,7 +308,7 @@ export function WorkspacePanel({
 
       if (fromEmp.locationId !== targetDept.locationId) {
         toast.error(
-          "Chỉ kéo được giữa các phòng ban cùng chi nhánh. Dùng Điều chuyển để đổi chi nhánh.",
+          "Chỉ kéo được giữa các phòng ban cùng chi nhánh. Kéo nhân viên lên chi nhánh để đổi thành quản lý.",
         );
         return;
       }
@@ -251,7 +323,103 @@ export function WorkspacePanel({
         // Toast handled in mutation
       }
     },
-    [departmentsByLocation, employeesByDepartment, invalidateGraph, transferDepartmentMutation],
+    [departmentsByLocation, employeesByDepartment, findEmployeeById, invalidateGraph, transferDepartmentMutation],
+  );
+
+  const openPromoteConfirm = useCallback(
+    (employee: EmployeeResponse, locationId: string, branchName?: string) => {
+      const loc = locations.find((l) => l.id === locationId);
+      const resolvedBranchName =
+        branchName ??
+        loc?.name ??
+        (employee.locationId === locationId ? employee.locationName : undefined) ??
+        "chi nhánh đã chọn";
+      setPromoteConfirm({ employee, locationId, branchName: resolvedBranchName });
+    },
+    [locations],
+  );
+
+  const handleConfirmPromote = useCallback(async () => {
+    if (!promoteConfirm) return;
+    try {
+      await roleTransitionMutation.mutateAsync({
+        employeeId: promoteConfirm.employee.id,
+        data: { targetRole: ROLE_MANAGER, locationId: promoteConfirm.locationId },
+      });
+      setPromoteConfirm(null);
+      invalidateGraph();
+    } catch {
+      // Toast handled in mutation
+    }
+  }, [invalidateGraph, promoteConfirm, roleTransitionMutation]);
+
+  const openDemoteConfirm = useCallback(
+    async (employeeId: string, locationId: string, departmentId: string) => {
+      let employee = findEmployeeById(employeeId);
+      if (!employee) {
+        try {
+          employee = await fetchEmployees.getById(employeeId);
+        } catch {
+          toast.error("Không tải được hồ sơ nhân viên để chuyển vai trò.");
+          return;
+        }
+      }
+      setDemoteConfirm({ employee, locationId, departmentId });
+    },
+    [findEmployeeById],
+  );
+
+  const handleConfirmDemote = useCallback(
+    async (departmentId: string) => {
+      if (!demoteConfirm) return;
+      try {
+        await roleTransitionMutation.mutateAsync({
+          employeeId: demoteConfirm.employee.id,
+          data: { targetRole: ROLE_USER, departmentId },
+        });
+        setDemoteConfirm(null);
+        invalidateGraph();
+      } catch {
+        // Toast handled in mutation
+      }
+    },
+    [demoteConfirm, invalidateGraph, roleTransitionMutation],
+  );
+
+  const handleEmployeeDropOnLocation = useCallback(
+    (employeeId: string, toLocationId: string) => {
+      const emp = findEmployeeById(employeeId);
+      if (!emp || emp.role !== ROLE_USER) {
+        toast.error("Chỉ kéo nhân viên (User) lên chi nhánh để bổ nhiệm quản lý.");
+        return;
+      }
+      openPromoteConfirm(emp, toLocationId);
+    },
+    [findEmployeeById, openPromoteConfirm],
+  );
+
+  const handleManagerDropOnDepartment = useCallback(
+    (payload: { userId: string; employeeId?: string; toDepartmentId: string }) => {
+      const resolvedEmployeeId =
+        payload.employeeId ?? employeeIdByUserId[payload.userId];
+      if (!resolvedEmployeeId) {
+        toast.error(
+          "Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Mở hồ sơ và dùng tab Vai trò & phạm vi.",
+        );
+        return;
+      }
+
+      const targetDept = Object.values(departmentsByLocation)
+        .flat()
+        .find((d) => d.id === payload.toDepartmentId);
+      if (!targetDept) {
+        toast.error("Không tìm thấy phòng ban đích.");
+        return;
+      }
+
+      void openDemoteConfirm(resolvedEmployeeId, targetDept.locationId, payload.toDepartmentId);
+    },
+    [departmentsByLocation, employeeIdByUserId, openDemoteConfirm],
   );
 
   const handleToggleExpand = useCallback(
@@ -277,17 +445,6 @@ export function WorkspacePanel({
       }
     },
     [scopeToCurrentLocation],
-  );
-
-  const findEmployeeById = useCallback(
-    (employeeId: string) => {
-      for (const list of Object.values(employeesByDepartment)) {
-        const emp = list.find((e) => e.id === employeeId);
-        if (emp) return emp;
-      }
-      return null;
-    },
-    [employeesByDepartment]
   );
 
   const openEmployeeProfile = useCallback(
@@ -412,9 +569,25 @@ export function WorkspacePanel({
               edges={edges}
               onNodeSelect={handleNodeSelect}
               onToggleExpand={handleToggleExpand}
-              canDragEmployees={canTransferEmployees}
+              canDragEmployees={canTransferEmployees || canTransitionRoles}
+              canDragManagers={canTransitionRoles}
               onEmployeeDropOnDepartment={
                 canTransferEmployees ? handleEmployeeDropOnDepartment : undefined
+              }
+              onEmployeeDropOnLocation={
+                canTransitionRoles ? handleEmployeeDropOnLocation : undefined
+              }
+              onManagerDropOnDepartment={
+                canTransitionRoles ? handleManagerDropOnDepartment : undefined
+              }
+              onManagerDropMissed={
+                canTransitionRoles
+                  ? () => {
+                      toast.error(
+                        "Kéo quản lý vào node phòng ban (mở rộng chi nhánh nếu phòng ban đang thu gọn).",
+                      );
+                    }
+                  : undefined
               }
             />
           </div>
@@ -424,7 +597,10 @@ export function WorkspacePanel({
       <p className="shrink-0 border-t border-neutral-200 px-4 py-2 text-xs text-muted-foreground md:px-6 dark:border-neutral-800">
         Mũi tên trên node để mở rộng phòng ban / nhân viên. Click node để chỉnh sửa.
         {canTransferEmployees
-          ? " Kéo thả nhân viên sang phòng ban khác (cùng chi nhánh) để phân lại."
+          ? " Kéo nhân viên sang phòng ban (cùng chi nhánh) để đổi phòng ban."
+          : null}
+        {canTransitionRoles
+          ? " Kéo nhân viên lên chi nhánh để bổ nhiệm quản lý; kéo quản lý xuống phòng ban để chuyển về nhân viên."
           : null}
       </p>
 
@@ -462,10 +638,50 @@ export function WorkspacePanel({
           open={selectedEmployee !== null}
           initialSection={employeeProfileSection}
           canTransfer={canTransferEmployees}
+          canTransitionRole={canTransitionRoles}
           onOpenChange={(open) => {
             if (!open) setSelectedEmployee(null);
           }}
           onTransferred={invalidateGraph}
+          onRequestPromoteConfirm={
+            canTransitionRoles
+              ? ({ locationId, branchName }) =>
+                  openPromoteConfirm(selectedEmployee, locationId, branchName)
+              : undefined
+          }
+          onRequestDemoteConfirm={
+            canTransitionRoles
+              ? ({ locationId, departmentId }) =>
+                  void openDemoteConfirm(selectedEmployee.id, locationId, departmentId)
+              : undefined
+          }
+        />
+      ) : null}
+
+      {promoteConfirm ? (
+        <PromoteManagerConfirmDialog
+          open={promoteConfirm !== null}
+          onOpenChange={(open) => {
+            if (!open) setPromoteConfirm(null);
+          }}
+          employee={promoteConfirm.employee}
+          branchName={promoteConfirm.branchName}
+          isPending={roleTransitionMutation.isPending}
+          onConfirm={handleConfirmPromote}
+        />
+      ) : null}
+
+      {demoteConfirm ? (
+        <DemoteManagerConfirmDialog
+          open={demoteConfirm !== null}
+          onOpenChange={(open) => {
+            if (!open) setDemoteConfirm(null);
+          }}
+          employee={demoteConfirm.employee}
+          initialLocationId={demoteConfirm.locationId}
+          initialDepartmentId={demoteConfirm.departmentId}
+          isPending={roleTransitionMutation.isPending}
+          onConfirm={handleConfirmDemote}
         />
       ) : null}
 
