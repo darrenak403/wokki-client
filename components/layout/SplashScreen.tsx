@@ -91,7 +91,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
               delay: 0.3,
               ease: [0.25, 0.1, 0.25, 1],
             }}
-            className={`absolute bottom-0 left-0 ${isMobile ? "h-1.5" : "h-1"} w-full origin-left bg-gradient-to-r from-[#102854] via-[#4C88C6] to-[#1D4D8F]`}
+            className={`absolute bottom-0 left-0 ${isMobile ? "h-1.5" : "h-1"} w-full origin-left bg-linear-to-r from-[#102854] via-[#4C88C6] to-[#1D4D8F]`}
           />
         </motion.div>
       )}
