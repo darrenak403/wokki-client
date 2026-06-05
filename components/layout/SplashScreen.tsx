@@ -13,6 +13,10 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const [isExiting, setIsExiting] = useState(false);
   const isMobile = useIsMobile();
 
+  const wokkiStagger = isMobile ? 0.07 : 0.1;
+  const wokkiDuration = isMobile ? 0.9 : 1.2;
+  const teamDelay = 0.3 + 4 * wokkiStagger + wokkiDuration + 0.2;
+
   const handleTextComplete = useCallback(() => {
     // Small pause after text animation, then start exit
     setTimeout(() => setIsExiting(true), 600);
@@ -33,18 +37,33 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
           {/* Main text */}
           <div className="relative flex flex-col items-center gap-2 px-4">
-            <FancyText
-              className={`${
-                isMobile ? "text-4xl" : "text-6xl md:text-8xl lg:text-9xl"
-              } font-black leading-none tracking-tighter text-neutral-200 dark:text-neutral-800`}
-              fillClassName="bg-gradient-to-r from-[#102854] via-[#4C88C6] to-[#1D4D8F] bg-clip-text text-black dark:text-white"
-              stagger={isMobile ? 0.07 : 0.1}
-              duration={isMobile ? 0.9 : 1.2}
-              delay={0.3}
-              onComplete={handleTextComplete}
-            >
-              WOKKI TEAM
-            </FancyText>
+            <div className="flex items-baseline gap-2 md:gap-3">
+              <FancyText
+                className={`${
+                  isMobile ? "text-4xl" : "text-6xl md:text-8xl lg:text-9xl"
+                } font-black leading-none tracking-tighter text-neutral-200 dark:text-neutral-800`}
+                fillClassName="bg-gradient-to-r from-[#102854] via-[#4C88C6] to-[#1D4D8F] bg-clip-text text-black dark:text-white"
+                stagger={isMobile ? 0.07 : 0.1}
+                duration={isMobile ? 0.9 : 1.2}
+                delay={0.3}
+                onComplete={handleTextComplete}
+              >
+                WOKKI
+              </FancyText>
+              <motion.span
+                className={`${
+                  isMobile ? "text-4xl" : "text-6xl md:text-8xl lg:text-9xl"
+                } font-black leading-none tracking-tighter text-neutral-300 dark:text-neutral-700`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  duration: 0.5,
+                  delay: teamDelay,
+                }}
+              >
+                TEAM
+              </motion.span>
+            </div>
 
             {/* Subtitle line that appears after a delay */}
             <motion.div

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
@@ -31,13 +31,12 @@ const FancyText = React.forwardRef<HTMLSpanElement, FancyTextProps>(
     const finalRef = (ref ?? spanRef) as React.RefObject<HTMLSpanElement>;
 
     const chars = children.split('');
-    const [hideBase, setHideBase] = useState(false);
 
     return (
       <span ref={finalRef} className='relative inline-block'>
         <span
-          className={cn(className)}
-          style={{ opacity: hideBase ? 0 : 1 }}
+          className={cn(className, 'invisible')}
+          aria-hidden="true"
         >
           {children}
         </span>
@@ -56,7 +55,6 @@ const FancyText = React.forwardRef<HTMLSpanElement, FancyTextProps>(
               }}
               onAnimationComplete={() => {
                 if (i === chars.length - 1) {
-                  setHideBase(true);
                   onComplete?.();
                 }
               }}
