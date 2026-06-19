@@ -16,6 +16,7 @@ export const swapPostKeys = {
 export const opsKeys = {
   all: ["ops"] as const,
   teamAttendance: (params: object) => [...opsKeys.all, "teamAttendance", params] as const,
+  attendanceSummary: (params: object) => [...opsKeys.all, "attendanceSummary", params] as const,
 };
 
 export const chatKeys = {
@@ -23,6 +24,7 @@ export const chatKeys = {
   channels: () => [...chatKeys.all, "channels"] as const,
   orgMembers: () => [...chatKeys.all, "orgMembers"] as const,
   messages: (channelId: string) => [...chatKeys.all, "messages", channelId] as const,
+  unreadCount: () => [...chatKeys.all, "unreadCount"] as const,
 };
 
 export const payrollKeys = {
@@ -68,6 +70,8 @@ export const statsKeys = {
   org: () => [...statsKeys.all, "org"] as const,
   platform: () => [...statsKeys.all, "platform"] as const,
   subscription: () => [...statsKeys.all, "subscription"] as const,
+  orgUsageAnalytics: (params: object) =>
+    [...statsKeys.all, "orgUsageAnalytics", params] as const,
 };
 
 export const platformKeys = {

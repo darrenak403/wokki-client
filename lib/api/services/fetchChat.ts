@@ -11,6 +11,7 @@ import type {
   MessageResponse,
   OrgChatMemberResponse,
   SendMessageRequest,
+  UnreadCountResponse,
 } from "@/types/chat";
 
 export const fetchChat = {
@@ -18,6 +19,13 @@ export const fetchChat = {
     const response = await apiService.get<ApiEnvelope<ChannelResponse[]>>("api/v1/channels");
     const channels = assertChatSuccess(normalizeApiResponse(response.data));
     return normalizeChannelList(channels);
+  },
+
+  getUnreadCount: async (): Promise<UnreadCountResponse> => {
+    const response = await apiService.get<ApiEnvelope<UnreadCountResponse>>(
+      "api/v1/channels/unread-count",
+    );
+    return assertChatSuccess(normalizeApiResponse(response.data));
   },
 
   listOrgMembers: async (): Promise<OrgChatMemberResponse[]> => {

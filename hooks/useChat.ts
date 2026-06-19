@@ -134,6 +134,15 @@ export function useDeleteMessageMutation(channelId: string | null) {
   });
 }
 
+export function useUnreadCountQuery(enabled = true) {
+  return useQuery({
+    queryKey: chatKeys.unreadCount(),
+    queryFn: () => fetchChat.getUnreadCount(),
+    enabled,
+    staleTime: STALE_MS,
+  });
+}
+
 export function useOrgMembersQuery(enabled = true) {
   return useQuery({
     queryKey: chatKeys.orgMembers(),

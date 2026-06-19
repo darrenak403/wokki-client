@@ -5,6 +5,8 @@ import type { ApiEnvelope } from "@/types/api";
 import type { PagedResponse } from "@/types/foundation";
 import type {
   AdjustAttendanceRequest,
+  AttendanceDailySummaryParams,
+  AttendanceDailySummaryResponse,
   AttendanceResponse,
   ClockInRequest,
   TeamAttendanceListParams,
@@ -54,6 +56,16 @@ export const fetchAttendance = {
     const response = await apiService.post<ApiEnvelope<AttendanceResponse>>(
       "api/v1/attendance/clock-out",
       {},
+    );
+    return assertEmployeeSuccess(normalizeApiResponse(response.data));
+  },
+
+  dailySummary: async (
+    params: AttendanceDailySummaryParams,
+  ): Promise<AttendanceDailySummaryResponse> => {
+    const response = await apiService.get<ApiEnvelope<AttendanceDailySummaryResponse>>(
+      "api/v1/attendance/summary",
+      { locationId: params.locationId, date: params.date },
     );
     return assertEmployeeSuccess(normalizeApiResponse(response.data));
   },

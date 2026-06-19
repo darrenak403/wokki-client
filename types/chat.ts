@@ -24,6 +24,17 @@ export interface ChannelResponse {
   members: ChannelMember[];
 }
 
+/** GET /channels/unread-count */
+export interface ChannelUnreadCountResponse {
+  channelId: string;
+  count: number;
+}
+
+export interface UnreadCountResponse {
+  total: number;
+  channels: ChannelUnreadCountResponse[];
+}
+
 export interface OrgChatMemberResponse {
   employeeId: string;
   firstName: string;

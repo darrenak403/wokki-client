@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PlatformDashboardPanel } from "@/app/(platform)/platform/components/PlatformDashboardPanel";
 import { PlatformHealthPanel } from "@/app/(platform)/platform/components/PlatformHealthPanel";
 import { PlatformOrganizationsPanel } from "@/app/(platform)/platform/components/PlatformOrganizationsPanel";
+import { PlatformOverviewWidgets } from "@/app/(platform)/platform/components/PlatformOverviewWidgets";
 import { PlatformSubscriptionLedgerPanel } from "@/app/(platform)/platform/components/PlatformSubscriptionLedgerPanel";
 import { PlatformSupportPanel } from "@/app/(platform)/platform/components/PlatformSupportPanel";
 import { PlatformUsageAnalyticsPanel } from "@/app/(platform)/platform/components/PlatformUsageAnalyticsPanel";
@@ -91,6 +92,7 @@ export function PlatformHome() {
           {tab === "overview" ? (
             <>
               <PlatformDashboardPanel />
+              <PlatformOverviewWidgets />
               <PlatformOrganizationsPanel
                 onOpenLedger={(org) => {
                   setLedgerOrg(org);
