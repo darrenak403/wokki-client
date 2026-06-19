@@ -112,6 +112,15 @@ Stop if: success criterion unverifiable, unexpected blocker, or phase needs user
 
 **Default**: spawn **`tester`** → writes tests, runs full suite (100% pass required) → on failure: spawn **`debugger`** → fix → re-test.
 
+**Keep/Discard prompt** (after `tester` reports PASS, default mode only — not `--tdd`, not `--fast`):
+
+1. Before spawning `tester`, snapshot `PRE_TRACKED` (`git ls-files`) and `PRE_DIRS` (`find <repo-root> -type d`, excluding `.git`/`node_modules`). `<repo-root>` via `git rev-parse --show-toplevel`.
+2. After `tester`'s `Test files written:` list comes back: reject any path whose `realpath` doesn't start with `<repo-root>`. Eligibility is decided by the orchestrator, never by `tester`'s say-so — a path already in `PRE_TRACKED` is never eligible, regardless of what `tester` reported.
+3. Append eligible paths to `.claude/session-data/scratch-tests.json` as `{path, phase, createdAt, status: "pending"}` (create as `[]` if missing; if existing JSON fails to parse, rename to `.corrupt-<timestamp>` and start fresh — never abort or silently overwrite).
+4. `AskUserQuestion`: keep or discard, as one batch covering all eligible files this phase.
+5. **Keep**: mark entries `"kept"`, proceed normally.
+6. **Discard**: per file — `rm`, mark that entry `"discarded"` and persist the ledger immediately (not batched), then walk up from its parent directory toward `<repo-root>`, stopping at the first ancestor present in `PRE_DIRS` (never touch it or above); remove each directory below that point only if it is now empty AND was absent from `PRE_DIRS`.
+
 **Remediation cycles**: each of cycles 1–3 must use a different approach than previous. Cycle 4: STOP.
 
 ```
