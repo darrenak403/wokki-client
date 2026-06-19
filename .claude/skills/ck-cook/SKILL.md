@@ -1,6 +1,6 @@
 ---
 name: ck:cook
-description: Implement a planned feature phase by phase. Use when the user says "cook this", "implement it", "let's build", "start coding", or passes a plan.md path. Spec-aware — auto-loads spec.md alongside plan for SDD+TDD. Modes (pick one): --fast (skip test/review), --hard (mandatory human approval). Composable flags (combine with any mode): --no-test (skip tester), --tdd (write failing tests before implementing).
+description: Implement a planned feature phase by phase. Use when the user says "cook this", "implement it", "let's build", "start coding", or passes a plan.md path. Spec-aware — auto-loads spec.md alongside plan for SDD+TDD. Modes (pick one): --fast (skip test/review), --hard (mandatory human approval). Composable flag: --tdd (write failing tests before implementing).
 user-invocable: true
 ---
 
@@ -12,9 +12,10 @@ Modes — mutually exclusive, pick one (default = Standard):
 - **`--hard`** — mandatory test + mandatory review, no auto-approve
 - **`--parallel`** — phases have exclusive File Ownership (from `ck:plan --parallel`); auto-continue between phases (no per-phase review gate), full test + review at end
 
-Composable flags — combine with any mode:
-- **`--no-test`** — skip tester; go directly to Step 3.S → Step 4
+Composable flag — combine with any mode:
 - **`--tdd`** — write failing tests first, then implement until they pass
+
+**Flag default** (no flag given): `--tdd` is off — standard test behavior applied.
 
 ---
 
@@ -30,12 +31,22 @@ After resolving plan path: check for `spec.md` in the same directory. If found, 
 
 ### Step 1 — Load Plan / Detect Mode
 
+After loading plan.md, determine the execution mode:
+
+1. If the user supplied a mode flag (`--fast`, `--hard`, `--parallel`), use it — **user flag always wins**.
+2. If no mode flag was supplied, scan plan.md for a line matching `^Risk: (tiny|normal|high-risk)\b` (anchored to line start, word boundary after tier — avoids false matches on Risks section bullets, tolerates trailing reason text like `Risk: high-risk — touches auth`). Apply the lane mapping:
+   - `tiny` → `--fast`
+   - `normal` → Standard
+   - `high-risk` → `--hard`
+3. If no `Risk:` line is found (plan written before Phase 1), fall through to Standard.
+4. If the user explicitly passed `--fast` and the plan carries `Risk: high-risk`, print one non-blocking warning before proceeding: `[WARN] --fast override on high-risk plan — skipping tests and review.`
+
 Report what will be cooked:
 
 ```
 Plan: {Feature Name}
 Status: {status from plan.md}
-Mode: {Standard | Fast | Hard}
+Risk Lane: {tiny|normal|high-risk|none} → Mode: {Standard|Fast|Hard} ({default|user override: --flag})
 Test:  {default | --no-test | --tdd}
 Spec:  {plans/{slug}/spec.md — N P1 stories, N success criteria | none}
 Phases remaining:
@@ -57,11 +68,16 @@ When no plan file provided: read the feature request, ask 2–3 clarifying quest
 For each `phase-XX-*.md` in order:
 
 1. Read phase file — understand requirements, architecture, steps, success criteria
-2. Implement following codebase conventions
-3. Verify success criteria for the phase
-4. **If spec loaded**: `P1 coverage: {N}/{total} stories addressed this phase`
-5. Write (overwrite) `## Session Notes` in plan.md, then mark phase complete `- [x] Phase N: {name}`
-6. Report what was done
+2. **Feature state → active**: locate `feature_list.json` at project root (same dir as `.ck.json`). If it exists and has an entry whose `id` matches the current phase slug, set `status: "active"`. Skip silently if file absent or no matching entry — never let this block implementation. If JSON is malformed, log one warning and skip. **`--parallel` mode**: reads and writes to `feature_list.json` must be serialized — always re-read the file immediately before writing to avoid overwriting concurrent phase updates (read-modify-write per update, not cached reads).
+3. Implement following codebase conventions
+4. Verify success criteria for the phase
+5. **Feature state → passing** (immediately after verification — do not defer to Step 5):
+   - Standard / `--hard`: set `status: "passing"`, `evidence`: one-line summary of verification output (e.g. `"Tests: 12 passed, 0 failed"`)
+   - `--fast`: set `status: "passing-unverified"`, `evidence`: `"fast mode — no test evidence"`
+   - Write the updated entry back to `feature_list.json` at project root before moving to the next sub-step.
+6. **If spec loaded**: `P1 coverage: {N}/{total} stories addressed this phase`
+7. Write (overwrite) `## Session Notes` in plan.md, then mark phase complete `- [x] Phase N: {name}`
+8. Report what was done
 
 **Session Notes template** (overwrite, never append):
 
@@ -90,7 +106,7 @@ Stop if: success criterion unverifiable, unexpected blocker, or phase needs user
 
 ### Step 3 — Test (tester sub-agent)
 
-**`--fast`** / **`--no-test`**: skip → Step 3.S.
+**`--fast`**: skip → Step 3.S.
 
 **[Build Gate]**: verify compilation before tests. On failure: `[GATE FAIL] Build gate: compilation errors — fix before testing.`
 
@@ -130,7 +146,7 @@ Thresholds (`.ck.json` → `simplify.threshold`): `totalLoc` 400, `fileCount` 8,
 
 **`--parallel`**: run code review across all phases at once (not per-phase).
 
-**[Test Gate]**: all tests must pass (or `--no-test` set).
+**[Test Gate]**: all tests must pass (or `--fast` set).
 
 Spawn **`code-reviewer`**: correctness, security, regressions, quality → APPROVED / WARNING / BLOCK.
 - **Standard**: auto-approve if score ≥ 9.5 with 0 CRITICAL
@@ -144,6 +160,8 @@ Spawn **`code-reviewer`**: correctness, security, regressions, quality → APPRO
 **[Approval Gate]**: code-reviewer APPROVED required (or `--fast` bypass).
 
 **`project-manager`** (skip `--fast`): mark phases `[x]`, update plan status.
+
+**Feature state consistency check** (skip `--fast`): read `feature_list.json` at project root if it exists. Log each feature's final status — this is read-only; Step 2 already owns all state writes. If any entry is still `active` (cook was interrupted mid-phase), log a warning: `[WARN] feature {id} still active — verify manually before /ck:handoff`.
 
 **`docs-manager`** (skip `--fast`): update docs, README, API contracts.
 
@@ -163,7 +181,7 @@ Uncovered P1:      {list any, or "none"}
 
 | Agent / Skill     | Step | Modes |
 |-------------------|------|-------|
-| `tester`          | 3    | Standard, `--hard`, `--parallel` (skip for `--fast`, `--no-test`) |
+| `tester`          | 3    | Standard, `--hard`, `--parallel` (skip for `--fast`) |
 | `debugger`        | 3    | When tests fail |
 | `simplify` skill  | 3.S  | All (hook-driven) |
 | `code-reviewer`   | 4    | Standard, `--hard`, `--parallel` (skip for `--fast`) |

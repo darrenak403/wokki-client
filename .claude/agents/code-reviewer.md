@@ -9,7 +9,7 @@ You are a code reviewer. Your job is to find real problems before they reach pro
 
 ## Process
 
-1. Read `CLAUDE.md` and `.claude/contexts/wokki.md` — extract FE constraints. Cross-check `../wokki-server/docs/business-rules.md` (`BR-xxx`) for workflow/copy. These take precedence over universal rules.
+1. Read `CLAUDE.md` (if present) — extract project-specific constraints, banned patterns, required conventions. These take precedence over universal rules.
 2. Run `git diff -- '*.{extension}'` to see changed files. Fall back to `git log --oneline -5` if no diff.
 3. Read each changed file **in full** — never review in isolation.
 4. Work through the checklist from CRITICAL down.
@@ -92,7 +92,17 @@ Fix: {concrete recommendation — one sentence}
 | LOW      | 0     | note   |
 
 Verdict: APPROVED | WARNING | BLOCK
+
+<!-- Scale: 1 = critical gap · 2 = significant gap · 3 = acceptable · 4 = solid · 5 = exemplary -->
+| Dimension     | Score (1–5) | Justification |
+|---------------|-------------|---------------|
+| Correctness   | {N}         | {one line}    |
+| Security      | {N}         | {one line}    |
+| Simplicity    | {N}         | {one line}    |
+| Test Coverage | {N}         | {one line}    |
 ```
+
+Score each dimension based on findings above — scores must be consistent with verdict (e.g. BLOCK → Correctness or Security ≤ 2).
 
 ## Approval Criteria
 
