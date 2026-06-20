@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, EyeIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,8 +14,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import { PayrollEmployeeDetailDialog } from "@/app/(app)/[orgId]/[locationId]/admin/payroll/components/PayrollEmployeeDetailDialog";
 import { PayrollLockPeriodDialog } from "@/app/(app)/[orgId]/[locationId]/admin/payroll/components/PayrollLockPeriodDialog";
 import { PayrollPayoutDialog } from "@/app/(app)/[orgId]/[locationId]/admin/payroll/components/PayrollPayoutDialog";
+import { PayrollSummaryTiles } from "@/app/(app)/[orgId]/[locationId]/admin/payroll/components/PayrollSummaryTiles";
 import {
   useExportPayrollCsvMutation,
   useLockPayrollPeriodMutation,
@@ -46,6 +48,7 @@ export function PayrollPanel({
   const [unpaidOnly, setUnpaidOnly] = useState(false);
   const [payoutLine, setPayoutLine] = useState<PayrollLineResponse | null>(null);
   const [lockDialogOpen, setLockDialogOpen] = useState(false);
+  const [detailEmployeeId, setDetailEmployeeId] = useState<string | null>(null);
 
   const { startDate, endDate, label } = monthBounds(month);
 
@@ -164,6 +167,7 @@ export function PayrollPanel({
         <p className="text-sm text-muted-foreground">Chưa có dữ liệu lương trong tháng này.</p>
       ) : (
         <div className="space-y-4">
+          <PayrollSummaryTiles data={data} />
           <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
@@ -208,14 +212,25 @@ export function PayrollPanel({
                       </TableCell>
                     ) : null}
                     <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPayoutLine(line)}
-                      >
-                        Chuyển lương
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDetailEmployeeId(line.employeeId)}
+                        >
+                          <EyeIcon className="mr-1 size-3.5" />
+                          Xem chi tiết
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPayoutLine(line)}
+                        >
+                          Chuyển lương
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -231,6 +246,17 @@ export function PayrollPanel({
         open={payoutLine !== null}
         onOpenChange={(open) => {
           if (!open) setPayoutLine(null);
+        }}
+      />
+
+      <PayrollEmployeeDetailDialog
+        employeeId={detailEmployeeId}
+        params={summaryParams}
+        periodLabel={label}
+        isLocked={isLocked}
+        open={detailEmployeeId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailEmployeeId(null);
         }}
       />
 
