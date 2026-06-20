@@ -15,6 +15,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { NoEmployeeLinked } from "@/app/(app)/[orgId]/[locationId]/user/components/NoEmployeeLinked";
+import { useIsMobile } from "@/hooks/useMobile";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,7 +121,9 @@ function MemberAvatar({
 export function ChatPanel({ canModerateDelete }: ChatPanelProps) {
   useChatHubOnPage();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [draft, setDraft] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<MessageResponse | null>(null);
@@ -241,9 +244,12 @@ export function ChatPanel({ canModerateDelete }: ChatPanelProps) {
   }, [orgMembers, directChannels, memberSearch, myEmployeeId]);
 
   useEffect(() => {
-    if (activeChannelId || channelsLoading) return;
-    if (orgChannel) setActiveChannelId(orgChannel.id);
-  }, [activeChannelId, channelsLoading, orgChannel]);
+    if (hasAutoSelected || activeChannelId || channelsLoading || isMobile) return;
+    if (orgChannel) {
+      setActiveChannelId(orgChannel.id);
+      setHasAutoSelected(true);
+    }
+  }, [hasAutoSelected, activeChannelId, channelsLoading, orgChannel, isMobile]);
 
   const {
     data: messagesData,

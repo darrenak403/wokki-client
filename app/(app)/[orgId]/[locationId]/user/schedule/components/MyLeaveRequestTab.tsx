@@ -67,7 +67,9 @@ export function MyLeaveRequestTab({
           <Label>Ca</Label>
           <Select value={shiftId} onValueChange={(v) => v && setShiftId(v)}>
             <SelectTrigger>
-              <SelectValue placeholder="Chọn ca" />
+              <SelectValue placeholder="Chọn ca">
+                {(v: string) => shifts.find((s) => s.id === v)?.name ?? v}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {shifts.map((s) => (
@@ -82,7 +84,9 @@ export function MyLeaveRequestTab({
           <Label>Ngày</Label>
           <Select value={date} onValueChange={(v) => v && setDate(v)}>
             <SelectTrigger>
-              <SelectValue placeholder="Chọn ngày" />
+              <SelectValue placeholder="Chọn ngày">
+                {(v: string) => (v ? format(parseISO(v), "dd/MM/yyyy") : v)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {weekDates.map((d) => (
