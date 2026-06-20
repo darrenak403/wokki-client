@@ -46,7 +46,7 @@ export function PayrollLockPeriodDialog({
             <p className="font-medium text-foreground">Sẽ chốt số liệu của</p>
             <ul className="mt-1 list-inside list-disc space-y-1 text-muted-foreground">
               <li>{employeeCount} nhân viên trong bảng</li>
-              <li>Tổng gross: {formatVnd(totalGross)}</li>
+              <li>Tổng lương: {formatVnd(totalGross)}</li>
             </ul>
           </div>
 

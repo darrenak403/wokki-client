@@ -43,10 +43,16 @@ export function MySchedulePanel() {
   return (
     <Tabs value={tab} onValueChange={setTab} className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <TabsList className="h-9">
-          <TabsTrigger value="published">Lịch đã công bố</TabsTrigger>
-          <TabsTrigger value="preferences">Đăng ký ca</TabsTrigger>
-          <TabsTrigger value="leave">Xin nghỉ</TabsTrigger>
+        <TabsList className="h-9 max-w-full overflow-x-auto">
+          <TabsTrigger value="published" className="shrink-0">
+            Lịch đã công bố
+          </TabsTrigger>
+          <TabsTrigger value="preferences" className="shrink-0">
+            Đăng ký ca
+          </TabsTrigger>
+          <TabsTrigger value="leave" className="shrink-0">
+            Xin nghỉ
+          </TabsTrigger>
         </TabsList>
         {tab === "published" ? (
           <Badge variant="outline" className="h-9 shrink-0 gap-2 rounded-lg px-3 text-sm">

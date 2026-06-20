@@ -34,10 +34,10 @@ export function TodayShiftSidebar({ todayShifts, activeShiftId, selectable, onSe
                 )}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium">{shift.shiftName}</p>
+                  <p className="min-w-0 truncate font-medium">{shift.shiftName}</p>
                   <span
                     className={cn(
-                      "size-2 rounded-full",
+                      "size-2 shrink-0 rounded-full",
                       active ? "bg-primary" : "bg-muted-foreground/40"
                     )}
                   />

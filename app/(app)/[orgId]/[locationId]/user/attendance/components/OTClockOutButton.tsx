@@ -33,8 +33,8 @@ export function OTClockOutButton({ overtimeRequestId, startedAt }: OTClockOutBut
   }, [startedAt]);
 
   return (
-    <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/40">
-      <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/40">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
         <TimerIcon className="size-4 shrink-0 animate-pulse" />
         <span className="font-medium">Đang tăng ca</span>
         <span className="text-amber-600/70 dark:text-amber-500/70">· {formatElapsed(elapsed)}</span>

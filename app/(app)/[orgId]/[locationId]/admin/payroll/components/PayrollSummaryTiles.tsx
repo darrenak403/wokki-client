@@ -24,7 +24,6 @@ export function PayrollSummaryTiles({ data }: PayrollSummaryTilesProps) {
         description={`/ ${data.lines.length} nhân viên`}
       />
       <StatCard label="Tổng giờ OT" value={formatHours(totalOvertimeMinutes)} />
-      <StatCard label="Tổng số nhân viên" value={data.lines.length} />
     </StatsGrid>
   );
 }

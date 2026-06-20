@@ -122,7 +122,7 @@ export function MyLeaveRequestTab({
                 key={item.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
               >
-                <span>
+                <span className="min-w-0 break-words">
                   {item.shiftName} · {format(parseISO(item.date), "dd/MM")} —{" "}
                   <span className="text-muted-foreground">{item.status}</span>
                 </span>

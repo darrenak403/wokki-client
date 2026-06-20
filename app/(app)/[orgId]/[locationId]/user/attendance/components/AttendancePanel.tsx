@@ -104,7 +104,7 @@ export function AttendancePanel() {
         openRecordCount={openRecord ? 1 : 0}
       />
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <ShiftClockCard
           currentShift={currentShift}
           openRecord={openRecord ?? undefined}

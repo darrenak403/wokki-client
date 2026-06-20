@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeftIcon, ChevronRightIcon, EyeIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,7 +27,13 @@ import {
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
 import { mapPayrollError } from "@/lib/support/payroll/map-errors";
-import { addMonthsISO, currentMonthISO, formatVnd, monthBounds } from "@/lib/support/payroll/month";
+import {
+  addMonthsISO,
+  currentMonthISO,
+  formatHours,
+  formatVnd,
+  monthBounds,
+} from "@/lib/support/payroll/month";
 import { PAY_PERIOD_STATUS, type PayrollLineResponse } from "@/types/payroll";
 
 type PayrollPanelProps = {
@@ -174,8 +180,9 @@ export function PayrollPanel({
                 <TableRow>
                   <TableHead>Nhân viên</TableHead>
                   <TableHead>Giờ</TableHead>
+                  <TableHead>Giờ OT</TableHead>
                   <TableHead>VND/giờ</TableHead>
-                  <TableHead>Gross</TableHead>
+                  <TableHead>Tổng lương</TableHead>
                   {isLocked && canMarkPaid ? <TableHead>CK</TableHead> : null}
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
@@ -188,9 +195,11 @@ export function PayrollPanel({
                     </TableCell>
                     <TableCell className="tabular-nums">
                       {Math.round(line.totalWorkedMinutes / 60)}h
+                    </TableCell>
+                    <TableCell className="tabular-nums">
                       {line.approvedOvertimeMinutes > 0
-                        ? ` (+OT ${line.approvedOvertimeMinutes}p)`
-                        : ""}
+                        ? formatHours(line.approvedOvertimeMinutes)
+                        : "—"}
                     </TableCell>
                     <TableCell className="tabular-nums">{formatVnd(line.hourlyRate)}</TableCell>
                     <TableCell className="tabular-nums font-medium">
@@ -215,11 +224,10 @@ export function PayrollPanel({
                       <div className="flex justify-end gap-2">
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           onClick={() => setDetailEmployeeId(line.employeeId)}
                         >
-                          <EyeIcon className="mr-1 size-3.5" />
                           Xem chi tiết
                         </Button>
                         <Button
@@ -237,7 +245,6 @@ export function PayrollPanel({
               </TableBody>
             </Table>
           </div>
-          <p className="text-sm font-medium">Tổng phòng ban: {formatVnd(data.totalGrossPay)}</p>
         </div>
       )}
 

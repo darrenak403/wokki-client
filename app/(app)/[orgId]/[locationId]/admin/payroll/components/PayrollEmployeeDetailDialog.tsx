@@ -38,7 +38,7 @@ export function PayrollEmployeeDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Phiếu lương{employeeName ? ` — ${employeeName}` : ""}</DialogTitle>
         </DialogHeader>
@@ -56,7 +56,7 @@ export function PayrollEmployeeDetailDialog({
             isLocked={isLocked}
             hours={{
               totalWorkedMinutes: data.totalWorkedMinutes,
-              regularMinutes: data.regularMinutes,
+              regularMinutes: data.totalWorkedMinutes - data.approvedOvertimeMinutes,
               approvedOvertimeMinutes: data.approvedOvertimeMinutes,
             }}
             pay={{

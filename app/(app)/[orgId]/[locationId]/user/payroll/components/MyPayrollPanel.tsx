@@ -23,10 +23,10 @@ export function MyPayrollPanel() {
   const isLocked = data?.periodStatus === PAY_PERIOD_STATUS.Locked;
 
   return (
-    <div className="mx-auto max-w-lg space-y-6">
+    <div className="mx-auto w-full max-w-lg space-y-6">
       <div className="border-b pb-4">
         <Label className="text-xs font-normal text-muted-foreground">Lương tháng</Label>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <Button
             type="button"
             variant="outline"
