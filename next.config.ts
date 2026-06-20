@@ -8,15 +8,9 @@ const nextConfig: NextConfig = {
       // Legacy paths without org/branch — canonical URLs handled in proxy.ts (JWT + branch cookie).
     ];
   },
-  async rewrites() {
-    // Same-origin proxy: browser calls /api/* on the FE domain; Next.js forwards
-    // server-side to the backend so DevTools never reveals the backend's own domain.
-    const backendUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8386").replace(
-      /\/+$/,
-      ""
-    );
-    return [{ source: "/api/:path*", destination: `${backendUrl}/api/:path*` }];
-  },
+  // Same-origin /api/* proxy lives in proxy.ts (Next middleware), not here:
+  // for output:"standalone", rewrites() destinations are frozen at build time
+  // and never see the container's real runtime env var.
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
