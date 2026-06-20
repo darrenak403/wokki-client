@@ -59,16 +59,6 @@ export function getApiBaseUrl(): string {
   return `${publicEnv.apiUrl}/`;
 }
 
-/**
- * REST base URL for browser-side calls — relative, so requests stay same-origin
- * and go through the `next.config.ts` rewrite proxy instead of hitting the backend
- * domain directly (keeps the backend URL out of DevTools' Network tab).
- * Server-side code (no `window`) still needs the real backend URL.
- */
-export function getApiProxyBaseUrl(): string {
-  return typeof window !== "undefined" ? "/" : getApiBaseUrl();
-}
-
 export function isProductionEnv(): boolean {
   return publicEnv.env === "production" || process.env.NODE_ENV === "production";
 }

@@ -1,1 +1,1 @@
-export { getApiBaseUrl, getApiProxyBaseUrl } from "@/lib/env/public";
+export { getApiBaseUrl } from "@/lib/env/public";
