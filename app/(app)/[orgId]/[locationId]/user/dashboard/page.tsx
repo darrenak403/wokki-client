@@ -1,3 +1,4 @@
+import { UserDashboardPanel } from "@/app/(app)/[orgId]/[locationId]/user/dashboard/components/UserDashboardPanel";
 import { buildPageMetadata } from "@/lib/support/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -8,5 +9,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function UserDashboardPage() {
-  return null;
+  return <UserDashboardPanel />;
 }

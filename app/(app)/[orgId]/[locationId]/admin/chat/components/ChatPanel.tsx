@@ -5,6 +5,7 @@ import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { HubConnectionState } from "@microsoft/signalr";
 import {
+  ArrowLeftIcon,
   Building2Icon,
   MoreHorizontalIcon,
   ReplyIcon,
@@ -14,6 +15,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { NoEmployeeLinked } from "@/app/(app)/[orgId]/[locationId]/user/components/NoEmployeeLinked";
+import { useIsMobile } from "@/hooks/useMobile";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,7 +121,9 @@ function MemberAvatar({
 export function ChatPanel({ canModerateDelete }: ChatPanelProps) {
   useChatHubOnPage();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [draft, setDraft] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<MessageResponse | null>(null);
@@ -240,9 +244,12 @@ export function ChatPanel({ canModerateDelete }: ChatPanelProps) {
   }, [orgMembers, directChannels, memberSearch, myEmployeeId]);
 
   useEffect(() => {
-    if (activeChannelId || channelsLoading) return;
-    if (orgChannel) setActiveChannelId(orgChannel.id);
-  }, [activeChannelId, channelsLoading, orgChannel]);
+    if (hasAutoSelected || activeChannelId || channelsLoading || isMobile) return;
+    if (orgChannel) {
+      setActiveChannelId(orgChannel.id);
+      setHasAutoSelected(true);
+    }
+  }, [hasAutoSelected, activeChannelId, channelsLoading, orgChannel, isMobile]);
 
   const {
     data: messagesData,
@@ -428,7 +435,12 @@ export function ChatPanel({ canModerateDelete }: ChatPanelProps) {
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="flex w-full max-w-[320px] shrink-0 flex-col border-r border-neutral-200 bg-neutral-50/80 dark:border-neutral-800 dark:bg-neutral-900/50">
+        <aside
+          className={cn(
+            "flex w-full shrink-0 flex-col border-r border-neutral-200 bg-neutral-50/80 dark:border-neutral-800 dark:bg-neutral-900/50 md:max-w-[320px]",
+            activeChannelId ? "hidden md:flex" : "flex",
+          )}
+        >
           <div className="flex shrink-0 items-center justify-between px-4 py-3">
             <h2 className="text-xl font-bold tracking-tight">Đoạn chat</h2>
             <Button type="button" variant="ghost" size="icon" className="size-8" aria-label="Tùy chọn">
@@ -524,7 +536,12 @@ export function ChatPanel({ canModerateDelete }: ChatPanelProps) {
         </aside>
 
         {/* Thread */}
-        <section className="flex min-w-0 flex-1 flex-col bg-white dark:bg-neutral-950">
+        <section
+          className={cn(
+            "flex min-w-0 flex-1 flex-col bg-white dark:bg-neutral-950",
+            activeChannelId ? "flex" : "hidden md:flex",
+          )}
+        >
           {!activeChannelId ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
               <MessageCirclePlaceholder />
@@ -533,6 +550,16 @@ export function ChatPanel({ canModerateDelete }: ChatPanelProps) {
           ) : (
             <>
               <header className="flex shrink-0 items-center gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0 md:hidden"
+                  aria-label="Quay lại danh sách"
+                  onClick={() => setActiveChannelId(null)}
+                >
+                  <ArrowLeftIcon className="size-4" />
+                </Button>
                 {isOrgThread ? (
                   <div className="flex size-10 items-center justify-center rounded-full bg-primary/15 text-primary">
                     <Building2Icon className="size-5" />
@@ -604,7 +631,7 @@ export function ChatPanel({ canModerateDelete }: ChatPanelProps) {
                 )}
               </div>
 
-              <div className="shrink-0 border-t border-neutral-200 px-4 py-3 dark:border-neutral-800">
+              <div className="shrink-0 border-t border-neutral-200 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-neutral-800">
                 {replyTo && !replyTo.isDeleted ? (
                   <div className="mb-2 flex items-start gap-2 rounded-xl bg-neutral-100 px-3 py-2 dark:bg-neutral-900">
                     <ReplyIcon className="mt-0.5 size-4 shrink-0 text-primary" />

@@ -149,6 +149,21 @@ export type TeamAttendanceListParams = {
   mode?: AttendanceMode;
 };
 
+/** GET /attendance/summary (Manager/Admin) */
+export interface AttendanceDailySummaryParams {
+  locationId: string;
+  date: string;
+}
+
+export interface AttendanceDailySummaryResponse {
+  locationId: string;
+  date: string;
+  scheduledCount: number;
+  clockedInCount: number;
+  clockedOutCount: number;
+  notClockedInCount: number;
+}
+
 /** @deprecated Use SelfAttendanceListParams or TeamAttendanceListParams */
 export type AttendanceListParams = SelfAttendanceListParams;
 

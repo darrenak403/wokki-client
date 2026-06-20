@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { deleteCookie } from "cookies-next";
-import { getApiBaseUrl } from "@/lib/api/get-api-base-url";
+import { getApiProxyBaseUrl } from "@/lib/api/get-api-base-url";
 import { extractApiMessage, normalizeApiResponse } from "@/lib/api/normalize-response";
 import type { ApiEnvelope, ApiError, RequestParams } from "@/types/api";
 import type { AuthTokenPair } from "@/types/auth";
@@ -40,7 +40,7 @@ class ApiService {
   private getClient(): AxiosInstance {
     if (!this.client) {
       this.client = axios.create({
-        baseURL: getApiBaseUrl(),
+        baseURL: getApiProxyBaseUrl(),
         timeout: 600000,
         headers: { "Content-Type": "application/json" },
       });
@@ -100,7 +100,7 @@ class ApiService {
 
             const accessToken = store?.getState()?.auth?.token;
             const response = await axios.post<ApiEnvelope<AuthTokenPair>>(
-              `${getApiBaseUrl()}api/v1/auth/refresh-token`,
+              `${getApiProxyBaseUrl()}api/v1/auth/refresh-token`,
               { refreshToken },
               {
                 headers: {

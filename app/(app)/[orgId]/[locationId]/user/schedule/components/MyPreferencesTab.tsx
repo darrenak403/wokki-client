@@ -95,7 +95,7 @@ export function MyPreferencesTab() {
         >
           <ChevronLeftIcon className="size-4" />
         </Button>
-        <span className="min-w-[160px] text-center text-sm font-medium">
+        <span className="min-w-0 text-center text-sm font-medium">
           Tuần {format(parseISO(weekStartDate), "dd/MM", { locale: vi })} -{" "}
           {format(parseISO(weekDays[6]), "dd/MM", { locale: vi })}
         </span>

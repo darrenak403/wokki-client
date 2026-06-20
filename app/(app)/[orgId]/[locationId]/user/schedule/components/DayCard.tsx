@@ -26,16 +26,21 @@ export function DayCard({ group, now }: { group: DayGroup; now: Date }) {
         {group.assignments.map((assignment) => {
           const ongoing = isOngoing(assignment, now);
           return (
-            <div key={assignment.id} className="flex items-center gap-3 px-4 py-3">
+            <div
+              key={assignment.id}
+              className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap"
+            >
               <div
                 className="self-stretch w-1 shrink-0 rounded-full"
                 style={{ backgroundColor: assignment.shiftColor ?? "#5068a9" }}
               />
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm leading-tight">{assignment.shiftName}</p>
+                <p className="truncate font-medium text-sm leading-tight">
+                  {assignment.shiftName}
+                </p>
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
-                    <ClockIcon className="size-3.5" />
+                    <ClockIcon className="size-3.5 shrink-0" />
                     {toTime(assignment.startTime)} - {toTime(assignment.endTime)}
                   </span>
                   {ongoing && (
@@ -50,9 +55,9 @@ export function DayCard({ group, now }: { group: DayGroup; now: Date }) {
               </div>
 
               {assignment.locationName && (
-                <span className="hidden sm:inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
-                  <MapPinIcon className="size-3.5" />
-                  {assignment.locationName}
+                <span className="hidden min-w-0 shrink-0 items-center gap-1 truncate text-sm text-muted-foreground sm:inline-flex">
+                  <MapPinIcon className="size-3.5 shrink-0" />
+                  <span className="truncate">{assignment.locationName}</span>
                 </span>
               )}
 

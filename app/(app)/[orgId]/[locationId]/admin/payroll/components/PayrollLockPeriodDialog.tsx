@@ -37,14 +37,35 @@ export function PayrollLockPeriodDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Chốt kỳ lương {monthLabel}?</AlertDialogTitle>
           <AlertDialogDescription>
-            Sau khi chốt, số liệu lương tháng này được cố định (snapshot). Admin không thể chỉnh
-            chấm công trong kỳ đã chốt; có thể dùng bảng lương để chuyển khoản.
+            Hành động này chốt số liệu lương tháng {monthLabel} thành bản cố định (snapshot).
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-          <li>{employeeCount} nhân viên trong bảng</li>
-          <li>Tổng gross: {formatVnd(totalGross)}</li>
-        </ul>
+
+        <div className="space-y-3 text-sm">
+          <div>
+            <p className="font-medium text-foreground">Sẽ chốt số liệu của</p>
+            <ul className="mt-1 list-inside list-disc space-y-1 text-muted-foreground">
+              <li>{employeeCount} nhân viên trong bảng</li>
+              <li>Tổng lương: {formatVnd(totalGross)}</li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="font-medium text-foreground">Sau khi chốt, không thể thay đổi</p>
+            <p className="mt-1 text-muted-foreground">
+              Admin không thể chỉnh sửa chấm công hoặc số liệu lương trong kỳ đã chốt.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-medium text-foreground">Nhân viên sẽ thấy</p>
+            <p className="mt-1 text-muted-foreground">
+              Phiếu lương hiển thị là số liệu cuối cùng (không còn là ước tính); bảng lương có thể
+              dùng để chuyển khoản.
+            </p>
+          </div>
+        </div>
+
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Huỷ</AlertDialogCancel>
           <AlertDialogAction disabled={isPending} onClick={onConfirm}>

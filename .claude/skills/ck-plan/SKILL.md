@@ -1,6 +1,6 @@
 ---
 name: ck:plan
-description: Plan a feature or system before implementation. Use when the user says "plan this", "I want to build X", "how do I implement Y", or when /ck:brainstorm produces a spec.md. Always run before /ck:cook. Modes (pick one): --fast (skip all, instant plan), --hard (2 researchers + red-team + validate), --two (2 approaches → compare → pick → cook), --parallel (parallel-impl plan → ck:cook --parallel), --auto (full pipeline + auto-cook). Composable flags: --no-test, --tdd — propagate into the cook pipeline.
+description: Plan a feature or system before implementation. Use when the user says "plan this", "I want to build X", "how do I implement Y", or when /ck:brainstorm produces a spec.md. Always run before /ck:cook. Modes (pick one): --fast (skip all, instant plan), --hard (2 researchers + red-team + validate), --two (2 approaches → compare → pick → cook), --parallel (parallel-impl plan → ck:cook --parallel), --auto (full pipeline + auto-cook). Composable flags: --tdd, --no-task — propagate into the cook pipeline.
 user-invocable: true
 ---
 
@@ -16,7 +16,9 @@ user-invocable: true
 | `--parallel` | 2 researchers                    | ✓            | optional    | `/ck:cook --parallel`            |
 | `--auto`     | 1 researcher                     | ✓            | ✓ (wait)    | auto-invoke cook (detected mode) |
 
-**Auto-detect** (no flag given): Fast if single-file / familiar / ≤ 2 components; Hard otherwise.
+**Auto-detect** (no mode given): Fast if single-file / familiar / ≤ 2 components; Hard otherwise.
+
+**Flag defaults** (no composable flags given): `--tdd` and `--no-task` are both off — no special behavior applied.
 
 ---
 
@@ -31,7 +33,8 @@ Before spawning any agents, detect mode and challenge scope:
 #   Complexity? → [Fast | Hard | Two | Parallel | Auto]
 #
 # Mode: [detected or explicit]
-# Test:  [default | --no-test | --tdd]
+# Test:  [default | --tdd]
+# Tasks: [default | --no-task]
 ```
 
 If scope is too large: suggest splitting and **wait for user confirmation**.
@@ -53,6 +56,27 @@ If a spec file path is provided or `plans/{slug}/spec.md` exists adjacent to any
 - **BLOCK**: resolve before proceeding
 - **WARN**: user acknowledges — proceed
 - **PASS**: continue
+
+---
+
+### Step 0.5 — Risk Classification
+
+Classify the request **before spawning any agents**. This step runs in all modes including `--fast` — it cannot be deferred or skipped.
+
+**Tier definitions:**
+- `tiny` — single-file change, fully reversible, no user-facing behavior change
+- `normal` — multi-file, testable, no auth/data/infra risk
+- `high-risk` — touches auth, schema changes, external APIs, infrastructure, or any irreversible operation
+
+Output one line inline:
+
+```
+Risk: tiny | normal | high-risk — {one-line reason}
+```
+
+Write this line into the `plan.md` header block immediately after the `Mode:` line. If planning from scratch (no plan.md yet), write it after the mode is determined in Step 0.
+
+**`--fast` mode**: classification still runs — output inline and write to plan.md before emitting the cook command. This is the only mandatory step in `--fast` mode that is not skippable.
 
 ---
 
@@ -83,8 +107,9 @@ If a spec file path is provided or `plans/{slug}/spec.md` exists adjacent to any
 
 Spawn the **`planner` agent** with: feature description + mode + research reports + test flag + spec file path (if any).
 
+**After planner returns**: capture the plan directory path from its "Directory: plans/{date}-{slug}/" line — you'll need it in Step 3.
+
 - **`--tdd`**: planner adds `### Tests to Write First` to each phase, derived from spec acceptance criteria
-- **`--no-test`**: planner notes `testing: skipped` in each phase header
 - **Spec provided**: planner maps each phase to the P1/P2/P3 stories it covers
 - **`--two`**: planner writes `plan-a.md` + `plan-b.md` (one per approach) — no `plan.md` yet
 - **`--parallel`**: planner adds `## File Ownership` section to each phase file
@@ -103,18 +128,40 @@ plans/{slug}/
 
 ---
 
+### Step 2.5 — Write feature_list.json
+
+**`--two` mode**: skip this step — defer to Step 4 (after approach merge).
+
+After the planner returns and plan files are confirmed on disk:
+
+1. Locate **project root** — the directory containing `.ck.json` (walk up from the plan directory).
+2. Determine feature entries. Each entry requires **all** of these fields — never omit any:
+   - **If spec.md was loaded**: extract P1 user stories → one entry per story. `id` = story slug, `title` = user-visible behavior, `user_visible_behavior` = "so that {value}" clause, `verification_command` = "Accepted when" condition, `status` = `"not_started"`, `evidence` = `""`, `notes` = `""`, `priority` = P1/P2/P3 marker from the story heading. Do not populate `blocked_by` — it is user-managed and set manually when a cross-feature dependency is identified during implementation.
+   - **No spec**: use plan phases as fallback → one entry per phase. `id` = phase slug, `title` = phase name, `user_visible_behavior` = `""`, `verification_command` = `""`, `status` = `"not_started"`, `evidence` = `""`, `notes` = `""`. Do not populate `priority` or `blocked_by`.
+3. **Idempotency**: if `feature_list.json` already exists at project root, merge — add new entries, preserve `status` and `evidence` for any `id` already present.
+4. Write `{project_root}/feature_list.json` (NOT inside the plan subdirectory).
+5. Log: `feature_list.json → {project_root}/feature_list.json ({N} features)` or `({N} new + {M} preserved)` on merge.
+
+---
+
 ### Step 3 — Red-Team Review
 
 **`--fast`**: skip.
 
-**All other modes**: spawn **`plan-reviewer`** with all plan files (+ spec.md if present).
+**All other modes**: before spawning `plan-reviewer`, **verify plan files exist on disk** using Glob on the captured plan directory:
+- Normal modes: `plans/{date}-{slug}/plan.md` must exist
+- `--two` mode: `plans/{date}-{slug}/plan-a.md` + `plans/{date}-{slug}/plan-b.md` must exist
+
+If files are missing: **stop** — output `"Planner failed to write files. Do not proceed."` Do not fall back to writing the plan inline.
+
+Spawn **`plan-reviewer`** with all plan files (+ spec.md if present).
 
 **`--two`**: reviewer evaluates both plan-a and plan-b — flag risks in each separately.
 
 Adjudicate each finding:
 
 - `ACCEPTED` → edit the relevant plan file immediately
-- `NOTED` → append to Risks section of plan.md
+- `NOTED` → append to Risks section of `plan.md` (or `plan-a.md` / `plan-b.md` in `--two` mode)
 - `REJECTED` → document reason
 
 If `plan-reviewer` returns `BLOCK`: revise the flagged phase and re-run before proceeding.
@@ -138,20 +185,20 @@ Plan B: {1-line summary}
 Which approach? [A/B]
 ```
 
-After selection: ask 2–3 targeted questions about the chosen plan. Merge chosen plan into `plan.md`, delete the rejected file.
+After selection: ask 2–3 targeted questions about the chosen plan. Merge chosen plan into `plan.md`, delete the rejected file. Then run Step 2.5 (write `feature_list.json` at project root) — this is the deferred trigger for `--two` mode.
 
 **`--hard` / `--parallel` / `--auto`**: ask 3–5 targeted questions about the plan's riskiest points. **Wait for user answers.**
 
-After validation: hydrate tasks via TodoWrite. Recommend `--tdd` if spec.md exists and it's not already set.
+After validation: hydrate tasks via TodoWrite (skip if `--no-task`). Recommend `--tdd` if spec.md exists and it's not already set.
 
 Output the exact cook command:
 
 | Mode         | Cook command                                                                                 |
 | ------------ | -------------------------------------------------------------------------------------------- |
-| `--fast`     | `/ck:cook --fast [--no-test\|--tdd] plans/{slug}/plan.md`                                    |
-| `--hard`     | `/ck:cook --hard [--no-test\|--tdd] plans/{slug}/plan.md`                                    |
-| `--two`      | `/ck:cook [--fast\|--hard] [--no-test\|--tdd] plans/{slug}/plan.md`                          |
-| `--parallel` | `/ck:cook --parallel [--no-test\|--tdd] plans/{slug}/plan.md`                                |
+| `--fast`     | `/ck:cook --fast [--tdd] plans/{slug}/plan.md`                                               |
+| `--hard`     | `/ck:cook --hard [--tdd] plans/{slug}/plan.md`                                               |
+| `--two`      | `/ck:cook [--fast\|--hard] [--tdd] plans/{slug}/plan.md`                                     |
+| `--parallel` | `/ck:cook --parallel [--tdd] plans/{slug}/plan.md`                                           |
 | `--auto`     | Automatically invoke `/ck:cook --{detected-mode} plans/{slug}/plan.md` — no separate command |
 
 ---

@@ -52,9 +52,9 @@ export function ShiftClockCard({
         style={{ backgroundColor: currentShift ? "#5068a9" : "var(--border)" }}
       />
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Ca hôm nay</p>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight break-words">
             {currentShift ? currentShift.shiftName : "Chưa có ca được công bố"}
           </h2>
           {currentShift ? (
@@ -74,7 +74,7 @@ export function ShiftClockCard({
             </p>
           )}
         </div>
-        <div className="text-right">
+        <div className="min-w-0 text-right">
           <p className="text-xs font-semibold uppercase text-muted-foreground">
             {openRecord ? "Đang làm" : workedDisplay ? "Tổng giờ làm việc" : "Giờ làm ca"}
           </p>

@@ -23,15 +23,16 @@ on:
       - ".github/workflows/docker-publish.yml"
   workflow_dispatch:
 
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   IMAGE_NAME: wokki-client
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    concurrency:
-      group: docker-publish-${{ github.ref }}
-      cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4

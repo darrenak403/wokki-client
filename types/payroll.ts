@@ -41,7 +41,7 @@ export interface PayrollAttendanceItem {
   workedMinutes: number;
 }
 
-export interface PayrollEmployeeDetailResponse extends PayrollLineResponse {
+export interface PayrollEmployeeDetailResponse extends Omit<PayrollLineResponse, "regularMinutes"> {
   payPeriodId: string;
   startDate: string;
   endDate: string;

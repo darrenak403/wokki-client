@@ -41,11 +41,11 @@ function WeekPicker({
   onNext: () => void;
 }) {
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border bg-background px-0.5 py-0.5">
+    <div className="flex w-full items-center justify-between gap-0.5 rounded-lg border bg-background px-0.5 py-0.5 sm:w-auto sm:justify-start">
       <Button type="button" variant="ghost" size="icon-sm" aria-label="Tuần trước" onClick={onPrev}>
         <ChevronLeftIcon className="size-4" />
       </Button>
-      <span className="min-w-[8.5rem] px-1 text-center text-sm font-medium tabular-nums">
+      <span className="min-w-0 flex-1 px-1 text-center text-sm font-medium tabular-nums sm:min-w-[8.5rem] sm:flex-none">
         {weekLabel}
       </span>
       <Button type="button" variant="ghost" size="icon-sm" aria-label="Tuần sau" onClick={onNext}>
@@ -67,13 +67,13 @@ function FeedTabs({
   onChange: (tab: Tab) => void;
 }) {
   return (
-    <div className="flex rounded-lg border bg-muted/30 p-0.5">
+    <div className="flex w-full rounded-lg border bg-muted/30 p-0.5 sm:w-auto">
       {(["feed", "mine"] as const).map((key) => (
         <button
           key={key}
           type="button"
           className={cn(
-            "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+            "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none",
             tab === key
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",

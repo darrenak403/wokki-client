@@ -28,3 +28,27 @@ export interface OrgSubscriptionResponse {
   subscriptionExpiresAt: string | null;
   daysRemaining: number | null;
 }
+
+export interface OrgUsageAnalyticsEventTypeCountResponse {
+  eventType: string;
+  count: number;
+}
+
+export interface OrgUsageAnalyticsDailyCountResponse {
+  date: string;
+  eventType: string;
+  count: number;
+}
+
+export interface OrgUsageAnalyticsResponse {
+  windowDays: number;
+  fromUtc: string;
+  toUtc: string;
+  totalActivityCount: number;
+  countsByEventType: OrgUsageAnalyticsEventTypeCountResponse[];
+  dailyCounts: OrgUsageAnalyticsDailyCountResponse[];
+}
+
+export interface OrgUsageAnalyticsParams {
+  windowDays?: 7 | 30;
+}

@@ -64,6 +64,7 @@ import {
   SETTINGS_PAIR_PAYMENT_PANEL_CLASS,
   SETTINGS_PAIR_PANEL_SURFACE_CLASS,
 } from "@/components/auth/account-settings-pair-layout";
+import { BankSelect } from "@/components/shared/bank-select";
 import { FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { MaskedInput } from "@/components/ui/masked-input";
@@ -848,10 +849,12 @@ function PaymentProfileSidePanel({
               className="flex min-h-0 flex-1 flex-col gap-3"
             >
               <div className="shrink-0 space-y-3">
-                <Input
-                  placeholder="Tên ngân hàng"
-                  className={INPUT_CLASS}
-                  {...form.register("bankName")}
+                <BankSelect
+                  value={form.watch("bankName") ?? ""}
+                  onChange={(bankName) =>
+                    form.setValue("bankName", bankName, { shouldDirty: true })
+                  }
+                  triggerClassName={INPUT_CLASS}
                 />
                 <Input
                   placeholder="Tên chủ tài khoản"

@@ -5,6 +5,8 @@ import { normalizeOrgStats, normalizeOrgSubscription } from "@/lib/support/org/s
 import type {
   OrgStatsResponse,
   OrgSubscriptionResponse,
+  OrgUsageAnalyticsParams,
+  OrgUsageAnalyticsResponse,
   PlatformStatsResponse,
 } from "@/types/stats";
 
@@ -47,5 +49,15 @@ export const fetchStats = {
     const envelope = normalizeApiResponse(response.data);
     const raw = assertStatsSuccess(envelope);
     return normalizeOrgSubscription(raw);
+  },
+
+  orgUsageAnalytics: async (
+    params: OrgUsageAnalyticsParams = {}
+  ): Promise<OrgUsageAnalyticsResponse> => {
+    const response = await apiService.get<ApiEnvelope<OrgUsageAnalyticsResponse>>(
+      "api/v1/org/usage-analytics",
+      params.windowDays ? { windowDays: params.windowDays } : undefined
+    );
+    return assertStatsSuccess(normalizeApiResponse(response.data));
   },
 };

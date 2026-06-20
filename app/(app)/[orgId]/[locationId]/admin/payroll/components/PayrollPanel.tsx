@@ -14,8 +14,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import { PayrollEmployeeDetailDialog } from "@/app/(app)/[orgId]/[locationId]/admin/payroll/components/PayrollEmployeeDetailDialog";
 import { PayrollLockPeriodDialog } from "@/app/(app)/[orgId]/[locationId]/admin/payroll/components/PayrollLockPeriodDialog";
 import { PayrollPayoutDialog } from "@/app/(app)/[orgId]/[locationId]/admin/payroll/components/PayrollPayoutDialog";
+import { PayrollSummaryTiles } from "@/app/(app)/[orgId]/[locationId]/admin/payroll/components/PayrollSummaryTiles";
 import {
   useExportPayrollCsvMutation,
   useLockPayrollPeriodMutation,
@@ -25,7 +27,13 @@ import {
 import { useFoundationSession } from "@/hooks/useFoundationSession";
 import { DepartmentScopeChips } from "@/components/shared/department-scope-chips";
 import { mapPayrollError } from "@/lib/support/payroll/map-errors";
-import { addMonthsISO, currentMonthISO, formatVnd, monthBounds } from "@/lib/support/payroll/month";
+import {
+  addMonthsISO,
+  currentMonthISO,
+  formatHours,
+  formatVnd,
+  monthBounds,
+} from "@/lib/support/payroll/month";
 import { PAY_PERIOD_STATUS, type PayrollLineResponse } from "@/types/payroll";
 
 type PayrollPanelProps = {
@@ -46,6 +54,7 @@ export function PayrollPanel({
   const [unpaidOnly, setUnpaidOnly] = useState(false);
   const [payoutLine, setPayoutLine] = useState<PayrollLineResponse | null>(null);
   const [lockDialogOpen, setLockDialogOpen] = useState(false);
+  const [detailEmployeeId, setDetailEmployeeId] = useState<string | null>(null);
 
   const { startDate, endDate, label } = monthBounds(month);
 
@@ -164,14 +173,16 @@ export function PayrollPanel({
         <p className="text-sm text-muted-foreground">Chưa có dữ liệu lương trong tháng này.</p>
       ) : (
         <div className="space-y-4">
+          <PayrollSummaryTiles data={data} />
           <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nhân viên</TableHead>
                   <TableHead>Giờ</TableHead>
+                  <TableHead>Giờ OT</TableHead>
                   <TableHead>VND/giờ</TableHead>
-                  <TableHead>Gross</TableHead>
+                  <TableHead>Tổng lương</TableHead>
                   {isLocked && canMarkPaid ? <TableHead>CK</TableHead> : null}
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
@@ -184,9 +195,11 @@ export function PayrollPanel({
                     </TableCell>
                     <TableCell className="tabular-nums">
                       {Math.round(line.totalWorkedMinutes / 60)}h
+                    </TableCell>
+                    <TableCell className="tabular-nums">
                       {line.approvedOvertimeMinutes > 0
-                        ? ` (+OT ${line.approvedOvertimeMinutes}p)`
-                        : ""}
+                        ? formatHours(line.approvedOvertimeMinutes)
+                        : "—"}
                     </TableCell>
                     <TableCell className="tabular-nums">{formatVnd(line.hourlyRate)}</TableCell>
                     <TableCell className="tabular-nums font-medium">
@@ -208,21 +221,30 @@ export function PayrollPanel({
                       </TableCell>
                     ) : null}
                     <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPayoutLine(line)}
-                      >
-                        Chuyển lương
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDetailEmployeeId(line.employeeId)}
+                        >
+                          Xem chi tiết
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPayoutLine(line)}
+                        >
+                          Chuyển lương
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
-          <p className="text-sm font-medium">Tổng phòng ban: {formatVnd(data.totalGrossPay)}</p>
         </div>
       )}
 
@@ -231,6 +253,17 @@ export function PayrollPanel({
         open={payoutLine !== null}
         onOpenChange={(open) => {
           if (!open) setPayoutLine(null);
+        }}
+      />
+
+      <PayrollEmployeeDetailDialog
+        employeeId={detailEmployeeId}
+        params={summaryParams}
+        periodLabel={label}
+        isLocked={isLocked}
+        open={detailEmployeeId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailEmployeeId(null);
         }}
       />
 
