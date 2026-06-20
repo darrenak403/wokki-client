@@ -21,9 +21,11 @@ export type ChartDatum = {
 
 type TrendChartProps = {
   title: string;
+  subtitle?: string;
   data?: ChartDatum[];
   variant?: "line" | "bar";
   color?: string;
+  unitLabel?: string;
   isLoading?: boolean;
   isError?: boolean;
   emptyLabel?: string;
@@ -34,9 +36,11 @@ type TrendChartProps = {
 
 export function TrendChart({
   title,
+  subtitle,
   data,
   variant = "line",
   color = "#1d4ed8",
+  unitLabel = "Lượt",
   isLoading,
   isError,
   emptyLabel = "Chưa có dữ liệu.",
@@ -53,7 +57,8 @@ export function TrendChart({
         className
       )}
     >
-      <h3 className="font-medium">{title}</h3>
+      {title ? <h3 className="font-medium">{title}</h3> : null}
+      {subtitle ? <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p> : null}
 
       <div className="mt-3" style={{ height }}>
         {isLoading ? (
@@ -74,17 +79,25 @@ export function TrendChart({
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 11 }}
+                  label={{ value: unitLabel, angle: -90, position: "insideLeft", fontSize: 11 }}
+                />
+                <Tooltip formatter={(value) => [`${value} ${unitLabel.toLowerCase()}`, ""]} />
                 <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
               </BarChart>
             ) : (
               <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 11 }}
+                  label={{ value: unitLabel, angle: -90, position: "insideLeft", fontSize: 11 }}
+                />
+                <Tooltip formatter={(value) => [`${value} ${unitLabel.toLowerCase()}`, ""]} />
+                <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
             )}
           </ResponsiveContainer>

@@ -91,6 +91,12 @@ export function PlatformHome() {
         <TabsContent value="overview" className="space-y-6">
           {tab === "overview" ? (
             <>
+              <div>
+                <h2 className="text-lg font-semibold">Tổng quan</h2>
+                <p className="text-sm text-muted-foreground">
+                  Thống kê toàn hệ thống, việc cần chú ý và xu hướng hoạt động của các tổ chức.
+                </p>
+              </div>
               <PlatformDashboardPanel />
               <PlatformOverviewWidgets />
               <PlatformOrganizationsPanel

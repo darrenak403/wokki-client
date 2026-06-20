@@ -53,6 +53,8 @@ export function PlatformOverviewWidgets() {
 
       <TrendChart
         title="Active org theo tuần (30 ngày)"
+        subtitle="Số tổ chức có hoạt động (đăng nhập, lịch làm, chấm công, chat) trong mỗi tuần."
+        unitLabel="Org"
         data={trendData}
         isLoading={usageQuery.isLoading}
         isError={usageQuery.isError}

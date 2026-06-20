@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import { useOrgStatsQuery, useOrgUsageAnalyticsQuery } from "@/hooks/useOrgStats";
-import { usePendingOrgJoinRequestsQuery } from "@/hooks/useOrgJoin";
-import { useOrgSubscriptionQuery } from "@/hooks/useOrgSubscription";
 import { StatCard, StatsGrid } from "@/components/shared/stats/stat-cards";
-import { ActionItemsList } from "@/components/shared/dashboard/action-items-list";
-import { TrendChart } from "@/components/shared/dashboard/trend-chart";
+import { PendingJoinRequestsWidget } from "@/components/shared/org-join/pending-join-requests-widget";
+import {
+  ActivityTrendChart,
+  type ActivityChartDatum,
+  type ActivitySeries,
+} from "@/components/shared/dashboard/activity-trend-chart";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -16,46 +17,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SUBSCRIPTION_STATUS_LABEL } from "@/lib/support/org/subscription";
-import { platformEventTypeLabel } from "@/lib/support/platform/format";
 
 type UsageWindow = "7" | "30";
 
+const ACTIVITY_SERIES: ActivitySeries[] = [
+  { key: "attendance.clock_in", label: "Vào ca", color: "#16a34a", emphasize: true },
+  { key: "attendance.clock_out", label: "Ra ca", color: "#f97316", emphasize: true },
+  { key: "auth.login", label: "Đăng nhập", color: "#3b82f6" },
+  { key: "schedule.publish", label: "Công bố lịch", color: "#a855f7" },
+  { key: "schedule.suggest", label: "Gợi ý lịch", color: "#6366f1" },
+  { key: "schedule.apply_suggestions", label: "Áp dụng gợi ý", color: "#ec4899" },
+  { key: "chat.message", label: "Tin nhắn", color: "#9ca3af" },
+];
+
 export function AdminDashboardPanel() {
-  const params = useParams<{ orgId: string; locationId: string }>();
   const { data: stats, isLoading, isError } = useOrgStatsQuery();
 
-  const joinRequestsQuery = usePendingOrgJoinRequestsQuery();
-  const pendingJoinRequests = joinRequestsQuery.data?.success
-    ? joinRequestsQuery.data.data ?? []
-    : [];
-
-  const subscriptionQuery = useOrgSubscriptionQuery();
-
   const [windowDays, setWindowDays] = useState<UsageWindow>("7");
-  const [eventType, setEventType] = useState<string>("all");
   const usageQuery = useOrgUsageAnalyticsQuery({
     windowDays: Number.parseInt(windowDays, 10) as 7 | 30,
   });
 
-  const eventTypeOptions = useMemo(
-    () => usageQuery.data?.countsByEventType.map((item) => item.eventType) ?? [],
-    [usageQuery.data?.countsByEventType]
-  );
-
-  const chartData = useMemo(() => {
+  const chartData: ActivityChartDatum[] = useMemo(() => {
     const dailyCounts = usageQuery.data?.dailyCounts ?? [];
-    const filtered =
-      eventType === "all" ? dailyCounts : dailyCounts.filter((d) => d.eventType === eventType);
-
-    const byDate = new Map<string, number>();
-    for (const item of filtered) {
-      byDate.set(item.date, (byDate.get(item.date) ?? 0) + item.count);
+    const byDate = new Map<string, ActivityChartDatum>();
+    for (const item of dailyCounts) {
+      const row = byDate.get(item.date) ?? { date: item.date };
+      row[item.eventType] = (Number(row[item.eventType]) || 0) + item.count;
+      byDate.set(item.date, row);
     }
-    return Array.from(byDate.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, value]) => ({ date, value }));
-  }, [usageQuery.data?.dailyCounts, eventType]);
+    return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }, [usageQuery.data?.dailyCounts]);
+
+  const activeSeries = useMemo(() => {
+    const presentKeys = new Set(usageQuery.data?.countsByEventType.map((c) => c.eventType) ?? []);
+    return ACTIVITY_SERIES.filter((s) => presentKeys.has(s.key));
+  }, [usageQuery.data?.countsByEventType]);
 
   return (
     <div className="space-y-6">
@@ -68,97 +65,35 @@ export function AdminDashboardPanel() {
           <StatCard label="Chi nhánh" value={isLoading ? "…" : (stats?.locationCount ?? 0)} />
           <StatCard label="Phòng ban" value={isLoading ? "…" : (stats?.departmentCount ?? 0)} />
           <StatCard label="Nhân viên" value={isLoading ? "…" : (stats?.employeeCount ?? 0)} />
-          <StatCard
-            label="Thành viên active"
-            value={isLoading ? "…" : (stats?.activeLocationMembershipCount ?? 0)}
-          />
           <StatCard label="Tài khoản" value={isLoading ? "…" : (stats?.userCount ?? 0)} />
-          <StatCard
-            label="Gói dịch vụ"
-            value={
-              subscriptionQuery.isLoading
-                ? "…"
-                : (subscriptionQuery.data?.daysRemaining ?? "—")
-            }
-            description={
-              subscriptionQuery.data?.subscriptionExpiresAt
-                ? `Hết hạn ${new Date(subscriptionQuery.data.subscriptionExpiresAt).toLocaleDateString("vi-VN")}`
-                : undefined
-            }
-            badge={
-              subscriptionQuery.data
-                ? {
-                    label: SUBSCRIPTION_STATUS_LABEL[subscriptionQuery.data.subscriptionStatus],
-                    variant:
-                      subscriptionQuery.data.subscriptionStatus === "Active"
-                        ? "default"
-                        : subscriptionQuery.data.subscriptionStatus === "Expired" ||
-                            subscriptionQuery.data.subscriptionStatus === "Disabled"
-                          ? "destructive"
-                          : "secondary",
-                  }
-                : undefined
-            }
-          />
         </StatsGrid>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ActionItemsList
-          title="Yêu cầu tham gia tổ chức"
-          isLoading={joinRequestsQuery.isLoading}
-          isError={joinRequestsQuery.isError}
-          items={
-            pendingJoinRequests.length > 0
-              ? [
-                  {
-                    label: "Yêu cầu đang chờ duyệt",
-                    count: pendingJoinRequests.length,
-                    href: `/${params.orgId}/admin/join-requests`,
-                  },
-                ]
-              : []
-          }
-          emptyLabel="Không có yêu cầu tham gia đang chờ."
-        />
+        <PendingJoinRequestsWidget />
 
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-medium">Xu hướng hoạt động</h3>
-            <div className="flex items-center gap-2">
-              <Select
-                value={eventType}
-                onValueChange={(value) => setEventType(value ?? "all")}
-              >
-                <SelectTrigger className="h-8 w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  {eventTypeOptions.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {platformEventTypeLabel(type)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={windowDays} onValueChange={(v) => setWindowDays(v as UsageWindow)}>
-                <SelectTrigger className="h-8 w-[110px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">7 ngày</SelectItem>
-                  <SelectItem value="30">30 ngày</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={windowDays} onValueChange={(v) => setWindowDays(v as UsageWindow)}>
+              <SelectTrigger className="h-8 w-[110px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">7 ngày</SelectItem>
+                <SelectItem value="30">30 ngày</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <TrendChart
-            title=""
+          <p className="mt-1 text-xs text-muted-foreground">
+            Mỗi đường là một loại hoạt động — nổi bật <span className="font-medium text-foreground">vào ca / ra ca</span>, các thao tác hệ thống khác (đăng nhập, lịch, chat) hiển thị mờ hơn.
+          </p>
+          <ActivityTrendChart
             data={chartData}
+            series={activeSeries}
             isLoading={usageQuery.isLoading}
             isError={usageQuery.isError}
-            className="border-none p-0 shadow-none"
+            className="mt-3"
           />
         </div>
       </div>
