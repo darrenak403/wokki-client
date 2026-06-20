@@ -53,30 +53,8 @@ function resolveRequestHomePath(
   return getSessionHomePath(sessionRole, orgId, branchId);
 }
 
-/**
- * Same-origin API proxy. Read live here (not via next.config.ts `rewrites()`):
- * for `output: "standalone"`, rewrites() destinations are resolved once at
- * `next build` and frozen into the routes manifest — they never see the
- * container's real runtime env. Middleware re-runs this on every request.
- */
-function proxyApiRequest(request: NextRequest): NextResponse {
-  const backendUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8386").replace(
-    /\/+$/,
-    ""
-  );
-  const target = new URL(
-    request.nextUrl.pathname + request.nextUrl.search,
-    backendUrl
-  );
-  return NextResponse.rewrite(target);
-}
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (pathname === "/api" || pathname.startsWith("/api/")) {
-    return proxyApiRequest(request);
-  }
 
   if (pathname === "/__runtime-env.js") {
     return NextResponse.next();
@@ -185,6 +163,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|__runtime-env\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webm|mp4|xml|glb)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|__runtime-env\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webm|mp4|xml|glb)$).*)",
   ],
 };
