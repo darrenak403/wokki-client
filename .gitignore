@@ -54,8 +54,5 @@ plans/
 # Claude Code — personal overrides (never commit)
 CLAUDE.local.md
 
-# Artifact folding — session-local large outputs
-.claude/artifacts/*.md
 
-# Trace logs — append-only session history, excluded from version control
-.claude/traces/*.jsonl
+.claude/
