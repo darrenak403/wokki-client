@@ -6,8 +6,11 @@
 | ------ | -------- |
 | `DOCKER_USERNAME` | Login + push Docker Hub |
 | `DOCKER_PASSWORD` | Token Docker Hub |
-| `DOKPLOY_WEBHOOK_URL` | Bắt buộc — trigger Dokploy redeploy sau khi push image (Dokploy UI → app `wokki-client` → tab Deployments → copy Webhook URL) |
-| `DOKPLOY_API_TOKEN` | Optional, **thường không cần** — chỉ set nếu Dokploy báo 401/403 khi gọi webhook |
+| `DOKPLOY_URL` | Bắt buộc — domain gốc Dokploy, vd `https://dokploy.darrenak.id.vn` (không kèm path) |
+| `DOKPLOY_API_TOKEN` | Bắt buộc — API/CLI key tạo trong Dokploy Profile, dùng header `x-api-key` |
+| `DOKPLOY_COMPOSE_ID` | Bắt buộc — id của compose service `wokki-client` trên Dokploy |
+
+> **Không dùng "Webhook URL"** ở tab Deployments — URL đó dành cho git provider gọi vào (kiểm tra branch trong payload push event), `curl` trần sẽ bị từ chối `Branch Not Match`. CI/CD gọi qua **Dokploy REST API** (`POST {DOKPLOY_URL}/api/compose.deploy`) thay vào đó. Lấy `DOKPLOY_API_TOKEN` từ Profile → API/CLI Keys → Generate New Key. Lấy `DOKPLOY_COMPOSE_ID` từ **URL dashboard** khi mở app `wokki-client` (`.../services/compose/<composeId>`) — **không** lấy từ đoạn cuối Webhook URL (đó là token webhook riêng, dùng nhầm sẽ lỗi `404 Compose not found`).
 
 Optional GitHub repo **Variable**: `APP_HEALTH_URL` (default `https://wokki.io.vn/`) nếu domain prod đổi.
 
@@ -31,12 +34,12 @@ Container start ghi `public/__runtime-env.js` từ các biến trên — **khôn
 
 ```
 push main → GitHub Actions build/push (chỉ image, không bake URL)
-         → job "deploy": POST DOKPLOY_WEBHOOK_URL (tự động, không cần bấm tay)
+         → job "deploy": POST {DOKPLOY_URL}/api/compose.deploy (x-api-key + composeId)
          → Dokploy pull ${DOCKER_USERNAME}/wokki-client:latest + compose up (env NEXT_PUBLIC_*)
          → job "deploy": poll / đến khi container healthy, fail loudly nếu timeout
 ```
 
-Không còn bước thủ công — chỉ cần `git push` lên `main`. Nếu `DOKPLOY_WEBHOOK_URL` chưa set, job `deploy` fail rõ ràng để nhắc cấu hình secret.
+Không còn bước thủ công — chỉ cần `git push` lên `main`. Nếu thiếu secret nào trong `DOKPLOY_URL`/`DOKPLOY_API_TOKEN`/`DOKPLOY_COMPOSE_ID`, job `deploy` fail rõ ràng để nhắc cấu hình.
 
 Deploy **sau BE** — FE join network `wokki-network` (external).
 
