@@ -1,7 +1,7 @@
 # Usage: docker compose -f docker/docker-compose.prod.yml --env-file docker/.env up -d
 # npm run docker:prod
 #
-# CI/CD: GitHub Actions → Docker Hub → Dokploy pull
+# CI/CD: GitHub Actions → Docker Hub → Dokploy webhook (auto) → pull + health check
 # Deploy BE trước FE — network wokki-network
 
 name: wokki-client-prod
