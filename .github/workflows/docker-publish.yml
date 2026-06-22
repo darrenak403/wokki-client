@@ -1,5 +1,6 @@
-# Build & push wokki-client to Docker Hub.
-# GitHub repo secrets (chỉ 2): DOCKER_USERNAME, DOCKER_PASSWORD
+# Build & push wokki-client to Docker Hub, then auto-trigger Dokploy redeploy + health check.
+# GitHub repo secrets: DOCKER_USERNAME, DOCKER_PASSWORD (build/push)
+#                      DOKPLOY_URL, DOKPLOY_API_TOKEN, DOKPLOY_COMPOSE_ID (Dokploy compose.deploy API)
 # Runtime env (NEXT_PUBLIC_*, ports, …) → Dokploy / docker/.env
 
 name: Docker publish
@@ -106,4 +107,55 @@ jobs:
           done
 
           echo "Unable to pull latest after retries."
+          exit 1
+
+  deploy:
+    name: Deploy to Dokploy
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Dokploy redeploy
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DOKPLOY_URL:-}" ] || [ -z "${DOKPLOY_API_TOKEN:-}" ] || [ -z "${DOKPLOY_COMPOSE_ID:-}" ]; then
+            echo "DOKPLOY_URL / DOKPLOY_API_TOKEN / DOKPLOY_COMPOSE_ID secret is not set — skipping auto-deploy. See docker/README.md."
+            exit 1
+          fi
+          # Dokploy's "Webhook URL" (Deployments tab) is meant for git-provider push events
+          # (it checks the pushed branch from the payload) — a bare curl call returns
+          # "Branch Not Match". Use the Dokploy REST API instead, authenticated with an
+          # API token (Profile → API/CLI Keys) and the compose service's id.
+          HTTP_CODE=$(curl -sS -o /tmp/dokploy_response.txt -w "%{http_code}" \
+            -X POST "$DOKPLOY_URL/api/compose.deploy" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $DOKPLOY_API_TOKEN" \
+            -d "{\"composeId\":\"$DOKPLOY_COMPOSE_ID\"}")
+          echo "Dokploy API response ($HTTP_CODE):"
+          cat /tmp/dokploy_response.txt
+          echo
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "Dokploy compose.deploy call failed with status $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: Wait for rollout and verify health
+        env:
+          HEALTH_URL: ${{ vars.APP_HEALTH_URL || 'https://wokki.io.vn/' }}
+        run: |
+          set -euo pipefail
+          echo "Waiting for Dokploy to pull image and restart container..."
+          sleep 15
+          for attempt in $(seq 1 20); do
+            echo "Health check attempt $attempt/20: $HEALTH_URL"
+            if curl -fsS "$HEALTH_URL" >/dev/null; then
+              echo "Deploy verified healthy."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Deploy did not become healthy in time — check Dokploy logs and roll back if needed."
           exit 1

@@ -1,11 +1,18 @@
 # Docker — Wokki Client (FE)
 
-## GitHub Secrets (chỉ 2 — cả 2 repo BE/FE)
+## GitHub Secrets
 
 | Secret | Mục đích |
 | ------ | -------- |
 | `DOCKER_USERNAME` | Login + push Docker Hub |
 | `DOCKER_PASSWORD` | Token Docker Hub |
+| `DOKPLOY_URL` | Bắt buộc — domain gốc Dokploy, vd `https://dokploy.darrenak.id.vn` (không kèm path) |
+| `DOKPLOY_API_TOKEN` | Bắt buộc — API/CLI key tạo trong Dokploy Profile, dùng header `x-api-key` |
+| `DOKPLOY_COMPOSE_ID` | Bắt buộc — id của compose service `wokki-client` trên Dokploy |
+
+> **Không dùng "Webhook URL"** ở tab Deployments — URL đó dành cho git provider gọi vào (kiểm tra branch trong payload push event), `curl` trần sẽ bị từ chối `Branch Not Match`. CI/CD gọi qua **Dokploy REST API** (`POST {DOKPLOY_URL}/api/compose.deploy`) thay vào đó. Lấy `DOKPLOY_API_TOKEN` từ Profile → API/CLI Keys → Generate New Key. Lấy `DOKPLOY_COMPOSE_ID` từ **URL dashboard** khi mở app `wokki-client` (`.../services/compose/<composeId>`) — **không** lấy từ đoạn cuối Webhook URL (đó là token webhook riêng, dùng nhầm sẽ lỗi `404 Compose not found`).
+
+Optional GitHub repo **Variable**: `APP_HEALTH_URL` (default `https://wokki.io.vn/`) nếu domain prod đổi.
 
 **Mọi biến khác** → env trên **Dokploy** hoặc `docker/.env`.
 
@@ -23,13 +30,16 @@
 
 Container start ghi `public/__runtime-env.js` từ các biến trên — **không cần** GitHub Variables.
 
-## CI/CD → Dokploy
+## CI/CD → Dokploy (tự động)
 
 ```
 push main → GitHub Actions build/push (chỉ image, không bake URL)
-         → Dokploy pull ${DOCKER_USERNAME}/wokki-client:latest
-         → compose up + env NEXT_PUBLIC_*
+         → job "deploy": POST {DOKPLOY_URL}/api/compose.deploy (x-api-key + composeId)
+         → Dokploy pull ${DOCKER_USERNAME}/wokki-client:latest + compose up (env NEXT_PUBLIC_*)
+         → job "deploy": poll / đến khi container healthy, fail loudly nếu timeout
 ```
+
+Không còn bước thủ công — chỉ cần `git push` lên `main`. Nếu thiếu secret nào trong `DOKPLOY_URL`/`DOKPLOY_API_TOKEN`/`DOKPLOY_COMPOSE_ID`, job `deploy` fail rõ ràng để nhắc cấu hình.
 
 Deploy **sau BE** — FE join network `wokki-network` (external).
 
