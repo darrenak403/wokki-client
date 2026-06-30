@@ -119,6 +119,11 @@ export interface AttendanceResponse {
   departmentName?: string | null;
   locationId?: string | null;
   locationName?: string | null;
+  clockInPhotoUrl?: string | null;
+  ipMismatch?: boolean | null;
+  gpsOutOfRange?: boolean | null;
+  faceMismatch?: boolean | null;
+  isFlagged?: boolean;
 }
 
 /** BE AttendanceMode */
@@ -131,6 +136,16 @@ export const ATTENDANCE_MODE = {
 
 export interface ClockInRequest {
   assignmentId?: string;
+  latitude?: number;
+  longitude?: number;
+  photoBase64?: string;
+  photoContentType?: string;
+  faceEmbeddingJson?: string;
+  faceMatch?: boolean;
+}
+
+export interface FaceDescriptorResponse {
+  faceEmbeddingJson: string | null;
 }
 
 /** Wave 4 — GET /self/attendance */

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,11 +34,22 @@ import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { writeFoundationSession } from "@/lib/support/foundation/session-context";
 import type { EmployeeResponse, LocationResponse } from "@/types/foundation";
 
+const LocationMapPicker = dynamic(
+  () =>
+    import("@/app/(app)/[orgId]/admin/workspace/components/location-map-picker").then(
+      (mod) => mod.LocationMapPicker
+    ),
+  { ssr: false }
+);
+
 const locationSchema = z.object({
   name: z.string().min(1, "Vui lòng nhập tên"),
   address: z.string().min(1, "Vui lòng nhập địa chỉ"),
   timeZone: z.string().min(1, "Vui lòng nhập múi giờ"),
   isActive: z.boolean(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+  networkIpOrCidr: z.string().nullable(),
 });
 
 type LocationFormValues = z.infer<typeof locationSchema>;
@@ -92,6 +104,9 @@ export function LocationDetailDrawer({
       address: "",
       timeZone: "Asia/Ho_Chi_Minh",
       isActive: true,
+      latitude: null,
+      longitude: null,
+      networkIpOrCidr: null,
     },
   });
 
@@ -104,6 +119,9 @@ export function LocationDetailDrawer({
         address: "",
         timeZone: "Asia/Ho_Chi_Minh",
         isActive: true,
+        latitude: null,
+        longitude: null,
+        networkIpOrCidr: null,
       });
       return;
     }
@@ -112,6 +130,9 @@ export function LocationDetailDrawer({
       address: location.address,
       timeZone: location.timeZone,
       isActive: location.isActive,
+      latitude: location.latitude ?? null,
+      longitude: location.longitude ?? null,
+      networkIpOrCidr: location.networkIpOrCidr ?? null,
     });
     writeFoundationSession({
       selectedLocationId: location.id,
@@ -125,6 +146,9 @@ export function LocationDetailDrawer({
         name: values.name,
         address: values.address,
         timeZone: values.timeZone,
+        latitude: values.latitude,
+        longitude: values.longitude,
+        networkIpOrCidr: values.networkIpOrCidr,
       });
     } else if (canWrite) {
       await updateMutation.mutateAsync({ id: location.id, data: values });
@@ -136,6 +160,9 @@ export function LocationDetailDrawer({
           address: location.address,
           timeZone: location.timeZone,
           isActive: location.isActive,
+          latitude: location.latitude ?? null,
+          longitude: location.longitude ?? null,
+          networkIpOrCidr: location.networkIpOrCidr ?? null,
         },
       });
     }
@@ -211,6 +238,29 @@ export function LocationDetailDrawer({
               <FieldLabel htmlFor="ws-loc-create-tz">Múi giờ</FieldLabel>
               <Input id="ws-loc-create-tz" {...form.register("timeZone")} />
               <FieldError errors={[form.formState.errors.timeZone]} />
+            </Field>
+            <Field>
+              <FieldLabel>Vị trí GPS (tùy chọn)</FieldLabel>
+              <p className="text-xs text-muted-foreground">
+                Bấm vào bản đồ để đặt vị trí chi nhánh cho việc chấm công bằng GPS.
+              </p>
+              <LocationMapPicker
+                latitude={form.watch("latitude")}
+                longitude={form.watch("longitude")}
+                onChange={(lat, lng) => {
+                  form.setValue("latitude", lat);
+                  form.setValue("longitude", lng);
+                }}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="ws-loc-create-cidr">IP/CIDR mạng văn phòng (tùy chọn)</FieldLabel>
+              <Input
+                id="ws-loc-create-cidr"
+                placeholder="ví dụ: 203.0.113.0/24"
+                {...form.register("networkIpOrCidr")}
+              />
+              <FieldError errors={[form.formState.errors.networkIpOrCidr]} />
             </Field>
           </FieldGroup>
         </form>
@@ -288,6 +338,41 @@ export function LocationDetailDrawer({
                       checked={form.watch("isActive")}
                       onCheckedChange={(checked) => form.setValue("isActive", checked)}
                     />
+                  </Field>
+                ) : null}
+                {canWrite ? (
+                  <>
+                    <Field>
+                      <FieldLabel>Vị trí GPS (tùy chọn)</FieldLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Bấm vào bản đồ để đặt vị trí chi nhánh cho việc chấm công bằng GPS.
+                      </p>
+                      <LocationMapPicker
+                        latitude={form.watch("latitude")}
+                        longitude={form.watch("longitude")}
+                        onChange={(lat, lng) => {
+                          form.setValue("latitude", lat);
+                          form.setValue("longitude", lng);
+                        }}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="ws-loc-cidr">IP/CIDR mạng văn phòng (tùy chọn)</FieldLabel>
+                      <Input
+                        id="ws-loc-cidr"
+                        placeholder="ví dụ: 203.0.113.0/24"
+                        {...form.register("networkIpOrCidr")}
+                      />
+                      <FieldError errors={[form.formState.errors.networkIpOrCidr]} />
+                    </Field>
+                  </>
+                ) : location?.latitude && location?.longitude ? (
+                  <Field>
+                    <FieldLabel>Vị trí GPS</FieldLabel>
+                    <p className="text-sm text-muted-foreground">
+                      {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                      {location.networkIpOrCidr ? ` · ${location.networkIpOrCidr}` : ""}
+                    </p>
                   </Field>
                 ) : null}
               </FieldGroup>
