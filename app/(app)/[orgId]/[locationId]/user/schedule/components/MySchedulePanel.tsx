@@ -3,16 +3,12 @@
 import { MyLeaveRequestTab } from "@/app/(app)/[orgId]/[locationId]/user/schedule/components/MyLeaveRequestTab";
 import { MyPreferencesTab } from "@/app/(app)/[orgId]/[locationId]/user/schedule/components/MyPreferencesTab";
 import { NoEmployeeLinked } from "@/app/(app)/[orgId]/[locationId]/user/components/NoEmployeeLinked";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmployeePreferenceScheduleQuery } from "@/hooks/useSchedulePreferences";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { addWeeksISO, toMondayISO } from "@/lib/support/schedule/week";
 import type { ApiError } from "@/types/api";
 import { SCHEDULE_STATUS } from "@/types/schedule";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
-import { CalendarDaysIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MyPublishedScheduleView } from "./MyPublishedScheduleView";
 
@@ -33,7 +29,7 @@ export function MySchedulePanel() {
         id: s.shiftDefinitionId,
         name: s.shiftName,
       })),
-    [preferenceSchedule?.shifts],
+    [preferenceSchedule?.shifts]
   );
 
   if (noEmployee) {
@@ -42,25 +38,26 @@ export function MySchedulePanel() {
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <TabsList className="h-9 max-w-full overflow-x-auto">
-          <TabsTrigger value="published" className="shrink-0">
-            Lịch đã công bố
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="shrink-0">
-            Đăng ký ca
-          </TabsTrigger>
-          <TabsTrigger value="leave" className="shrink-0">
-            Xin nghỉ
-          </TabsTrigger>
-        </TabsList>
-        {tab === "published" ? (
-          <Badge variant="outline" className="h-9 shrink-0 gap-2 rounded-lg px-3 text-sm">
-            <CalendarDaysIcon className="size-4 text-primary" aria-hidden />
-            {format(new Date(), "MMMM yyyy", { locale: vi })}
-          </Badge>
-        ) : null}
-      </div>
+      <TabsList className="h-auto w-full justify-start gap-0 rounded-none border-b bg-transparent p-0">
+        <TabsTrigger
+          value="published"
+          className="shrink-0 rounded-none border-b-2 border-transparent px-4 pb-2.5 pt-0 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:border-b-[10px] data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
+        >
+          Lịch đã công bố
+        </TabsTrigger>
+        <TabsTrigger
+          value="preferences"
+          className="shrink-0 rounded-none border-b-2 border-transparent px-4 pb-2.5 pt-0 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:border-b-[10px] data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
+        >
+          Đăng ký ca
+        </TabsTrigger>
+        <TabsTrigger
+          value="leave"
+          className="shrink-0 rounded-none border-b-2 border-transparent px-4 pb-2.5 pt-0 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:border-b-[10px] data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
+        >
+          Xin nghỉ
+        </TabsTrigger>
+      </TabsList>
       <TabsContent value="published" className="mt-0 space-y-2">
         <MyPublishedScheduleView />
       </TabsContent>

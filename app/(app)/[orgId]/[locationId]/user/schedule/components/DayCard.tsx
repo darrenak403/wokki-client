@@ -2,10 +2,12 @@
 
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { ClockIcon, MapPinIcon, ShieldCheckIcon } from "lucide-react";
+import { ClockIcon, MapPinIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { type DayGroup, isOngoing, toTime } from "./my-schedule-utils";
+
+export type { DayGroup };
 
 export function DayCard({ group, now }: { group: DayGroup; now: Date }) {
   const dayLabel = format(group.date, "EEEE", { locale: vi });
@@ -28,7 +30,10 @@ export function DayCard({ group, now }: { group: DayGroup; now: Date }) {
           return (
             <div
               key={assignment.id}
-              className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap"
+              className={cn(
+                "flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap",
+                ongoing && "bg-emerald-50/60 dark:bg-emerald-950/20",
+              )}
             >
               <div
                 className="self-stretch w-1 shrink-0 rounded-full"
@@ -41,13 +46,10 @@ export function DayCard({ group, now }: { group: DayGroup; now: Date }) {
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
                     <ClockIcon className="size-3.5 shrink-0" />
-                    {toTime(assignment.startTime)} - {toTime(assignment.endTime)}
+                    {toTime(assignment.startTime)} – {toTime(assignment.endTime)}
                   </span>
                   {ongoing && (
-                    <Badge
-                      variant="secondary"
-                      className="h-5 rounded-md px-2 text-[11px] bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                    >
+                    <Badge className="h-5 rounded-md px-2 text-[11px] bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300">
                       Đang diễn ra
                     </Badge>
                   )}
@@ -60,14 +62,6 @@ export function DayCard({ group, now }: { group: DayGroup; now: Date }) {
                   <span className="truncate">{assignment.locationName}</span>
                 </span>
               )}
-
-              <Badge
-                variant="outline"
-                className="shrink-0 gap-1 rounded-md border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
-              >
-                <ShieldCheckIcon className="size-3" />
-                Đã công bố
-              </Badge>
             </div>
           );
         })}
