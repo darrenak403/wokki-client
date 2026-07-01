@@ -5,6 +5,7 @@ import type { ApiEnvelope } from "@/types/api";
 import type {
   SelfAttendanceListParams,
   AttendanceResponse,
+  FaceDescriptorResponse,
 } from "@/types/employee";
 import type { ShiftAssignmentResponse } from "@/types/schedule";
 import type { EmployeeResponse, UpdateMyProfileRequest } from "@/types/foundation";
@@ -33,6 +34,13 @@ export const fetchSelf = {
         ...(params.fromDate ? { fromDate: params.fromDate } : {}),
         ...(params.toDate ? { toDate: params.toDate } : {}),
       },
+    );
+    return assertEmployeeSuccess(normalizeApiResponse(response.data));
+  },
+
+  getFaceDescriptor: async (): Promise<FaceDescriptorResponse> => {
+    const response = await apiService.get<ApiEnvelope<FaceDescriptorResponse>>(
+      "api/v1/self/face-descriptor",
     );
     return assertEmployeeSuccess(normalizeApiResponse(response.data));
   },

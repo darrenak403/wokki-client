@@ -251,6 +251,7 @@ export function LocationDetailDrawer({
                   form.setValue("latitude", lat);
                   form.setValue("longitude", lng);
                 }}
+                onAddressFound={(addr) => form.setValue("address", addr)}
               />
             </Field>
             <Field>
@@ -354,6 +355,7 @@ export function LocationDetailDrawer({
                           form.setValue("latitude", lat);
                           form.setValue("longitude", lng);
                         }}
+                        onAddressFound={(addr) => form.setValue("address", addr)}
                       />
                     </Field>
                     <Field>

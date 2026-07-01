@@ -7,6 +7,7 @@ import { fetchLocations } from "@/lib/api/services/fetchLocations";
 import { mapFoundationError } from "@/lib/support/foundation/map-errors";
 import type {
   CreateLocationRequest,
+  LocationResponse,
   UpdateLocationRequest,
 } from "@/types/foundation";
 
@@ -46,7 +47,11 @@ export function useUpdateLocationMutation() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateLocationRequest }) =>
       fetchLocations.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedLocation) => {
+      // Synchronously update cache so reopening the drawer immediately shows fresh data
+      queryClient.setQueryData<LocationResponse[]>(foundationKeys.locations(), (old) =>
+        old?.map((l) => (l.id === updatedLocation.id ? updatedLocation : l)) ?? old,
+      );
       void queryClient.invalidateQueries({ queryKey: foundationKeys.locations() });
       toast.success("Đã cập nhật chi nhánh.");
     },

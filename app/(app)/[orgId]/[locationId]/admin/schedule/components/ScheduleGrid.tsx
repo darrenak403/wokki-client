@@ -9,12 +9,41 @@ import {
 } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/WeekShiftCalendar";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { useDeleteAssignmentMutation } from "@/hooks/useSchedule";
+import { useTeamAttendanceQuery } from "@/hooks/useAttendance";
 import { useShiftsQuery } from "@/hooks/useShifts";
 import { cn } from "@/lib/utils";
 import { isScheduleEditable } from "@/lib/support/schedule/status";
 import { shiftAccentColor, shiftChipStyle } from "@/lib/support/schedule/shift-calendar";
 import { weekDayDates } from "@/lib/support/schedule/week";
+import type { AttendanceResponse } from "@/types/employee";
 import type { ShiftAssignmentResponse, ScheduleStatus } from "@/types/schedule";
+
+type AttendanceChipStatus = "active" | "done" | "absent";
+
+function getAttendanceStatus(record: AttendanceResponse | undefined): AttendanceChipStatus {
+  if (!record) return "absent";
+  if (record.clockOut) return "done";
+  return "active";
+}
+
+const STATUS_CONFIG: Record<
+  AttendanceChipStatus,
+  { dot: string; label: string }
+> = {
+  active: { dot: "bg-emerald-500", label: "Đang trong ca" },
+  done:   { dot: "bg-slate-400",   label: "Đã tan ca" },
+  absent: { dot: "bg-amber-400",   label: "Chưa vào ca" },
+};
+
+function AttendanceStatusDot({ status }: { status: AttendanceChipStatus }) {
+  const { dot, label } = STATUS_CONFIG[status];
+  return (
+    <span className="mt-0.5 flex items-center gap-1">
+      <span className={cn("inline-block size-1.5 rounded-full shrink-0", dot)} />
+      <span className="text-[10px] font-normal opacity-75 truncate">{label}</span>
+    </span>
+  );
+}
 
 type ScheduleGridProps = {
   scheduleId: string;
@@ -51,6 +80,9 @@ export function ScheduleGrid({
     date: string;
   } | null>(null);
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const weekIncludesToday = days.includes(todayStr);
+
   const { data: shifts = [], isLoading: shiftsLoading } = useShiftsQuery({
     locationId,
     departmentId,
@@ -60,6 +92,20 @@ export function ScheduleGrid({
     pageSize: 100,
   });
   const deleteMutation = useDeleteAssignmentMutation(scheduleId, listParams);
+
+  // Fetch today's attendance only when today falls within the displayed week
+  const { data: todayAttendancePage } = useTeamAttendanceQuery(
+    { fromDate: todayStr, toDate: todayStr, pageSize: 200 },
+    weekIncludesToday,
+  );
+
+  const attendanceByAssignmentId = useMemo(() => {
+    const map = new Map<string, AttendanceResponse>();
+    for (const record of todayAttendancePage?.items ?? []) {
+      if (record.assignmentId) map.set(record.assignmentId, record);
+    }
+    return map;
+  }, [todayAttendancePage]);
 
   const activeShifts = useMemo(
     () =>
@@ -148,22 +194,33 @@ export function ScheduleGrid({
 
             return (
               <>
-                {cellAssignments.map((assignment) => (
-                  <button
-                    type="button"
-                    key={assignment.id}
-                    className={cn(
-                      "block w-full truncate rounded-lg border px-2.5 py-2 text-left text-sm font-semibold transition-all",
-                      editable && "hover:brightness-[0.97] hover:ring-1 hover:ring-destructive/25",
-                    )}
-                    style={shiftChipStyle(color)}
-                    disabled={!editable || deleteMutation.isPending}
-                    title={editable ? "Bấm để xóa phân ca" : undefined}
-                    onClick={() => void handleDelete(assignment.id)}
-                  >
-                    {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
-                  </button>
-                ))}
+                {cellAssignments.map((assignment) => {
+                  const isToday = date === todayStr;
+                  const attendanceStatus = isToday
+                    ? getAttendanceStatus(attendanceByAssignmentId.get(assignment.id))
+                    : null;
+                  return (
+                    <button
+                      type="button"
+                      key={assignment.id}
+                      className={cn(
+                        "block w-full rounded-lg border px-2.5 py-2 text-left text-sm font-semibold transition-all",
+                        editable && "hover:brightness-[0.97] hover:ring-1 hover:ring-destructive/25",
+                      )}
+                      style={shiftChipStyle(color)}
+                      disabled={!editable || deleteMutation.isPending}
+                      title={editable ? "Bấm để xóa phân ca" : undefined}
+                      onClick={() => void handleDelete(assignment.id)}
+                    >
+                      <span className="truncate block">
+                        {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
+                      </span>
+                      {attendanceStatus ? (
+                        <AttendanceStatusDot status={attendanceStatus} />
+                      ) : null}
+                    </button>
+                  );
+                })}
                 {editable ? (
                   <button
                     type="button"

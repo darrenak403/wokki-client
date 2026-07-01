@@ -33,7 +33,10 @@ function isAppHubMissingError(error: unknown): boolean {
   return (
     message.includes("404") ||
     message.includes("Not Found") ||
-    message.includes("Failed to fetch")
+    message.includes("Failed to fetch") ||
+    // Server returned non-2xx during negotiate HTTP request
+    message.includes("stopped during negotiation") ||
+    message.includes("negotiate")
   );
 }
 
@@ -60,11 +63,13 @@ export function getHubConnection(): HubConnection {
   return connection;
 }
 
-async function resetConnectionIfNeeded(conn: HubConnection): Promise<void> {
-  if (conn.state === HubConnectionState.Disconnected) return;
+async function resetConnection(): Promise<void> {
+  if (!connection) return;
   try {
-    await conn.stop();
+    await connection.stop();
   } catch {
+    // ignore stop errors
+  } finally {
     connection = null;
     startPromise = null;
   }
@@ -74,7 +79,7 @@ async function resetConnectionIfNeeded(conn: HubConnection): Promise<void> {
 export async function startHubConnection(): Promise<HubConnection | null> {
   if (appHubUnavailable) return null;
 
-  const conn = getHubConnection();
+  let conn = getHubConnection();
   if (conn.state === HubConnectionState.Connected) return conn;
 
   if (conn.state === HubConnectionState.Connecting && startPromise) {
@@ -82,7 +87,8 @@ export async function startHubConnection(): Promise<HubConnection | null> {
   }
 
   if (conn.state !== HubConnectionState.Disconnected) {
-    await resetConnectionIfNeeded(conn);
+    await resetConnection();
+    conn = getHubConnection(); // fresh connection after reset
   }
 
   startPromise = conn
