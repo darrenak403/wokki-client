@@ -16,12 +16,18 @@ export interface LocationResponse {
   timeZone: string;
   isActive: boolean;
   createdAt: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  networkIpOrCidr?: string | null;
 }
 
 export interface CreateLocationRequest {
   name: string;
   address: string;
   timeZone?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  networkIpOrCidr?: string | null;
 }
 
 export interface UpdateLocationRequest {
@@ -29,6 +35,9 @@ export interface UpdateLocationRequest {
   address: string;
   timeZone: string;
   isActive: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  networkIpOrCidr?: string | null;
 }
 
 export interface OrganizationSchedulingPolicyResponse {
@@ -156,6 +165,7 @@ export interface EmployeeResponse {
   employedAt: string;
   terminatedAt: string | null;
   createdAt: string;
+  hasFaceEnrollment?: boolean;
 }
 
 export interface EmployeeListParams {

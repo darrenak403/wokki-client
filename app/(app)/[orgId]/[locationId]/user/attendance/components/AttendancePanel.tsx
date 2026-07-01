@@ -11,8 +11,11 @@ import {
   useClockOutMutation,
   useOpenAttendanceRecord,
 } from "@/hooks/useAttendance";
+import { blobToBase64, useCheckInVerification } from "@/hooks/useCheckInVerification";
 import { useMyOTRequestsQuery } from "@/hooks/useOvertimeRequests";
+import { useMyProfileQuery } from "@/hooks/useMyProfile";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
+import { fetchSelf } from "@/lib/api/services/fetchSelf";
 import type { ApiError } from "@/types/api";
 import { OVERTIME_STATUS } from "@/types/overtime";
 import { formatDurationShort, isShiftAttendanceClosed, isShiftEnded } from "./attendance-utils";
@@ -20,6 +23,13 @@ import { AttendanceHistoryTable } from "./AttendanceHistoryTable";
 import { AttendanceStats } from "./AttendanceStats";
 import { ShiftClockCard } from "./ShiftClockCard";
 import { TodayShiftSidebar } from "./TodayShiftSidebar";
+
+const VERIFICATION_STAGE_LABEL: Record<string, string> = {
+  "requesting-permission": "Đang xin quyền vị trí/camera…",
+  "model-loading": "Đang tải mô hình nhận diện…",
+  capturing: "Đang ghi nhận khuôn mặt…",
+  comparing: "Đang so khớp khuôn mặt…",
+};
 
 export function AttendancePanel() {
   const {
@@ -31,6 +41,8 @@ export function AttendancePanel() {
   const clockInMutation = useClockInMutation();
   const clockOutMutation = useClockOutMutation();
   const openRecord = useOpenAttendanceRecord();
+  const { data: myProfile } = useMyProfileQuery();
+  const verification = useCheckInVerification();
   const { data: myOTPage } = useMyOTRequestsQuery();
   const myOTRequests = myOTPage?.items ?? [];
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
@@ -67,7 +79,8 @@ export function AttendancePanel() {
 
   const canClockIn = !openRecord && todayShifts.length > 0 && !shiftCompleted;
   const canClockOut = Boolean(openRecord);
-  const actionPending = clockInMutation.isPending || clockOutMutation.isPending;
+  const verificationPending = !["idle", "done", "skipped"].includes(verification.stage);
+  const actionPending = clockInMutation.isPending || clockOutMutation.isPending || verificationPending;
   const selectedShiftEnded = !openRecord && isShiftEnded(currentShift, now);
   const selectable = !openRecord && todayShifts.length > 1;
 
@@ -88,6 +101,37 @@ export function AttendancePanel() {
       ? shiftRecord.workedMinutes
       : null;
   const workedDisplay = workedMinutes !== null ? formatDurationShort(workedMinutes) : null;
+
+  async function handleClockIn() {
+    let storedFaceEmbeddingJson: string | null = null;
+    if (myProfile?.hasFaceEnrollment) {
+      try {
+        storedFaceEmbeddingJson = (await fetchSelf.getFaceDescriptor()).faceEmbeddingJson;
+      } catch {
+        storedFaceEmbeddingJson = null;
+      }
+    }
+    const result = await verification.capture(storedFaceEmbeddingJson);
+    let photoBase64: string | undefined;
+    if (result.photo) {
+      try {
+        photoBase64 = await blobToBase64(result.photo);
+      } catch {
+        photoBase64 = undefined;
+      }
+    }
+    void clockInMutation.mutateAsync({
+      assignmentId: selectedShift?.id,
+      latitude: result.latitude ?? undefined,
+      longitude: result.longitude ?? undefined,
+      photoBase64,
+      photoContentType: photoBase64 ? "image/jpeg" : undefined,
+      faceEmbeddingJson: result.faceEmbeddingJson ?? undefined,
+      faceMatch: result.faceMatch ?? undefined,
+    });
+  }
+
+  const verificationStageLabel = VERIFICATION_STAGE_LABEL[verification.stage];
 
   return (
     <div className="space-y-8">
@@ -114,12 +158,15 @@ export function AttendancePanel() {
           canClockOut={canClockOut}
           selectedShiftEnded={selectedShiftEnded}
           actionPending={actionPending}
-          clockInPending={clockInMutation.isPending}
+          clockInPending={clockInMutation.isPending || verificationPending}
           clockOutPending={clockOutMutation.isPending}
           canRequestOT={canRequestOT}
-          onClockIn={() => void clockInMutation.mutateAsync({ assignmentId: selectedShift?.id })}
+          onClockIn={() => void handleClockIn()}
           onClockOut={() => void clockOutMutation.mutateAsync()}
         />
+        {verificationStageLabel ? (
+          <p className="text-sm text-muted-foreground xl:col-span-2">{verificationStageLabel}</p>
+        ) : null}
         <TodayShiftSidebar
           todayShifts={todayShifts}
           activeShiftId={currentShift?.id}

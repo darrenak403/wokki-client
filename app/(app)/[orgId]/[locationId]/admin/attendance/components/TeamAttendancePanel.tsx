@@ -41,6 +41,30 @@ function fromLocalInputValue(value: string): string {
   return new Date(value).toISOString();
 }
 
+type AttendanceTab = "all" | "flagged";
+
+const FLAG_LABELS: Record<"ipMismatch" | "gpsOutOfRange" | "faceMismatch", string> = {
+  ipMismatch: "Sai IP",
+  gpsOutOfRange: "Ngoài vùng GPS",
+  faceMismatch: "Khuôn mặt không khớp",
+};
+
+function FlagBadges({ row }: { row: AttendanceResponse }) {
+  const flags: Array<keyof typeof FLAG_LABELS> = (
+    ["ipMismatch", "gpsOutOfRange", "faceMismatch"] as const
+  ).filter((key) => row[key]);
+  if (flags.length === 0) return <span className="text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {flags.map((key) => (
+        <Badge key={key} variant="destructive">
+          {FLAG_LABELS[key]}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
 export function TeamAttendancePanel() {
   const { session, setDepartmentId } = useFoundationSession();
   const locationId = session.selectedLocationId;
@@ -51,6 +75,8 @@ export function TeamAttendancePanel() {
   const [clockIn, setClockIn] = useState("");
   const [clockOut, setClockOut] = useState("");
   const [adjustmentNote, setAdjustmentNote] = useState("");
+  const [tab, setTab] = useState<AttendanceTab>("all");
+  const [photoRow, setPhotoRow] = useState<AttendanceResponse | null>(null);
 
   const listParams = useMemo(
     () => (departmentId ? { page: 1, pageSize: 50, fromDate: startDate, toDate: endDate } : null),
@@ -87,6 +113,8 @@ export function TeamAttendancePanel() {
     if (!departmentId || departmentEmployeeIds.size === 0) return raw;
     return raw.filter((row) => departmentEmployeeIds.has(row.employeeId));
   }, [data?.items, departmentId, departmentEmployeeIds]);
+  const flaggedItems = useMemo(() => items.filter((row) => row.isFlagged), [items]);
+  const visibleItems = tab === "flagged" ? flaggedItems : items;
   const listError = isError ? mapEmployeeError(error) : null;
 
   const openAdjust = (row: AttendanceResponse) => {
@@ -149,6 +177,23 @@ export function TeamAttendancePanel() {
               </Button>
             </div>
           </div>
+          <div className="flex rounded-lg border bg-muted/30 p-0.5">
+            {(["all", "flagged"] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  tab === key
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setTab(key)}
+              >
+                {key === "all" ? "Tất cả" : "Bị gắn cờ"}
+                {key === "flagged" && flaggedItems.length > 0 ? ` (${flaggedItems.length})` : ""}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -160,8 +205,12 @@ export function TeamAttendancePanel() {
         </p>
       ) : isLoading ? (
         <p className="text-sm text-muted-foreground">Đang tải…</p>
-      ) : items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Chưa có bản ghi chấm công trong kỳ này.</p>
+      ) : visibleItems.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {tab === "flagged"
+            ? "Không có bản ghi nào bị gắn cờ trong kỳ này."
+            : "Chưa có bản ghi chấm công trong kỳ này."}
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-lg border">
           <Table>
@@ -171,11 +220,12 @@ export function TeamAttendancePanel() {
                 <TableHead>Vào</TableHead>
                 <TableHead>Ra</TableHead>
                 <TableHead>Phút</TableHead>
+                <TableHead>Cảnh báo</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((row) => (
+              {visibleItems.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell>
                     {nameByEmployeeId.get(row.employeeId) ?? row.employeeId.slice(0, 8)}
@@ -191,9 +241,19 @@ export function TeamAttendancePanel() {
                   </TableCell>
                   <TableCell>{row.workedMinutes}</TableCell>
                   <TableCell>
-                    <Button size="sm" variant="outline" onClick={() => openAdjust(row)}>
-                      Điều chỉnh
-                    </Button>
+                    <FlagBadges row={row} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      {row.clockInPhotoUrl ? (
+                        <Button size="sm" variant="outline" onClick={() => setPhotoRow(row)}>
+                          Xem ảnh
+                        </Button>
+                      ) : null}
+                      <Button size="sm" variant="outline" onClick={() => openAdjust(row)}>
+                        Điều chỉnh
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -244,6 +304,25 @@ export function TeamAttendancePanel() {
               {adjustMutation.isPending ? "Đang lưu…" : "Lưu"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={photoRow !== null} onOpenChange={(open) => !open && setPhotoRow(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ảnh chấm công vào ca</DialogTitle>
+          </DialogHeader>
+          {photoRow?.clockInPhotoUrl ? (
+            <div className="space-y-3">
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed Cloudinary URL, not a static asset */}
+              <img
+                src={photoRow.clockInPhotoUrl}
+                alt="Ảnh chấm công"
+                className="w-full rounded-lg border object-cover"
+              />
+              <FlagBadges row={photoRow} />
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>

@@ -1,33 +1,36 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { endOfWeek, format, isSameDay, parseISO, startOfWeek } from "date-fns";
+import { format, isSameDay, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
-import { ZapIcon } from "lucide-react";
+import { CalendarDaysIcon, ChevronDownIcon, LayoutListIcon, ZapIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useMyScheduleQuery } from "@/hooks/useMySchedule";
 import { mapEmployeeError } from "@/lib/support/employee/map-errors";
+import { cn } from "@/lib/utils";
 import { DayCard } from "./DayCard";
+import { WeekGridView } from "./WeekGridView";
 import { buildDayGroups, getRelativeStart, getUpcoming, toTime } from "./my-schedule-utils";
 
 export function MyPublishedScheduleView() {
   const { data: assignments = [], isLoading, isError, error, dataUpdatedAt } = useMyScheduleQuery();
   const [now, setNow] = useState(() => new Date());
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  const { weeklyCount, upcoming, dayGroups } = useMemo(() => {
-    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+  const [pastExpanded, setPastExpanded] = useState(false);
+
+  const { upcoming, todayGroups, upcomingGroups, pastGroups } = useMemo(() => {
+    const allGroups = buildDayGroups(assignments, now);
     return {
-      weeklyCount: assignments.filter((a) => {
-        const d = parseISO(a.date);
-        return d >= weekStart && d <= weekEnd;
-      }).length,
       upcoming: getUpcoming(assignments, now),
-      dayGroups: buildDayGroups(assignments, now),
+      todayGroups: allGroups.filter((g) => g.isToday),
+      upcomingGroups: allGroups.filter((g) => !g.isToday && !g.isPast),
+      pastGroups: allGroups.filter((g) => g.isPast),
     };
   }, [assignments, now]);
 
@@ -51,8 +54,8 @@ export function MyPublishedScheduleView() {
 
   return (
     <div className="space-y-4">
-      <section className="grid gap-2 sm:grid-cols-3">
-        <div className="rounded-lg border bg-primary px-3 py-2.5 text-primary-foreground shadow-sm sm:col-span-1">
+      <section className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-lg border bg-primary px-3 py-2.5 text-primary-foreground shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-primary-foreground/70">
               Ca sắp tới
@@ -89,29 +92,78 @@ export function MyPublishedScheduleView() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-lg font-semibold text-orange-800 dark:bg-orange-950/40 dark:text-orange-300">
-            {weeklyCount}
-          </span>
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Tuần này
-            </p>
-            <p className="text-sm font-medium leading-tight">Ca làm tuần này</p>
-          </div>
-        </div>
       </section>
 
       <section className="space-y-3">
-        <div className="border-b pb-2">
+        <div className="flex items-center justify-between border-b pb-2">
           <h2 className="text-base font-semibold tracking-tight">Lịch làm việc chi tiết</h2>
+          <div className="flex items-center gap-1 rounded-lg border p-0.5">
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon"
+              className="size-7"
+              onClick={() => setViewMode("list")}
+              aria-label="Chế độ danh sách"
+            >
+              <LayoutListIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant={viewMode === "calendar" ? "secondary" : "ghost"}
+              size="icon"
+              className="size-7"
+              onClick={() => setViewMode("calendar")}
+              aria-label="Chế độ lịch"
+            >
+              <CalendarDaysIcon className="size-3.5" />
+            </Button>
+          </div>
         </div>
 
-        <div className="space-y-3">
-          {dayGroups.map((group) => (
-            <DayCard key={group.dateKey} group={group} now={now} />
-          ))}
-        </div>
+        {viewMode === "list" ? (
+          <div className="space-y-4">
+            {/* Hôm nay */}
+            {todayGroups.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Hôm nay</p>
+                {todayGroups.map((group) => (
+                  <DayCard key={group.dateKey} group={group} now={now} />
+                ))}
+              </div>
+            )}
+
+            {/* Sắp tới */}
+            {upcomingGroups.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sắp tới</p>
+                {upcomingGroups.map((group) => (
+                  <DayCard key={group.dateKey} group={group} now={now} />
+                ))}
+              </div>
+            )}
+
+            {/* Đã qua — collapsible */}
+            {pastGroups.length > 0 && (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setPastExpanded((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                >
+                  <ChevronDownIcon
+                    className={cn("size-3.5 transition-transform", pastExpanded && "rotate-180")}
+                  />
+                  Đã qua ({pastGroups.length} ngày)
+                </button>
+                {pastExpanded &&
+                  pastGroups.map((group) => (
+                    <DayCard key={group.dateKey} group={group} now={now} />
+                  ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <WeekGridView assignments={assignments} now={now} />
+        )}
       </section>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5 text-xs text-muted-foreground">
