@@ -2,15 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   AlertCircle,
   Bot,
+  Check,
   CheckCheck,
   Loader2,
   SendHorizontal,
   Sparkles,
   Square,
   X,
+  XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,13 +46,22 @@ import { useShiftsQuery } from "@/hooks/useShifts";
 import { useTenantNavigation } from "@/hooks/useTenantNavigation";
 import { useAuth } from "@/hooks/useAuth";
 import { isAppRole, ROLE_ADMIN } from "@/lib/types/roles";
+import { fetchSchedules } from "@/lib/api/services/fetchSchedules";
+import { scheduleKeys } from "@/lib/api/query-keys";
+import { mapScheduleError } from "@/lib/support/schedule/map-errors";
 import { mapSuggestReason } from "@/lib/support/schedule/suggest-reasons";
 import { buildReadinessLine } from "@/lib/support/schedule/suggest-readiness";
 import { shiftAccentColor, shiftChipStyle } from "@/lib/support/schedule/shift-calendar";
 import { weekDayDates } from "@/lib/support/schedule/week";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import type { ScheduleStatus, ScheduleSuggestion, ShiftAssignmentResponse } from "@/types/schedule";
+import type {
+  ScheduleActionItem,
+  ScheduleActionProposal,
+  ScheduleStatus,
+  ScheduleSuggestion,
+  ShiftAssignmentResponse,
+} from "@/types/schedule";
 
 function timeToMinutes(value: string) {
   const [hours = "0", minutes = "0"] = value.slice(0, 5).split(":");
@@ -70,7 +83,42 @@ type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  proposal?: ScheduleActionProposal;
 };
+
+type ActionItemStatus = "idle" | "stale" | "pending" | "success" | "error";
+
+type ActionCardState = {
+  proposal: ScheduleActionProposal;
+  itemStatuses: ActionItemStatus[];
+  itemErrors: (string | null)[];
+  applying: boolean;
+  applied: boolean;
+  dismissed: boolean;
+};
+
+function assignmentTupleKey(shiftDefinitionId: string, employeeId: string, date: string) {
+  return `${shiftDefinitionId}|${employeeId}|${date}`;
+}
+
+function describeActionItem(
+  item: ScheduleActionItem,
+  employeeNameById: Map<string, string>,
+  shiftNameById: Map<string, string>,
+) {
+  const employeeName = employeeNameById.get(item.employeeId) ?? "?";
+  const shiftName = shiftNameById.get(item.shiftDefinitionId) ?? "?";
+  const dateLabel = format(parseISO(item.date), "dd/MM");
+
+  if (item.action === "Delete") return `Xoá ca ${shiftName} của ${employeeName} ngày ${dateLabel}`;
+  if (item.action === "Add") return `Thêm ${employeeName} vào ca ${shiftName} ngày ${dateLabel}`;
+
+  const targetShiftName = item.targetShiftDefinitionId
+    ? (shiftNameById.get(item.targetShiftDefinitionId) ?? "?")
+    : "?";
+  const targetDateLabel = item.targetDate ? format(parseISO(item.targetDate), "dd/MM") : "?";
+  return `Chuyển ${employeeName} từ ca ${shiftName} ngày ${dateLabel} sang ca ${targetShiftName} ngày ${targetDateLabel}`;
+}
 
 export function SuggestionsSheet({
   open,
@@ -83,6 +131,7 @@ export function SuggestionsSheet({
   currentAssignments = [],
 }: SuggestionsSheetProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { branchPath, orgPath, parsed } = useTenantNavigation();
   const { role } = useAuth();
   const suggestMutation = useSuggestScheduleMutation(scheduleId);
@@ -97,6 +146,7 @@ export function SuggestionsSheet({
   const [hasGenerated, setHasGenerated] = useState(false);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [actionCards, setActionCards] = useState<Record<string, ActionCardState>>({});
   const [assistantOpen, setAssistantOpen] = useState(false);
 
   const resetSheetState = () => {
@@ -107,6 +157,7 @@ export function SuggestionsSheet({
     setHasGenerated(false);
     setQuestion("");
     setMessages([]);
+    setActionCards({});
     setAssistantOpen(false);
   };
 
@@ -196,27 +247,6 @@ export function SuggestionsSheet({
     ));
   };
 
-  const handleAsk = async () => {
-    const trimmed = question.trim();
-    if (!trimmed) return;
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: trimmed,
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    setQuestion("");
-    const response = await chatMutation.mutateAsync({ question: trimmed });
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: response.answer,
-      },
-    ]);
-  };
-
   const loading = suggestMutation.isPending;
   const empty = hasGenerated && !loading && suggestions.length === 0;
 
@@ -263,6 +293,149 @@ export function SuggestionsSheet({
   }, [employeesPage?.items]);
 
   const hasCurrentAssignments = currentAssignments.length > 0;
+
+  const shiftNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const shift of shiftsData) map.set(shift.id, shift.name);
+    return map;
+  }, [shiftsData]);
+
+  const assignmentByTuple = useMemo(() => {
+    const map = new Map<string, ShiftAssignmentResponse>();
+    for (const assignment of currentAssignments) {
+      map.set(
+        assignmentTupleKey(assignment.shiftDefinitionId, assignment.employeeId, assignment.date),
+        assignment,
+      );
+    }
+    return map;
+  }, [currentAssignments]);
+
+  const handleAsk = async () => {
+    const trimmed = question.trim();
+    if (!trimmed) return;
+    const userMessageId = `user-${Date.now()}`;
+    const assistantMessageId = `assistant-${Date.now()}`;
+    setMessages((prev) => [...prev, { id: userMessageId, role: "user", content: trimmed }]);
+    setQuestion("");
+    const response = await chatMutation.mutateAsync({ question: trimmed, actionMode: true });
+    const proposal = response.actionUnderstood ? (response.actionProposal ?? undefined) : undefined;
+    setMessages((prev) => [
+      ...prev,
+      { id: assistantMessageId, role: "assistant", content: response.answer, proposal },
+    ]);
+    if (proposal) {
+      setActionCards((prev) => ({
+        ...prev,
+        [assistantMessageId]: {
+          proposal,
+          itemStatuses: proposal.items.map((item) =>
+            item.action === "Add" ||
+            assignmentByTuple.has(assignmentTupleKey(item.shiftDefinitionId, item.employeeId, item.date))
+              ? "idle"
+              : "stale",
+          ),
+          itemErrors: proposal.items.map(() => null),
+          applying: false,
+          applied: false,
+          dismissed: false,
+        },
+      }));
+    }
+  };
+
+  const handleDismissActionCard = (messageId: string) => {
+    setActionCards((prev) => ({
+      ...prev,
+      [messageId]: { ...prev[messageId], dismissed: true },
+    }));
+  };
+
+  const handleApplyActionCard = async (messageId: string) => {
+    const card = actionCards[messageId];
+    if (!card || card.applying || card.applied) return;
+
+    setActionCards((prev) => ({ ...prev, [messageId]: { ...prev[messageId], applying: true } }));
+    const statuses = [...card.itemStatuses];
+    const errors = [...card.itemErrors];
+
+    for (let i = 0; i < card.proposal.items.length; i++) {
+      if (statuses[i] === "stale") continue;
+      const item = card.proposal.items[i]!;
+
+      // Re-check freshness against the live assignment list right before applying —
+      // the schedule may have changed since the card was rendered (manual grid edit,
+      // another applied item in this same batch, etc.).
+      const sourceAssignment =
+        item.action === "Delete" || item.action === "Move"
+          ? assignmentByTuple.get(assignmentTupleKey(item.shiftDefinitionId, item.employeeId, item.date))
+          : undefined;
+      if ((item.action === "Delete" || item.action === "Move") && !sourceAssignment) {
+        statuses[i] = "stale";
+        errors[i] = null;
+        setActionCards((prev) => ({
+          ...prev,
+          [messageId]: { ...prev[messageId], itemStatuses: [...statuses], itemErrors: [...errors] },
+        }));
+        continue;
+      }
+
+      statuses[i] = "pending";
+      setActionCards((prev) => ({
+        ...prev,
+        [messageId]: { ...prev[messageId], itemStatuses: [...statuses] },
+      }));
+
+      try {
+        if (item.action === "Delete") {
+          await fetchSchedules.deleteAssignment(scheduleId, sourceAssignment!.id);
+        } else if (item.action === "Move") {
+          await fetchSchedules.moveAssignment(scheduleId, sourceAssignment!.id, {
+            shiftDefinitionId: item.targetShiftDefinitionId!,
+            date: item.targetDate!,
+          });
+        } else {
+          await fetchSchedules.createAssignment(scheduleId, {
+            shiftDefinitionId: item.shiftDefinitionId,
+            employeeId: item.employeeId,
+            date: item.date,
+          });
+        }
+        statuses[i] = "success";
+        errors[i] = null;
+      } catch (error) {
+        statuses[i] = "error";
+        errors[i] = mapScheduleError(error);
+      }
+      setActionCards((prev) => ({
+        ...prev,
+        [messageId]: { ...prev[messageId], itemStatuses: [...statuses], itemErrors: [...errors] },
+      }));
+    }
+
+    setActionCards((prev) => ({
+      ...prev,
+      [messageId]: { ...prev[messageId], applying: false, applied: true },
+    }));
+
+    void queryClient.invalidateQueries({ queryKey: scheduleKeys.detail(scheduleId) });
+    void queryClient.invalidateQueries({ queryKey: scheduleKeys.lists() });
+
+    const successCount = statuses.filter((s) => s === "success").length;
+    const failureCount = statuses.filter((s) => s === "error").length;
+    if (failureCount === 0) toast.success(`Đã áp dụng ${successCount} thay đổi từ trợ lý.`);
+    else toast.error(`Áp dụng ${successCount} thành công, ${failureCount} thất bại.`);
+
+    try {
+      // Call the API directly (not the toasting mutation hook) — the batch-apply
+      // summary toast above is enough; a second "snapshot regenerated" toast here
+      // would be noise for the same user action.
+      await fetchSchedules.generateInsightContext(scheduleId, {});
+      void queryClient.invalidateQueries({ queryKey: scheduleKeys.insightContext(scheduleId) });
+    } catch {
+      // Snapshot regeneration failure is non-fatal — the applied changes already landed.
+    }
+  };
 
   const compare = useMemo(
     () => buildSuggestionCompare(currentAssignments, suggestions, employeeNameById, activeShifts, days),
@@ -544,36 +717,115 @@ export function SuggestionsSheet({
                     <Bot className="size-3.5" aria-hidden />
                   </div>
                   <div className="rounded-lg rounded-tl-none bg-background px-3 py-2 text-xs leading-5 shadow-sm ring-1 ring-border/80">
-                    Hỏi về lý do phân ca, ràng buộc org, hoặc cách cải thiện lịch tuần này. Tôi
-                    chỉ giải thích — không tự áp dụng lịch.
+                    Hỏi về lý do phân ca, ràng buộc org, hoặc yêu cầu xoá/chuyển/thêm ca (ví dụ
+                    &quot;xoá ca sáng của Lan ngày 04/07&quot;). Tôi chỉ đề xuất — bạn bấm Áp dụng thì
+                    lịch nháp mới thay đổi.
                   </div>
                 </div>
 
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "flex gap-2",
-                      message.role === "user" ? "justify-end" : "justify-start",
-                    )}
-                  >
-                    {message.role === "assistant" ? (
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <Bot className="size-3.5" aria-hidden />
-                      </div>
-                    ) : null}
+                {messages.map((message) => {
+                  const card = actionCards[message.id];
+                  return (
                     <div
+                      key={message.id}
                       className={cn(
-                        "max-w-[92%] rounded-lg px-3 py-2 text-xs leading-5 whitespace-pre-wrap",
-                        message.role === "user"
-                          ? "rounded-tr-none bg-primary text-primary-foreground"
-                          : "rounded-tl-none bg-background shadow-sm ring-1 ring-border/80",
+                        "flex gap-2",
+                        message.role === "user" ? "justify-end" : "justify-start",
                       )}
                     >
-                      {message.content}
+                      {message.role === "assistant" ? (
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <Bot className="size-3.5" aria-hidden />
+                        </div>
+                      ) : null}
+                      <div className={cn("flex max-w-[92%] flex-col gap-2")}>
+                        <div
+                          className={cn(
+                            "rounded-lg px-3 py-2 text-xs leading-5 whitespace-pre-wrap",
+                            message.role === "user"
+                              ? "rounded-tr-none bg-primary text-primary-foreground"
+                              : "rounded-tl-none bg-background shadow-sm ring-1 ring-border/80",
+                          )}
+                        >
+                          {message.content}
+                        </div>
+
+                        {card && !card.dismissed ? (
+                          <div className="space-y-2 rounded-lg border bg-background p-2.5 shadow-sm ring-1 ring-border/80">
+                            <ul className="space-y-1">
+                              {card.proposal.items.map((item, index) => {
+                                const itemStatus = card.itemStatuses[index];
+                                return (
+                                  <li
+                                    key={`${message.id}-item-${index}`}
+                                    className={cn(
+                                      "flex items-start gap-1.5 text-[11px] leading-4",
+                                      itemStatus === "stale" && "text-muted-foreground/70",
+                                    )}
+                                  >
+                                    {itemStatus === "success" ? (
+                                      <Check className="mt-0.5 size-3 shrink-0 text-emerald-600" aria-hidden />
+                                    ) : itemStatus === "error" ? (
+                                      <XCircle className="mt-0.5 size-3 shrink-0 text-destructive" aria-hidden />
+                                    ) : itemStatus === "pending" ? (
+                                      <Loader2 className="mt-0.5 size-3 shrink-0 animate-spin" aria-hidden />
+                                    ) : (
+                                      <span className="mt-1 size-1 shrink-0 rounded-full bg-muted-foreground/50" />
+                                    )}
+                                    <span className="flex-1">
+                                      {describeActionItem(item, employeeNameById, shiftNameById)}
+                                      {itemStatus === "stale" ? (
+                                        <span className="block text-amber-600">
+                                          Ca này không còn tồn tại — làm mới snapshot.
+                                        </span>
+                                      ) : null}
+                                      {itemStatus === "error" && card.itemErrors[index] ? (
+                                        <span className="block text-destructive">
+                                          {card.itemErrors[index]}
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                            <div className="flex items-center justify-end gap-1.5">
+                              {!card.applied ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs"
+                                  onClick={() => handleDismissActionCard(message.id)}
+                                >
+                                  Bỏ qua
+                                </Button>
+                              ) : null}
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="h-7 text-xs"
+                                disabled={card.applying || card.applied}
+                                onClick={() => void handleApplyActionCard(message.id)}
+                              >
+                                {card.applying ? (
+                                  <>
+                                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                                    Đang áp dụng…
+                                  </>
+                                ) : card.applied ? (
+                                  "Đã áp dụng"
+                                ) : (
+                                  "Áp dụng"
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {chatMutation.isPending ? (
                   <div className="flex gap-2">

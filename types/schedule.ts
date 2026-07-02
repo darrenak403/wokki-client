@@ -158,6 +158,23 @@ export interface ScheduleInsightContextResponse {
 
 export interface ScheduleInsightChatRequest {
   question: string;
+  hintMode?: boolean;
+  actionMode?: boolean;
+}
+
+export type ScheduleActionKind = "Delete" | "Move" | "Add";
+
+export interface ScheduleActionItem {
+  action: ScheduleActionKind;
+  shiftDefinitionId: string;
+  employeeId: string;
+  date: string;
+  targetShiftDefinitionId?: string | null;
+  targetDate?: string | null;
+}
+
+export interface ScheduleActionProposal {
+  items: ScheduleActionItem[];
 }
 
 export interface ScheduleInsightChatResponse {
@@ -165,6 +182,11 @@ export interface ScheduleInsightChatResponse {
   answer: string;
   provider: string;
   contextGeneratedAt: string;
+  hintMode?: boolean;
+  actionMode?: boolean;
+  actionProposal?: ScheduleActionProposal | null;
+  actionSummary?: string | null;
+  actionUnderstood?: boolean;
 }
 
 export interface CopyScheduleRequest {
