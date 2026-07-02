@@ -28,6 +28,7 @@ import {
   WeekShiftCalendar,
   type WeekShiftCalendarShift,
 } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/WeekShiftCalendar";
+import { ScheduleGrid } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/ScheduleGrid";
 import { SuggestionDiffView } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/SuggestionDiffView";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
 import { buildSuggestionCompare } from "@/lib/support/schedule/suggestion-compare";
@@ -47,7 +48,7 @@ import { shiftAccentColor, shiftChipStyle } from "@/lib/support/schedule/shift-c
 import { weekDayDates } from "@/lib/support/schedule/week";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import type { ScheduleSuggestion, ShiftAssignmentResponse } from "@/types/schedule";
+import type { ScheduleStatus, ScheduleSuggestion, ShiftAssignmentResponse } from "@/types/schedule";
 
 function timeToMinutes(value: string) {
   const [hours = "0", minutes = "0"] = value.slice(0, 5).split(":");
@@ -60,6 +61,7 @@ type SuggestionsSheetProps = {
   scheduleId: string;
   locationId: string;
   listParams: { departmentId: string; weekStartDate: string };
+  status: ScheduleStatus;
   conflictCount?: number;
   currentAssignments?: ShiftAssignmentResponse[];
 };
@@ -76,6 +78,7 @@ export function SuggestionsSheet({
   scheduleId,
   locationId,
   listParams,
+  status,
   conflictCount = 0,
   currentAssignments = [],
 }: SuggestionsSheetProps) {
@@ -260,35 +263,6 @@ export function SuggestionsSheet({
   }, [employeesPage?.items]);
 
   const hasCurrentAssignments = currentAssignments.length > 0;
-  const currentAssignmentsByKey = useMemo(() => {
-    const map = new Map<string, ShiftAssignmentResponse[]>();
-    for (const assignment of currentAssignments) {
-      const key = `${assignment.shiftDefinitionId}|${assignment.date}`;
-      const list = map.get(key) ?? [];
-      list.push(assignment);
-      map.set(key, list);
-    }
-    return map;
-  }, [currentAssignments]);
-
-  const renderCurrentAssignmentCell = (shift: WeekShiftCalendarShift, date: string) => {
-    const color = shiftAccentColor(shift.color);
-    const cell = currentAssignmentsByKey.get(`${shift.id}|${date}`) ?? [];
-
-    if (cell.length === 0) {
-      return <CalendarEmptySlot label="Trống" />;
-    }
-
-    return cell.map((assignment) => (
-      <div
-        key={assignment.id}
-        className="rounded-lg border px-2.5 py-2 text-xs font-semibold opacity-90"
-        style={shiftChipStyle(color)}
-      >
-        {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
-      </div>
-    ));
-  };
 
   const compare = useMemo(
     () => buildSuggestionCompare(currentAssignments, suggestions, employeeNameById, activeShifts, days),
@@ -494,19 +468,21 @@ export function SuggestionsSheet({
               ) : !hasGenerated && !loading && hasCurrentAssignments ? (
                 <div className="flex min-h-0 flex-1 flex-col gap-2">
                   <div className="shrink-0 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                    Lịch nháp tuần này đã có {currentAssignments.length} ca được phân — chỉ xem.
-                    Nhấn <strong className="text-foreground">Tạo gợi ý</strong> nếu bạn muốn CP-SAT
-                    đề xuất điều chỉnh.
+                    Lịch nháp tuần này đã có {currentAssignments.length} ca được phân — kéo-thả để
+                    chuyển ca, bấm chip để xóa, hoặc nhấn{" "}
+                    <strong className="text-foreground">Tạo gợi ý</strong> nếu bạn muốn CP-SAT đề
+                    xuất điều chỉnh.
                   </div>
-                  <div className="min-h-0 flex-1 overflow-x-auto">
-                    <WeekShiftCalendar
-                      fillHeight
-                      className="min-w-[880px]"
-                      days={days}
-                      shifts={activeShifts}
-                      renderCell={renderCurrentAssignmentCell}
+                  <ScrollArea className="min-h-0 flex-1">
+                    <ScheduleGrid
+                      scheduleId={scheduleId}
+                      departmentId={listParams.departmentId}
+                      locationId={locationId}
+                      weekStartDate={listParams.weekStartDate}
+                      status={status}
+                      assignments={currentAssignments}
                     />
-                  </div>
+                  </ScrollArea>
                 </div>
               ) : (
                 <ScrollArea className="min-h-0 flex-1">

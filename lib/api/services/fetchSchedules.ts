@@ -15,6 +15,7 @@ import type {
   CreateScheduleRequest,
   ScheduleDetailResponse,
   GenerateScheduleInsightContextRequest,
+  MoveAssignmentRequest,
   ScheduleInsightChatRequest,
   ScheduleInsightChatResponse,
   ScheduleInsightContextResponse,
@@ -82,6 +83,18 @@ export const fetchSchedules = {
   ): Promise<ShiftAssignmentResponse> => {
     const response = await apiService.post<ApiEnvelope<ShiftAssignmentResponse>>(
       `api/v1/schedules/${scheduleId}/assignments`,
+      data,
+    );
+    return assertScheduleSuccess(normalizeApiResponse(response.data));
+  },
+
+  moveAssignment: async (
+    scheduleId: string,
+    assignmentId: string,
+    data: MoveAssignmentRequest,
+  ): Promise<ShiftAssignmentResponse> => {
+    const response = await apiService.patch<ApiEnvelope<ShiftAssignmentResponse>>(
+      `api/v1/schedules/${scheduleId}/assignments/${assignmentId}`,
       data,
     );
     return assertScheduleSuccess(normalizeApiResponse(response.data));

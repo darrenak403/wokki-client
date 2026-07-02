@@ -1,6 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { PlusIcon } from "lucide-react";
 import { AssignEmployeeDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/AssignEmployeeDialog";
 import {
@@ -8,7 +17,7 @@ import {
   WeekShiftCalendar,
 } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/WeekShiftCalendar";
 import { useEmployeesQuery } from "@/hooks/useEmployees";
-import { useDeleteAssignmentMutation } from "@/hooks/useSchedule";
+import { useDeleteAssignmentMutation, useMoveAssignmentMutation } from "@/hooks/useSchedule";
 import { useTeamAttendanceQuery } from "@/hooks/useAttendance";
 import { useShiftsQuery } from "@/hooks/useShifts";
 import { cn } from "@/lib/utils";
@@ -63,6 +72,84 @@ function getAssignmentKey(shiftDefinitionId: string, date: string) {
   return `${shiftDefinitionId}|${date}`;
 }
 
+function parseAssignmentKey(key: string): DragData | null {
+  const [shiftDefinitionId = "", date = ""] = key.split("|");
+  return shiftDefinitionId && date ? { shiftDefinitionId, date } : null;
+}
+
+type DragData = { shiftDefinitionId: string; date: string };
+
+function DroppableCell({
+  id,
+  disabled,
+  children,
+}: {
+  id: string;
+  disabled: boolean;
+  children: ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id, disabled });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex min-h-full flex-1 flex-col gap-1.5 rounded-xl transition-colors",
+        isOver && "bg-primary/[0.06] ring-2 ring-primary/30",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DraggableAssignmentChip({
+  assignmentId,
+  data,
+  disabled,
+  className,
+  style,
+  title,
+  onClick,
+  children,
+}: {
+  assignmentId: string;
+  data: DragData;
+  disabled: boolean;
+  className?: string;
+  style?: CSSProperties;
+  title?: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: assignmentId,
+    data,
+    disabled,
+  });
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      {...attributes}
+      {...listeners}
+      className={cn(
+        className,
+        !disabled && "cursor-grab touch-none",
+        isDragging && "relative z-30 cursor-grabbing opacity-85 shadow-lg ring-2 ring-primary/40",
+      )}
+      style={{
+        ...style,
+        transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
+      }}
+      disabled={disabled}
+      title={title}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function ScheduleGrid({
   scheduleId,
   departmentId,
@@ -92,6 +179,30 @@ export function ScheduleGrid({
     pageSize: 100,
   });
   const deleteMutation = useDeleteAssignmentMutation(scheduleId, listParams);
+  const moveMutation = useMoveAssignmentMutation(scheduleId, listParams);
+
+  // Click fires after a drag's pointerup; suppress it so a drop never triggers delete.
+  const suppressClickRef = useRef(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
+
+  const handleDragStart = () => {
+    suppressClickRef.current = true;
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 0);
+    const { active, over } = event;
+    if (!over) return;
+    const target = parseAssignmentKey(String(over.id));
+    const source = active.data.current as DragData | undefined;
+    if (!target || !source) return;
+    if (source.shiftDefinitionId === target.shiftDefinitionId && source.date === target.date) return;
+    moveMutation.mutate({ assignmentId: String(active.id), data: target });
+  };
 
   // Fetch today's attendance only when today falls within the displayed week
   const { data: todayAttendancePage } = useTeamAttendanceQuery(
@@ -139,6 +250,7 @@ export function ScheduleGrid({
   };
 
   const handleDelete = async (assignmentId: string) => {
+    if (suppressClickRef.current) return;
     if (!window.confirm("Xóa phân ca này?")) return;
     await deleteMutation.mutateAsync(assignmentId);
   };
@@ -160,82 +272,87 @@ export function ScheduleGrid({
   return (
     <>
       <div className="overflow-x-auto">
-        <WeekShiftCalendar
-          className="min-w-[960px]"
-          days={days}
-          shifts={activeShifts}
-          renderCell={(shift, date) => {
-            const color = shiftAccentColor(shift.color);
-            const cellAssignments = assignmentsByKey.get(getAssignmentKey(shift.id, date)) ?? [];
-            const hasAssignments = cellAssignments.length > 0;
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <WeekShiftCalendar
+            className="min-w-[960px]"
+            days={days}
+            shifts={activeShifts}
+            renderCell={(shift, date) => {
+              const color = shiftAccentColor(shift.color);
+              const cellKey = getAssignmentKey(shift.id, date);
+              const cellAssignments = assignmentsByKey.get(cellKey) ?? [];
+              const hasAssignments = cellAssignments.length > 0;
 
-            if (!hasAssignments) {
-              if (!editable) {
+              if (!hasAssignments && !editable) {
                 return <CalendarEmptySlot label="—" />;
               }
-              return (
-                <button
-                  type="button"
-                  aria-label="Thêm nhân viên"
-                  className={cn(
-                    "group flex min-h-[64px] flex-1 w-full flex-col items-center justify-center gap-1 rounded-xl",
-                    "border border-dashed border-border/45 bg-background/50 transition-all",
-                    "hover:border-primary/35 hover:bg-primary/[0.04]",
-                  )}
-                  onClick={() => openAssign(shift.id, shift.name, date)}
-                >
-                  <PlusIcon className="size-4 text-muted-foreground/35 transition-colors group-hover:text-primary/70" />
-                  <span className="text-[10px] font-medium text-muted-foreground/0 transition-all group-hover:text-muted-foreground">
-                    Phân ca
-                  </span>
-                </button>
-              );
-            }
 
-            return (
-              <>
-                {cellAssignments.map((assignment) => {
-                  const isToday = date === todayStr;
-                  const attendanceStatus = isToday
-                    ? getAttendanceStatus(attendanceByAssignmentId.get(assignment.id))
-                    : null;
-                  return (
+              return (
+                <DroppableCell id={cellKey} disabled={!editable}>
+                  {!hasAssignments ? (
                     <button
                       type="button"
-                      key={assignment.id}
+                      aria-label="Thêm nhân viên"
                       className={cn(
-                        "block w-full rounded-lg border px-2.5 py-2 text-left text-sm font-semibold transition-all",
-                        editable && "hover:brightness-[0.97] hover:ring-1 hover:ring-destructive/25",
+                        "group flex min-h-[64px] flex-1 w-full flex-col items-center justify-center gap-1 rounded-xl",
+                        "border border-dashed border-border/45 bg-background/50 transition-all",
+                        "hover:border-primary/35 hover:bg-primary/[0.04]",
                       )}
-                      style={shiftChipStyle(color)}
-                      disabled={!editable || deleteMutation.isPending}
-                      title={editable ? "Bấm để xóa phân ca" : undefined}
-                      onClick={() => void handleDelete(assignment.id)}
+                      onClick={() => openAssign(shift.id, shift.name, date)}
                     >
-                      <span className="truncate block">
-                        {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
+                      <PlusIcon className="size-4 text-muted-foreground/35 transition-colors group-hover:text-primary/70" />
+                      <span className="text-[10px] font-medium text-muted-foreground/0 transition-all group-hover:text-muted-foreground">
+                        Phân ca
                       </span>
-                      {attendanceStatus ? (
-                        <AttendanceStatusDot status={attendanceStatus} />
-                      ) : null}
                     </button>
-                  );
-                })}
-                {editable ? (
-                  <button
-                    type="button"
-                    aria-label="Thêm nhân viên"
-                    className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[11px] font-medium text-primary/70 transition-colors hover:bg-primary/5 hover:text-primary"
-                    onClick={() => openAssign(shift.id, shift.name, date)}
-                  >
-                    <PlusIcon className="size-3" />
-                    Thêm
-                  </button>
-                ) : null}
-              </>
-            );
-          }}
-        />
+                  ) : (
+                    <>
+                      {cellAssignments.map((assignment) => {
+                        const isToday = date === todayStr;
+                        const attendanceStatus = isToday
+                          ? getAttendanceStatus(attendanceByAssignmentId.get(assignment.id))
+                          : null;
+                        return (
+                          <DraggableAssignmentChip
+                            key={assignment.id}
+                            assignmentId={assignment.id}
+                            data={{ shiftDefinitionId: shift.id, date }}
+                            disabled={!editable || deleteMutation.isPending || moveMutation.isPending}
+                            className={cn(
+                              "block w-full rounded-lg border px-2.5 py-2 text-left text-sm font-semibold transition-all",
+                              editable && "hover:brightness-[0.97] hover:ring-1 hover:ring-destructive/25",
+                            )}
+                            style={shiftChipStyle(color)}
+                            title={editable ? "Bấm để xóa · Kéo để chuyển ca" : undefined}
+                            onClick={() => void handleDelete(assignment.id)}
+                          >
+                            <span className="truncate block">
+                              {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
+                            </span>
+                            {attendanceStatus ? (
+                              <AttendanceStatusDot status={attendanceStatus} />
+                            ) : null}
+                          </DraggableAssignmentChip>
+                        );
+                      })}
+                      {editable ? (
+                        <button
+                          type="button"
+                          aria-label="Thêm nhân viên"
+                          className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[11px] font-medium text-primary/70 transition-colors hover:bg-primary/5 hover:text-primary"
+                          onClick={() => openAssign(shift.id, shift.name, date)}
+                        >
+                          <PlusIcon className="size-3" />
+                          Thêm
+                        </button>
+                      ) : null}
+                    </>
+                  )}
+                </DroppableCell>
+              );
+            }}
+          />
+        </DndContext>
       </div>
 
       {dialog ? (

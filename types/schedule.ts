@@ -106,6 +106,11 @@ export interface CreateAssignmentRequest {
   note?: string | null;
 }
 
+export interface MoveAssignmentRequest {
+  shiftDefinitionId: string;
+  date: string;
+}
+
 export interface ApplySuggestionItem {
   shiftDefinitionId: string;
   employeeId: string;

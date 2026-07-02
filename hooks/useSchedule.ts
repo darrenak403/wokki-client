@@ -11,6 +11,7 @@ import type {
   CreateAssignmentRequest,
   CreateScheduleRequest,
   GenerateScheduleInsightContextRequest,
+  MoveAssignmentRequest,
   ScheduleInsightChatRequest,
   SuggestScheduleRequest,
   UpdateScheduleRequest,
@@ -113,6 +114,19 @@ export function useDeleteAssignmentMutation(scheduleId: string, listParams: Sche
     onSuccess: () => {
       invalidateSchedule(queryClient, scheduleId, listParams ?? undefined);
       toast.success("Đã xóa phân ca.");
+    },
+    onError: (error) => toast.error(mapScheduleError(error)),
+  });
+}
+
+export function useMoveAssignmentMutation(scheduleId: string, listParams: ScheduleListParams | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ assignmentId, data }: { assignmentId: string; data: MoveAssignmentRequest }) =>
+      fetchSchedules.moveAssignment(scheduleId, assignmentId, data),
+    onSuccess: () => {
+      invalidateSchedule(queryClient, scheduleId, listParams ?? undefined);
+      toast.success("Đã chuyển phân ca.");
     },
     onError: (error) => toast.error(mapScheduleError(error)),
   });

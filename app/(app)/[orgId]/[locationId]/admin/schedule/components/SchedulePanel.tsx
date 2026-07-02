@@ -302,6 +302,7 @@ export function SchedulePanel() {
             scheduleId={schedule.id}
             locationId={locationId}
             listParams={listParams!}
+            status={schedule.status}
             conflictCount={rebalanceHints.conflictCount}
             currentAssignments={assignments}
           />
