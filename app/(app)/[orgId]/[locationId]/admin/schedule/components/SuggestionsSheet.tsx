@@ -259,6 +259,37 @@ export function SuggestionsSheet({
     return map;
   }, [employeesPage?.items]);
 
+  const hasCurrentAssignments = currentAssignments.length > 0;
+  const currentAssignmentsByKey = useMemo(() => {
+    const map = new Map<string, ShiftAssignmentResponse[]>();
+    for (const assignment of currentAssignments) {
+      const key = `${assignment.shiftDefinitionId}|${assignment.date}`;
+      const list = map.get(key) ?? [];
+      list.push(assignment);
+      map.set(key, list);
+    }
+    return map;
+  }, [currentAssignments]);
+
+  const renderCurrentAssignmentCell = (shift: WeekShiftCalendarShift, date: string) => {
+    const color = shiftAccentColor(shift.color);
+    const cell = currentAssignmentsByKey.get(`${shift.id}|${date}`) ?? [];
+
+    if (cell.length === 0) {
+      return <CalendarEmptySlot label="Trống" />;
+    }
+
+    return cell.map((assignment) => (
+      <div
+        key={assignment.id}
+        className="rounded-lg border px-2.5 py-2 text-xs font-semibold opacity-90"
+        style={shiftChipStyle(color)}
+      >
+        {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
+      </div>
+    ));
+  };
+
   const compare = useMemo(
     () => buildSuggestionCompare(currentAssignments, suggestions, employeeNameById, activeShifts, days),
     [currentAssignments, suggestions, employeeNameById, activeShifts, days],
@@ -460,6 +491,23 @@ export function SuggestionsSheet({
                     />
                   </div>
                 )
+              ) : !hasGenerated && !loading && hasCurrentAssignments ? (
+                <div className="flex min-h-0 flex-1 flex-col gap-2">
+                  <div className="shrink-0 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    Lịch nháp tuần này đã có {currentAssignments.length} ca được phân — chỉ xem.
+                    Nhấn <strong className="text-foreground">Tạo gợi ý</strong> nếu bạn muốn CP-SAT
+                    đề xuất điều chỉnh.
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-x-auto">
+                    <WeekShiftCalendar
+                      fillHeight
+                      className="min-w-[880px]"
+                      days={days}
+                      shifts={activeShifts}
+                      renderCell={renderCurrentAssignmentCell}
+                    />
+                  </div>
+                </div>
               ) : (
                 <ScrollArea className="min-h-0 flex-1">
                   <div className="p-4 sm:p-5">
