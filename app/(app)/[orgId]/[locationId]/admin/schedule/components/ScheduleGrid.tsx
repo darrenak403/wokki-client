@@ -13,6 +13,16 @@ import {
 import { PlusIcon } from "lucide-react";
 import { AssignEmployeeDialog } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/AssignEmployeeDialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   CalendarEmptySlot,
   WeekShiftCalendar,
 } from "@/app/(app)/[orgId]/[locationId]/admin/schedule/components/WeekShiftCalendar";
@@ -166,6 +176,7 @@ export function ScheduleGrid({
     shiftName: string;
     date: string;
   } | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const weekIncludesToday = days.includes(todayStr);
@@ -249,10 +260,15 @@ export function ScheduleGrid({
     setDialog({ shiftDefinitionId, shiftName, date });
   };
 
-  const handleDelete = async (assignmentId: string) => {
+  const handleDelete = (assignmentId: string) => {
     if (suppressClickRef.current) return;
-    if (!window.confirm("Xóa phân ca này?")) return;
-    await deleteMutation.mutateAsync(assignmentId);
+    setPendingDeleteId(assignmentId);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    await deleteMutation.mutateAsync(pendingDeleteId);
+    setPendingDeleteId(null);
   };
 
   if (shiftsLoading) {
@@ -324,7 +340,7 @@ export function ScheduleGrid({
                             )}
                             style={shiftChipStyle(color)}
                             title={editable ? "Bấm để xóa · Kéo để chuyển ca" : undefined}
-                            onClick={() => void handleDelete(assignment.id)}
+                            onClick={() => handleDelete(assignment.id)}
                           >
                             <span className="truncate block">
                               {employeeNameById.get(assignment.employeeId) ?? "Nhân viên"}
@@ -366,6 +382,30 @@ export function ScheduleGrid({
           date={dialog.date}
         />
       ) : null}
+
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa phân ca này?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Nhân viên sẽ không còn được phân vào ca này trong lịch nháp. Bạn có thể phân lại sau.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+              onClick={() => void confirmDelete()}
+            >
+              {deleteMutation.isPending ? "Đang xoá…" : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

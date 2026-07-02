@@ -1,7 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useDeleteAssignmentMutation } from "@/hooks/useSchedule";
 import type { ShiftAssignmentResponse } from "@/types/schedule";
 
@@ -23,6 +34,13 @@ export function AssignmentCell({
   onAdd,
 }: AssignmentCellProps) {
   const deleteMutation = useDeleteAssignmentMutation(scheduleId, listParams);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    await deleteMutation.mutateAsync(pendingDeleteId);
+    setPendingDeleteId(null);
+  };
 
   if (assignments.length === 0) {
     if (!editable) {
@@ -60,11 +78,7 @@ export function AssignmentCell({
               className="shrink-0"
               aria-label="Xóa phân ca"
               disabled={deleteMutation.isPending}
-              onClick={() => {
-                if (window.confirm("Xóa phân ca này?")) {
-                  void deleteMutation.mutateAsync(a.id);
-                }
-              }}
+              onClick={() => setPendingDeleteId(a.id)}
             >
               <Trash2Icon className="size-3" />
             </Button>
@@ -80,6 +94,30 @@ export function AssignmentCell({
           + Thêm
         </button>
       ) : null}
+
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa phân ca này?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Nhân viên sẽ không còn được phân vào ca này trong lịch nháp. Bạn có thể phân lại sau.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+              onClick={() => void confirmDelete()}
+            >
+              {deleteMutation.isPending ? "Đang xoá…" : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
